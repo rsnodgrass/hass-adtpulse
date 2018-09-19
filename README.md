@@ -4,6 +4,10 @@ This adds ADT Pulse sensor support to Home Assistant, automatically
 exposing to Home Assistant all sensors that are configured with a
 Pulse account.
 
+Currently this only reads the current state of the sensors and requires
+polling, however eventually this should support notificatons upon
+state changes of sensors.
+
 ### Installation
 
 To install, you must manually copy the adtpulse.py file into your

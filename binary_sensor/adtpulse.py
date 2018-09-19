@@ -115,13 +115,17 @@ class ADTBinarySensor(BinarySensorDevice):
         #       devStatOK   -> closed
         #       devStatTamper (for shock devices)
 
-        # TODO: this should be more robust
-        self._device_class = ADT_DEVICE_CLASS_TAG_MAP[ desc['tags'].split(',')[1] ]
+        # map the ADT Pulse device type tag to a binary_sensor class so the proper status
+        # codes and icons are displayed. If device class is not specified, binary_sensor
+        # default to a generic on/off sensor
+        device_class = ADT_DEVICE_CLASS_TAG_MAP[ desc['tags'].split(',')[1] ]
+        if device_class:
+            self._device_class = device_class
 
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if self._device_class is 'door' :
-            if 'Window' in self_.name or 'window' in self_.name:
+            if 'Window' in self._name or 'window' in self._name:
                 self._device_class = 'window'
 
         # TODO: just compare _timestamp to determine if an "event" occured?

@@ -1,7 +1,22 @@
 """
-This adds ADT Pulse sensor support to Home Assistant, automatically
-exposing to Home Assistant all sensors that are configured with a
-Pulse account.
+This adds ADT Pulse sensor support to Home Assistant.
+ADT Pulse integration that automatically exposes to Home Assistant all
+sensors that are configured within Pulse.
+
+To install, you must manually copy the adtpulse.py file into your
+custom_components folder, for example on Mac:
+
+   ~/.homeassistant/custom_components/sensor/adtpulse.py
+
+Example configuration:
+
+binary_sensor:
+  - platform: adtpulse:
+    username: your@email.com
+    password: password
+
+
+In the future, create an ADT Pulse alarm panel (alarm_control_panel/adtpulse.py)
 """
 import logging
 import re
@@ -24,7 +39,8 @@ ADT_STATUS_MAP = {
 
 ADT_DEVICE_CLASS_TAG_MAP = {
     "doorWindow": "door",
-    "motion": "motion"
+    "motion": "motion",
+    "smoke": "smoke"
 }
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
@@ -94,19 +110,22 @@ class ADTBinarySensor(BinarySensorDevice):
             if status in ADT_STATUS_MAP:
                 self._state = ADT_STATUS_MAP[status]
 
+        # NOTE: it may be better to determine state by using the "icon" to determine status
+        #       devStatOpen -> open
+        #       devStatOK   -> closed
+        #       devStatTamper (for shock devices)
+
         # TODO: this should be more robust
         self._device_class = ADT_DEVICE_CLASS_TAG_MAP[ desc['tags'].split(',')[1] ]
-        # TODO: if _name has "Window" and no "Door", then set it to "window" class
+
+        # since ADT Pulse does not separate the concept of a door or window sensor,
+        # we try to autodetect window type sensors so the appropriate icon is displayed
+        if self._device_class is 'door' :
+            if 'Window' in self_.name or 'window' in self_.name:
+                self._device_class = 'window'
 
         # TODO: just compare _timestamp to determine if an "event" occured?
         #(comparing state is not enough, since it could have flipped back to the same original state)
-
-        # TODO: what does "icon": "devStatOK" indicate and do we need to surface?
-
-        # TODO handle the various device status:
-        #       devStatOpen
-        #       devStatOK
-        #       devStatTamper (for shock devices)
 
         _LOGGER.debug('Created new ADT %s sensor: %s', self._device_class, self._name)
 

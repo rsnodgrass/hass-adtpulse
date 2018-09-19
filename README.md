@@ -13,7 +13,7 @@ state changes of sensors.
 To install, you must manually copy the adtpulse.py file into your
 custom_components folder, for example on Mac:
 
- <pre>  ~/.homeassistant/custom_components/sensor/adtpulse.py
+ <pre>  ~/.homeassistant/custom_components/binary_sensor/adtpulse.py
  </pre>
 
 It is recommended that you create a new separate ADT Pulse account login

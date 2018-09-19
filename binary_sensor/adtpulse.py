@@ -1,22 +1,7 @@
 """
-This adds ADT Pulse sensor support to Home Assistant.
-ADT Pulse integration that automatically exposes to Home Assistant all
-sensors that are configured within Pulse.
-
-To install, you must manually copy the adtpulse.py file into your
-custom_components folder, for example on Mac:
-
-   ~/.homeassistant/custom_components/sensor/adtpulse.py
-
-Example configuration:
-
-binary_sensor:
-  - platform: adtpulse:
-    username: your@email.com
-    password: password
-
-
-In the future, someone should create an ADT Pulse alarm panel (alarm_control_panel/adtpulse.py)
+This adds ADT Pulse sensor support to Home Assistant, automatically
+exposing to Home Assistant all sensors that are configured with a
+Pulse account.
 """
 import logging
 import re

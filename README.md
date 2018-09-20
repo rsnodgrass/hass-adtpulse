@@ -30,6 +30,12 @@ Example configuration:
     password: password
 </pre>
 
+### See Also
+
+* adt-pulse-mqtt:  https://github.com/haruny/adt-pulse-mqtt
+  Seems to be comprehense in supporting both ADT Pulse alarm panels as well as sense.
+* https://community.home-assistant.io/t/adt-pulse-integration/10160sy
+
 ### TODO
 
 * Create an ADT Pulse alarm panel alarm_control_panel/adtpulse.py

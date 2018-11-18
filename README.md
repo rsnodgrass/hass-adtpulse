@@ -1,11 +1,11 @@
 # adtpulse
 
-This adds ADT Pulse sensor support to Home Assistant, automatically
-exposing to Home Assistant all sensors that are configured with a
-Pulse account.
+This adds support for ADT Pulse sensors to Home Assistant, automatically
+exposing to HA all sensors that are configured within the specified Pulse
+account.
 
-Currently this only reads the current state of the sensors and requires
-polling, however eventually this should support notificatons upon
+Currently this only reads the current state of the sensors by polling the
+ADT Pulse site, however eventually this should support notificatons upon
 state changes of sensors.
 
 ### Installation
@@ -34,7 +34,7 @@ Example configuration:
 
 * adt-pulse-mqtt:  https://github.com/haruny/adt-pulse-mqtt
   Seems to be comprehense in supporting both ADT Pulse alarm panels as well as sense.
-* https://community.home-assistant.io/t/adt-pulse-integration/10160sy
+* https://community.home-assistant.io/t/adt-pulse-integration/10160/149
 
 ### TODO
 

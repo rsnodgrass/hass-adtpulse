@@ -1,21 +1,27 @@
 """
-This adds ADT Pulse sensor support to Home Assistant.
-ADT Pulse integration that automatically exposes to Home Assistant all
-sensors that are configured within Pulse.
+FUTURE WORK:
+- create an ADT Pulse alarm panel (alarm_control_panel/adtpulse.py)
+- As the MQTT version seems to be more comprehensive, this might be
+  better to be an automatic adapter for the MQTT version to auto-discover
+  all the sensors.
 
-To install, you must manually copy the adtpulse.py file into your
-custom_components folder, for example on Mac:
+This adds a sensor for ADT Pulse alarm systems so that all the ADT
+motion sensors and switches automatically appear in Home Assistant. This
+automatically discovers the ADT sensors configured within Pulse and
+exposes them into HA.
 
-   ~/.homeassistant/custom_components/sensor/adtpulse.py
+To install, manually copy the adtpulse.py file into the binary_sensor folder
+underneath your Home Assistant installation's custom_components folder.
+For example, on hassio, this would need to be copied to:
+
+  /config/custom_components/sensor/adtpulse.py
 
 Example configuration:
 
-binary_sensor:
-  - platform: adtpulse:
-    username: your@email.com
-    password: password
-
-In the future, create an ADT Pulse alarm panel (alarm_control_panel/adtpulse.py)
+  binary_sensor:
+    - platform: adtpulse:
+      username: your@email.com
+      password: your_adt_pulse_password
 """
 import logging
 import re
@@ -49,10 +55,10 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
 
-    refresh_interval = 60
-    if refresh_interval < 25:
+    refresh_interval = 30
+    if refresh_interval < 5:
         _LOGGER.error(
-            'ADT Pulse disabled. Refresh interval must be at least 25 secondsto prevent DDOSing ADT servers.')
+            'ADT Pulse disabled. Refresh interval must be at least 5 seconds to prevent DDOSing ADT servers.')
         return
 
     username = config['username']

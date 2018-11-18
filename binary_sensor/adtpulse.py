@@ -20,7 +20,7 @@ Example configuration:
 
   binary_sensor:
     - platform: adtpulse:
-      username: your@email.com
+      username: your_email.com
       password: your_adt_pulse_password
 """
 import logging

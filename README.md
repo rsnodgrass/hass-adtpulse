@@ -11,10 +11,11 @@ state changes of sensors.
 ### Installation
 
 To install, you must manually copy the adtpulse.py file into your
-custom_components folder, for example on Mac:
+custom_components folder, for example on HassOS:
 
- <pre>  ~/.homeassistant/custom_components/binary_sensor/adtpulse.py
- </pre>
+'''
+/config/custom_components/binary_sensor/adtpulse.py
+'''
 
 It is recommended that you create a new separate ADT Pulse account login
 for accessing the sensors as well as using the HASS !secret feature in
@@ -24,11 +25,12 @@ your configuration files.
 
 Example configuration:
 
-<pre>binary_sensor:
+'''
+binary_sensor:
   - platform: adtpulse:
-    username: your@email.com
+    username: your_email.com
     password: password
-</pre>
+'''
 
 ### See Also
 
@@ -36,7 +38,7 @@ Example configuration:
   Seems to be comprehense in supporting both ADT Pulse alarm panels as well as sense.
 * https://community.home-assistant.io/t/adt-pulse-integration/10160/149
 
-### TODO
+### FUTURE
 
 * Create an ADT Pulse alarm panel alarm_control_panel/adtpulse.py
 * Support events whenever a change in state is detected for one of the sensors

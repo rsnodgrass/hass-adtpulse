@@ -1,27 +1,8 @@
 """
-FUTURE WORK:
-- create an ADT Pulse alarm panel (alarm_control_panel/adtpulse.py)
-- As the MQTT version seems to be more comprehensive, this might be
-  better to be an automatic adapter for the MQTT version to auto-discover
-  all the sensors.
-
 This adds a sensor for ADT Pulse alarm systems so that all the ADT
 motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
-
-To install, manually copy the adtpulse.py file into the binary_sensor folder
-underneath your Home Assistant installation's custom_components folder.
-For example, on hassio, this would need to be copied to:
-
-  /config/custom_components/sensor/adtpulse.py
-
-Example configuration:
-
-  binary_sensor:
-    - platform: adtpulse:
-      username: your_email.com
-      password: your_adt_pulse_password
 """
 import logging
 import re

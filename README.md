@@ -16,22 +16,17 @@ FUTURE WORK:
 To install, manually copy the adtpulse.py file into the binary_sensor folder
 underneath your Home Assistant installation's custom_components folder.
 For example, on hassio, this would need to be copied to:
-'''
-  /config/custom_components/sensor/adtpulse.py
-'''
+<pre>/config/custom_components/sensor/adtpulse.py</pre>
 
 It is recommended that you create a new separate ADT Pulse account login
 for accessing the sensors as well as using the HASS !secret feature in
 your configuration files.
 
 Example configuration:
-
-'''
-  binary_sensor:
+<pre>  binary_sensor:
     - platform: adtpulse:
       username: your_email.com
-      password: your_adt_pulse_password
-'''
+      password: your_adt_pulse_password</pre>
 
 ### See Also
 

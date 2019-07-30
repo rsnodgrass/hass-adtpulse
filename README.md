@@ -1,4 +1,6 @@
-# adtpulse
+# adtpulse (ADT Pulse for Home Assistant)
+
+***DEVELOPMENT ON THIS HAS STOPPED/PAUSED on a native HA ADT Pulse component: See [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt) for a working solution (requires MQTT)***
 
 This adds a sensor for ADT Pulse alarm systems so that all the ADT
 motion sensors and switches automatically appear in Home Assistant. This
@@ -30,6 +32,5 @@ Example configuration:
 
 ### See Also
 
-* adt-pulse-mqtt:  https://github.com/haruny/adt-pulse-mqtt
-  Seems to be comprehense in supporting both ADT Pulse alarm panels as well as sense.
-* https://community.home-assistant.io/t/adt-pulse-integration/10160/149
+* [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt) – comprehensive in supporting both ADT Pulse alarm panels as well as sense.
+* [ADT Pulse integration for Home Assistant support community](https://community.home-assistant.io/t/adt-pulse-integration/10160/149)

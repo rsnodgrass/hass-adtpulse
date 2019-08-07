@@ -1,0 +1,8 @@
+{
+  "domain": "adtpulse",
+  "name": "ADT Pulse for Home Assistant - NOT IMPLEMENTED",
+  "documentation": "https://github.com/rsnodgrass/adtpulse/",
+  "requirements": [],
+  "dependencies": [],
+  "codeowners": ["@rsnodgrass"]
+}

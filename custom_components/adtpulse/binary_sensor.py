@@ -14,6 +14,8 @@ import datetime
 from requests import Session
 from homeassistant.components.binary_sensor import BinarySensorDevice
 
+from . import ADTPULSE_SERVICE
+
 _LOGGER = logging.getLogger(__name__)
 
 ADTPULSE_DATA = 'adtpulse'
@@ -36,24 +38,13 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
 
-    refresh_interval = 30
-    if refresh_interval < 5:
-        _LOGGER.error(
-            'ADT Pulse disabled. Refresh interval must be at least 5 seconds to prevent DDOSing ADT servers.')
-        return
+    adt_service = hass.data[ADTPULSE_SERVICE]
+    for site in adt.sites:
+        
+    
 
-    username = config['username']
-    password = config['password']
-
-    adtpulseservice = ADTPulseService(username, password, refresh_interval)
-    adtpulseservice._fetch_state_from_adt_pulse()
-    sensors = adtpulseservice.sensors()
-
-    add_entities_callback(sensors)
 
     hass.data[ADTPULSE_DATA] = {}
-    hass.data[ADTPULSE_DATA]['sensors'] = []
-    hass.data[ADTPULSE_DATA]['sensors'].extend(sensors)
 
 class ADTPulseService():
     def __init__(self, username, password, refresh_interval):

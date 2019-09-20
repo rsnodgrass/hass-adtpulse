@@ -1,1 +1,130 @@
-"""ADT Pulse for Home Assistant"""
+"""
+ADT Pulse for Home Assistant
+See https://github.com/rsnodgrass/hass-adtpulse
+"""
+import logging
+
+import time
+from datetime import timedelta
+import voluptuous as vol
+from requests.exceptions import HTTPError, ConnectTimeout
+
+from homeassistant.core import callback
+from homeassistant.helpers import config_validation as cv, discovery
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
+from homeassistant.helpers.event import track_time_interval
+from homeassistant.const import CONF_NAME, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL
+
+LOG = logging.getLogger(__name__)
+
+ADTPULSE_DOMAIN = 'adtpulse'
+
+ADTPULSE_SERVICE = 'adtpulse_service'
+
+SIGNAL_ADTPULSE_UPDATED = 'adtpulse_updated'
+
+EVENT_ADTPULSE_ALARM = "adtpulse_alarm"
+EVENT_ADTPULSE_ALARM_END = "adtpulse_alarm_end"
+
+NOTIFICATION_TITLE = 'ADT Pulse'
+NOTIFICATION_ID = 'adtpulse_notification'
+
+ATTR_SITE_ID   = 'site_id'
+ATTR_DEVICE_ID = 'device_id'
+
+ADTPULSE_PLATFORMS = [ "alarm_control_panel" ] #, "binary_sensor" ]
+
+CONFIG_SCHEMA = vol.Schema({
+        ADTPULSE_DOMAIN: vol.Schema({
+            vol.Required(CONF_USERNAME): cv.string,
+            vol.Required(CONF_PASSWORD): cv.string,
+            vol.Optional(CONF_SCAN_INTERVAL, default=60): cv.positive_int # FIXME: 10 seconds?
+        })
+    }, extra=vol.ALLOW_EXTRA
+)
+
+def setup(hass, config):
+    """Initialize the ADTPulse integration"""
+    conf = config[ADTPULSE_DOMAIN]
+
+    username = conf.get(CONF_USERNAME)
+    password = conf.get(CONF_PASSWORD)
+
+    try:
+        # share reference to the service with other components/platforms running within HASS
+        from pyadtpulse import PyADTPulse
+        hass.data[ADTPULSE_SERVICE] = PyADTPulse(username, password)
+
+    except (ConnectTimeout, HTTPError) as ex:
+        LOG.error("Unable to connect to ADT Pulse: %s", str(ex))
+        hass.components.persistent_notification.create(
+            f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",
+            title=NOTIFICATION_TITLE,
+            notification_id=NOTIFICATION_ID,
+        )
+        return False
+
+    def refresh_adtpulse_data(event_time):
+        """Call ADTPulse service to refresh latest data"""
+        LOG.debug("Updating data from ADTPulse cloud API")
+
+        if hass.data[ADTPULSE_SERVICE].updates_exist:
+            # hass.data[ADTPULSE_SAMPLES] = latest_samples
+            # notify all listeners (sensor entities) that they may have new data
+            dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
+
+    # subscribe for notifications that an update should be triggered
+    hass.services.register(ADTPULSE_DOMAIN, 'update', refresh_adtpulse_data)
+
+    # automatically update ADTPulse data (samples) on the scan interval
+    scan_interval = timedelta(seconds = conf.get(CONF_SCAN_INTERVAL))
+    track_time_interval(hass, refresh_adtpulse_data, scan_interval)
+
+    for platform in ADTPULSE_PLATFORMS:
+        discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)
+
+    return True
+
+class ADTPulseEntity(Entity):
+    """Base Entity class for ADT Pulse devices"""
+
+    def __init__(self, hass, service, name):
+        self._hass = hass
+        self._service = service
+        self._name = name
+
+        self._state = None
+        self._attrs = {}
+        
+    @property
+    def name(self):
+        """Return the display name for this sensor"""
+        return self._name
+
+    @property
+    def icon(self):
+        return 'mdi:gauge'
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def device_state_attributes(self):
+        """Return the device state attributes."""
+        return self._attrs
+
+    async def async_added_to_hass(self):
+        """Register callbacks."""
+        # register callback when cached ADTPulse data has been updated
+        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
+
+    @callback
+    def _update_callback(self):
+        """Call update method."""
+
+#        LOG.info(f"Updated {self._name} to {self._state} {self.unit_of_measurement} : {latest_result}")
+
+        # inform HASS that ADT Pulse data for this entity has been updated
+        self.async_schedule_update_ha_state()

@@ -1,8 +1,8 @@
 {
   "domain": "adtpulse",
-  "name": "ADT Pulse for Home Assistant - NOT IMPLEMENTED",
-  "documentation": "https://github.com/rsnodgrass/adtpulse/",
-  "requirements": [],
+  "name": "ADT Pulse",
+  "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
+  "requirements": ["pyadtpulse>=0.0.1"],
   "dependencies": [],
   "codeowners": ["@rsnodgrass"]
 }

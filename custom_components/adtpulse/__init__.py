@@ -33,7 +33,7 @@ NOTIFICATION_ID = 'adtpulse_notification'
 ATTR_SITE_ID   = 'site_id'
 ATTR_DEVICE_ID = 'device_id'
 
-ADTPULSE_PLATFORMS = [ "alarm_control_panel" ] #, "binary_sensor" ]
+ADTPULSE_PLATFORMS = [ "alarm_control_panel", "binary_sensor" ]
 
 CONFIG_SCHEMA = vol.Schema({
         ADTPULSE_DOMAIN: vol.Schema({

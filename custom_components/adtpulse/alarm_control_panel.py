@@ -8,7 +8,7 @@ from homeassistant.const import (
     STATE_ALARM_DISARMED,
 )
 
-from . import ADTPULSE_DOMAIN, ADTPULSE_SERVICE
+from . import ADTPulseEntity, ADTPULSE_DOMAIN, ADTPULSE_SERVICE
 
 LOG = logging.getLogger(__name__)
 

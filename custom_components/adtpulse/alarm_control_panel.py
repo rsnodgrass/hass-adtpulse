@@ -29,7 +29,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
 
     def __init__(self, hass, service, site):
         """Initialize the alarm control panel."""
-        name = f"{site.name} Alarm"
+        name = f"ADT {site.name} Alarm"
         self._site = site
         super().__init__(hass, service, name)
 

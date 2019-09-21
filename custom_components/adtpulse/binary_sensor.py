@@ -33,125 +33,64 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "smoke": "smoke"
 }
 
-# TODO: default username to hass_adtpulse
-
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
     sensors = []
 
     adt_service = hass.data[ADTPULSE_SERVICE]
     for site in adt_service.sites:
-        sensors.append( ADTPulseSensor(hass, adt_service, site) )
+        for zone in site.zones:
+            sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
-class ADTPulseService():
-    def __init__(self, username, password, refresh_interval):
-        self._username = username
-        self._password = password
 
-        self._session = None
-        self._last_response = None
+class ADTPulseSensor(BinarySensorDevice):
+    """HASS binary sensor implementation for ADT Pulse."""
 
-        self._refresh_interval = refresh_interval
-        self._last_update_timestamp = 0
-        self._last_adtpulse_timestamp = 0
+    # zone = {'id': 'sensor-12', 'name': 'South Office Motion', 'tags': ['sensor', 'motion'],
+    #         'status': 'Motion', 'activityTs': 1569078085275}
 
-        self._binary_sensors = {}
+    def __init__(self, hass, adt_service, site, zone):
+        """Initialize the binary_sensor."""
+        self._hass = hass
+        self._adt_service = adt_service
+        self._site = site
+        self._zone = zone
 
-#        adt_pulse_timestamp = int(response['ts'])
-#        if self._last_adtpulse_timestamp is adt_pulse_timestamp:
-#            _LOGGER.warning('Strange: ADT Pulse reported same %d timestamp as last request', adt_pulse_timestamp)
+        self._name = zone.get('name')
+        self._determine_device_class()
 
-#        self._last_response = response
-#        self._last_update_timestamp = datetime.datetime.now()
-#        self._last_adtpulse_timestamp = adt_pulse_timestamp
+        self._last_activity_timestamp = zone.get('activityTs')
 
-        # apply the latest state values to all the sensors
-#        for desc in response['items']:
-#            tags = desc['tags'].split(',')
-#            if 'sensor' not in tags:
-#                _LOGGER.error("Currently does not support ADT sensor %s = '%s' (tags %S)",
-#                                desc['id'], desc['name'], desc['tags'])
-#               continue
-  
-#            sensor = self._get_sensor(desc)
-#            self._update_sensor_state(sensor, desc)
+        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{name}'")
 
-    def _construct_sensor(self, desc):
-        name = desc['name']
-
+    def _determine_device_class(self):
         # map the ADT Pulse device type tag to a binary_sensor class so the proper status
         # codes and icons are displayed. If device class is not specified, binary_sensor
         # default to a generic on/off sensor
-        device_class = ADT_DEVICE_CLASS_TAG_MAP[ desc['tags'].split(',')[1] ]
-        if device_class:
-            self._device_class = device_class
+        self._device_class = None
+        tags = self._zone.get('tags')
+
+        if 'sensor' in tags:
+            for tag in tags:
+                device_class = ADT_DEVICE_CLASS_TAG_MAP[ tag ]
+                if device_class:
+                    self._device_class = device_class
+                    break
 
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if self._device_class is 'door':
-            if 'Window' in name or 'window' in name:
+            if 'Window' in self._name or 'window' in self._name:
                 self._device_class = 'window'
 
-        state = self._parse_sensor_state(desc)
-        last_activity_timestamp = int(desc['state']['activityTs'])
-
-        return ADTBinarySensor(device_class, desc['id'], desc['name'], 
-                               state, last_activity_timestamp, self)
-
-    def _get_sensor(self, desc):
-        id = desc['id'] 
-        if id in self._binary_sensors:
-            return self._binary_sensors[id]
-
-        sensor = self._construct_sensor(desc)
-        self._binary_sensors[id] = sensor
-        return sensor
-
-    def _parse_sensor_state(self, desc):
-        # NOTE: it may be better to determine state by using the "icon" to determine status,
-        # or at least compare as a safety check
-        #       devStatOpen -> open
-        #       devStatOK   -> closed
-        #       devStatTamper (for shock devices)
-        state = 'devStatOpen' in desc['state']['icon']
-
-        # extract the sensor status from the text description
-        # e.g.:  Front Side Door - Closed\nLast Activity: 9/7 4:02 PM
-        match = re.search(r'-\s(.+)\n', desc['state']['statusTxt'])
-        if match:
-            status = match.group(1)
-            if status in ADT_STATUS_MAP:
-                state = ADT_STATUS_MAP[status]
-
-        return state
-
-    def _update_sensor_state(self, sensor, desc):
-        last_activity_timestamp = int( desc['state']['activityTs'] )
-        state = self._parse_sensor_state( desc )
-        sensor.update_state(state, last_activity_timestamp)
-
-    # return all the known sensors
-    def sensors(self):
-        return self._binary_sensors.values()
-
-class ADTPulseSensor(BinarySensorDevice):
-    """A binary sensor implementation for ADT Pulse."""
-
-    def __init__(self, device_class, id, name, state, last_activity_timestamp, adtpulseservice):
-        """Initialize the binary_sensor."""
-        self._device_class = device_class
-        self._name = name
-        self._id = id
-        self._state = state
-        self._last_activity_timestamp = last_activity_timestamp
-        self._adtpulseservice = adtpulseservice
-
-        LOG.debug(f"Created ADTPulseSensor {name}")
-
+        if not self._device_class:
+            LOG.warn(f"Ignoring unsupported ADT Pulse sensor type {tags}")
+            # FIXME: throw exception
+        
     @property
     def id(self):
         """Return the id of the ADT sensor."""
-        return self._id
+        return self._zone.get('id')
 
     @property
     def name(self):
@@ -166,7 +105,7 @@ class ADTPulseSensor(BinarySensorDevice):
     @property
     def is_on(self):
         """Return True if the binary sensor is on."""
-        return self._state
+        return self._zone.get('status')
 
     @property
     def device_class(self):
@@ -176,7 +115,7 @@ class ADTPulseSensor(BinarySensorDevice):
     @property
     def last_activity(self):
         """Return the timestamp for the last sensor actvity."""
-        return self._last_activity_timestamp
+        return self._zone.get('activityTs')
 
     def update(self):
         """Trigger the process to update this sensors state."""
@@ -191,5 +130,5 @@ class ADTPulseSensor(BinarySensorDevice):
         self._state = state
 
         # emit message on state change
-        if state_changed:
-            LOG.error(f"ADT Pulse state change notifications not available: {desc['name']}")
+#        if state_changed:
+#            LOG.error(f"ADT Pulse state change notifications not available: {desc['name']}")

@@ -8,13 +8,12 @@ from homeassistant.const import (
     STATE_ALARM_DISARMED,
 )
 
-from . import ADTPulseEntity, ADTPULSE_DOMAIN, ADTPULSE_SERVICE
+from . import ADTPulseEntity, ADTPULSE_SERVICE
 
 LOG = logging.getLogger(__name__)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up an alarm control panel for ADT Pulse."""
-    data = hass.data[ADTPULSE_DOMAIN]
     adt_service = hass.data[ADTPULSE_SERVICE]
 
     alarm_devices = []
@@ -22,7 +21,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         alarm_devices.append( ADTPulseAlarm(hass, adt_service, site) )
 
     # FIXME: why this??? data.devices.extend(alarm_devices)
-    add_entities(alarm_devices)
+    add_entities_callback(alarm_devices)
 
 class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
     """An alarm_control_panel implementation for ADT Pulse."""

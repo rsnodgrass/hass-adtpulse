@@ -36,12 +36,13 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
     sensors = []
-
     adt_service = hass.data[ADTPULSE_SERVICE]
+
     for site in adt_service.sites:
         for zone in site.zones:
             sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
+    add_entities_callback(sensors)
 
 class ADTPulseSensor(BinarySensorDevice):
     """HASS binary sensor implementation for ADT Pulse."""

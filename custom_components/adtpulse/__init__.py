@@ -33,7 +33,7 @@ NOTIFICATION_ID = 'adtpulse_notification'
 ATTR_SITE_ID   = 'site_id'
 ATTR_DEVICE_ID = 'device_id'
 
-ADTPULSE_PLATFORMS = [ "alarm_control_panel", "binary_sensor" ]
+SUPPORTED_PLATFORMS = [ "alarm_control_panel", "binary_sensor" ]
 
 CONFIG_SCHEMA = vol.Schema({
         ADTPULSE_DOMAIN: vol.Schema({
@@ -81,7 +81,7 @@ def setup(hass, config):
     scan_interval = timedelta(seconds = conf.get(CONF_SCAN_INTERVAL))
     track_time_interval(hass, refresh_adtpulse_data, scan_interval)
 
-    for platform in ADTPULSE_PLATFORMS:
+    for platform in SUPPORTED_PLATFORMS:
         discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)
 
     return True

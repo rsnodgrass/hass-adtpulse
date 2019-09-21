@@ -14,7 +14,10 @@ LOG = logging.getLogger(__name__)
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up an alarm control panel for ADT Pulse."""
-    adt_service = hass.data[ADTPULSE_SERVICE]
+    adt_service = hass.data.get(ADTPULSE_SERVICE)
+    if not adt_service:
+        LOG.error("ADT Pulse service not initialized, cannot create alarm")
+        return
 
     alarm_devices = []
     for site in adt_service.sites:

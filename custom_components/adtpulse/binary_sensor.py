@@ -36,7 +36,10 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
     sensors = []
-    adt_service = hass.data[ADTPULSE_SERVICE]
+    adt_service = hass.data.get(ADTPULSE_SERVICE)
+    if not adt_service:
+        LOG.error("ADT Pulse service not initialized, cannot create sensors")
+        return
 
     for site in adt_service.sites:
         for zone in site.zones:
@@ -73,7 +76,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
         if 'sensor' in tags:
             for tag in tags:
-                device_class = ADT_DEVICE_CLASS_TAG_MAP[ tag ]
+                device_class = ADT_DEVICE_CLASS_TAG_MAP.get('tag')
                 if device_class:
                     self._device_class = device_class
                     break

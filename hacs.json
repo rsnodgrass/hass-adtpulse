@@ -1,5 +1,5 @@
 {
   "name": "ADT Pulse",
   "domains": ["alarm_control_panel", "binary_sensor"],
-  "render_readme": True
+  "render_readme": true
 }

@@ -16,7 +16,7 @@ from homeassistant.components.binary_sensor import BinarySensorDevice
 
 from . import ADTPULSE_SERVICE
 
-_LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 ADTPULSE_DATA = 'adtpulse'
 
@@ -37,14 +37,11 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up sensors for an ADT Pulse installation."""
+    sensors = []
 
     adt_service = hass.data[ADTPULSE_SERVICE]
-    for site in adt.sites:
-        
-    
-
-
-    hass.data[ADTPULSE_DATA] = {}
+    for site in adt_service.sites:
+        sensors.append( ADTPulseSensor(hass, adt_service, site) )
 
 class ADTPulseService():
     def __init__(self, username, password, refresh_interval):
@@ -60,60 +57,24 @@ class ADTPulseService():
 
         self._binary_sensors = {}
 
-    def _get_authenticated_session(self):
-        # must login to ADT Pulse if we have no session
-        if not self._session:
-            # TODO: improve robustness by selecting the POST url from https://portal.adtpulse.com/ (to handle versioning)
-            login_form_url = "https://portal.adtpulse.com/myhome/10.0.0-60/access/signin.jsp"
-            form_data = {
-                'username': self._username,
-                'password': self._password,
-                'sun': 'yes'
-            }
+#        adt_pulse_timestamp = int(response['ts'])
+#        if self._last_adtpulse_timestamp is adt_pulse_timestamp:
+#            _LOGGER.warning('Strange: ADT Pulse reported same %d timestamp as last request', adt_pulse_timestamp)
 
-            _LOGGER.debug("Authenticating to ADT Pulse account %s (refresh interval %d seconds)",
-                          self._username, self._refresh_interval)
-            session = requests.Session()
-            post = session.post(login_form_url, data=form_data)
-            self._session = session
-
-        return self._session
-
-    def trigger_update(self):
-        elapsed_time = datetime.datetime.now() - self._last_update_timestamp
-        # only call ADT Pulse service to get current sensor state if the update interval has passed
-        if elapsed_time.total_seconds() >= self._refresh_interval:
-            self._fetch_state_from_adt_pulse()
-
-    def _fetch_state_from_adt_pulse(self):
-        session = self._get_authenticated_session()
-
-        # FIXME: not sure what 10.0.0-60 is, other than perhaps a platform version?
-        adtpulse_url = 'https://portal.adtpulse.com/myhome/10.0.0-60/ajax/homeViewDevAjax.jsp'
-        _LOGGER.debug("Requesting latest sensor state from ADT Pulse account %s (%s)",
-                      self._username, adtpulse_url)
-
-        r = session.get(adtpulse_url)
-        response = json.loads(r.text)
-
-        adt_pulse_timestamp = int(response['ts'])
-        if self._last_adtpulse_timestamp is adt_pulse_timestamp:
-            _LOGGER.warning('Strange: ADT Pulse reported same %d timestamp as last request', adt_pulse_timestamp)
-
-        self._last_response = response
-        self._last_update_timestamp = datetime.datetime.now()
-        self._last_adtpulse_timestamp = adt_pulse_timestamp
+#        self._last_response = response
+#        self._last_update_timestamp = datetime.datetime.now()
+#        self._last_adtpulse_timestamp = adt_pulse_timestamp
 
         # apply the latest state values to all the sensors
-        for desc in response['items']:
-            tags = desc['tags'].split(',')
-            if 'sensor' not in tags:
-                _LOGGER.error("Currently does not support ADT sensor %s = '%s' (tags %S)",
-                                desc['id'], desc['name'], desc['tags'])
-                continue
+#        for desc in response['items']:
+#            tags = desc['tags'].split(',')
+#            if 'sensor' not in tags:
+#                _LOGGER.error("Currently does not support ADT sensor %s = '%s' (tags %S)",
+#                                desc['id'], desc['name'], desc['tags'])
+#               continue
   
-            sensor = self._get_sensor(desc)
-            self._update_sensor_state(sensor, desc)
+#            sensor = self._get_sensor(desc)
+#            self._update_sensor_state(sensor, desc)
 
     def _construct_sensor(self, desc):
         name = desc['name']
@@ -173,7 +134,7 @@ class ADTPulseService():
     def sensors(self):
         return self._binary_sensors.values()
 
-class ADTBinarySensor(BinarySensorDevice):
+class ADTPulseSensor(BinarySensorDevice):
     """A binary sensor implementation for ADT Pulse."""
 
     def __init__(self, device_class, id, name, state, last_activity_timestamp, adtpulseservice):
@@ -184,6 +145,8 @@ class ADTBinarySensor(BinarySensorDevice):
         self._state = state
         self._last_activity_timestamp = last_activity_timestamp
         self._adtpulseservice = adtpulseservice
+
+        LOG.debug(f"Created ADTPulseSensor {name}")
 
     @property
     def id(self):
@@ -213,7 +176,7 @@ class ADTBinarySensor(BinarySensorDevice):
     @property
     def last_activity(self):
         """Return the timestamp for the last sensor actvity."""
-        return self._last_activity
+        return self._last_activity_timestamp
 
     def update(self):
         """Trigger the process to update this sensors state."""
@@ -229,37 +192,4 @@ class ADTBinarySensor(BinarySensorDevice):
 
         # emit message on state change
         if state_changed:
-            _LOGGER.error("ADT Pulse state change notifications not available: %s", desc['name'])
-
-
-"""
-Example JSON response:
-
-{
-  "items": [
-    {
-      "state": {
-        "icon": "devStatOK",
-        "statusTxt": "Exterior Door - Closed\nLast Activity: 2/23 9:34 AM",
-        "d": 1519407240395
-      },
-      "id": "sensor-22",
-      "devIndex": "11VER1",
-      "name": "Exterior Door",
-      "tags": "sensor,doorWindow"
-    },
-    { "state": {
-        "icon": "devStatOK",
-        "statusTxt": "Office Motion - No Motion\nLast Activity: Today 12:01 AM",
-        "activityTs": 1537340469370
-      },
-      "id": "sensor-15",
-      "devIndex": "10VER1",
-      "name": "Office Motion",
-      "tags": "sensor,motion"
-    },
-  ],
-  "id": "hvwData",
-  "ts": 1537352131080
-}
-"""
+            LOG.error(f"ADT Pulse state change notifications not available: {desc['name']}")

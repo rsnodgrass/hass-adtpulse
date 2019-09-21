@@ -72,5 +72,6 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
     def device_state_attributes(self):
         """Return the state attributes."""
         return {
-            "site_id": self._site.id,
+            # FIXME: add timestamp for this state change?
+            "site_id": self._site.id
         }

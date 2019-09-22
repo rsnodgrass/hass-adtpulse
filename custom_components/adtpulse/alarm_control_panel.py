@@ -16,7 +16,7 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     """Set up an alarm control panel for ADT Pulse."""
     adt_service = hass.data.get(ADTPULSE_SERVICE)
     if not adt_service:
-        LOG.error("ADT Pulse service not initialized, cannot create alarm")
+        LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
 
     alarm_devices = []
@@ -31,7 +31,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
 
     def __init__(self, hass, service, site):
         """Initialize the alarm control panel."""
-        name = f"ADT {site.name} Alarm"
+        name = f"ADT {site.name}"
         self._site = site
         super().__init__(hass, service, name)
 

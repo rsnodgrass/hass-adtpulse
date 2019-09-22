@@ -53,6 +53,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
             self._state = None
         return self._state
 
+    # FIXME: change to async def alarm_disarm(self, code=None)!!!
     def alarm_disarm(self, code=None):
         """Send disarm command."""
         self._site.disarm()
@@ -77,3 +78,12 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
             # FIXME: add timestamp for this state change?
             "site_id": self._site.id
         }
+
+    @property
+    def code_format(self):
+        return 'None'
+        
+    # def async_update(self):
+    
+    # FIXME: add support for changed by (once pyadtpulse supports history)
+    #def changed_by(self):

@@ -81,7 +81,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
 
     @property
     def code_format(self):
-        return 'None'
+        return None
         
     # def async_update(self):
     

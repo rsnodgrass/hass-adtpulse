@@ -123,7 +123,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
     def update(self):
         """Trigger the process to update this sensors state."""
-        self._adtpulseservice.trigger_update() 
+        #FIXME!  self._adtpulseservice.trigger_update() 
 
     def update_state(self, state, last_activity_timestamp):
         # compare timestamp to determine if an event occured, since comparing state values

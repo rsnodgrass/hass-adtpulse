@@ -69,9 +69,12 @@ def setup(hass, config):
         """Call ADTPulse service to refresh latest data"""
         LOG.debug("Updating data from ADTPulse cloud API")
 
-        if hass.data[ADTPULSE_SERVICE].updates_exist:
-            # hass.data[ADTPULSE_SAMPLES] = latest_samples
-            # notify all listeners (sensor entities) that they may have new data
+        adtpulse_service = hass.data[ADTPULSE_SERVICE]
+        if adtpulse_service.updates_exist:
+            # FIXME: fetch latest data!
+            adtpulse_service.update()
+
+            # notify all listeners (alarm and sensors) that they may have new data
             dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
 
     # subscribe for notifications that an update should be triggered
@@ -85,6 +88,7 @@ def setup(hass, config):
         discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)
 
     return True
+
 
 class ADTPulseEntity(Entity):
     """Base Entity class for ADT Pulse devices"""
@@ -124,6 +128,7 @@ class ADTPulseEntity(Entity):
     def _update_callback(self):
         """Call update method."""
 
+# FIXME: update based on the latest...
 #        LOG.info(f"Updated {self._name} to {self._state} {self.unit_of_measurement} : {latest_result}")
 
         # inform HASS that ADT Pulse data for this entity has been updated

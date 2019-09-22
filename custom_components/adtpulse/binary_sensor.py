@@ -21,16 +21,16 @@ LOG = logging.getLogger(__name__)
 ADTPULSE_DATA = 'adtpulse'
 
 ADT_STATUS_MAP = {
-    "Closed":    False,
-    "Open":      True,
-    "No Motion": False,
-    "Motion":    True
+    'Closed':    False,
+    'Open':      True,
+    'No Motion': False,
+    'Motion':    True
 }
 
 ADT_DEVICE_CLASS_TAG_MAP = {
-    "doorWindow": "door",
-    "motion": "motion",
-    "smoke": "smoke"
+    'doorWindow': 'door',
+    'motion':     'motion',
+    'smoke':      'smoke'
 }
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):
@@ -65,7 +65,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
         self._last_activity_timestamp = zone.get('activityTs')
 
-        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{name}'")
+        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self._name}'")
 
     def _determine_device_class(self):
         # map the ADT Pulse device type tag to a binary_sensor class so the proper status
@@ -76,7 +76,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
         if 'sensor' in tags:
             for tag in tags:
-                device_class = ADT_DEVICE_CLASS_TAG_MAP.get('tag')
+                device_class = ADT_DEVICE_CLASS_TAG_MAP.get(tag)
                 if device_class:
                     self._device_class = device_class
                     break

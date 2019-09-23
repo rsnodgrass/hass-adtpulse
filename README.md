@@ -18,12 +18,6 @@ Example configuration.yaml entry:
 adtpulse:
   username: your@email.com
   password: your_password
-
-alarm_control_panel:
-  - platform: adtpulse
-
-binary_sensors:
-  - platform: adtpulse
 ```
 
 ## Lovelace

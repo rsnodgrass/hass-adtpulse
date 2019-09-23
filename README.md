@@ -4,7 +4,7 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 
 ## Installation
 
-If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/204).
+If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/).
 
 ### Step 1: Install Custom Components
 
@@ -94,8 +94,8 @@ states:
 
 ## See Also
 
+* [ADT Pulse Home Assistant support community](https://community.home-assistant.io/t/adt-pulse-integration/10160/)
 * [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt)
-* [ADT Pulse integration for Home Assistant support community](https://community.home-assistant.io/t/adt-pulse-integration/10160/)
 * [ADT Pulse management portal](https://portal.adtpulse.com/)
 
 ## Not Supported

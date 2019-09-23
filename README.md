@@ -30,6 +30,8 @@ binary_sensors:
 
 #### Sensors
 
+Current status of motion detectors:
+
 ```yaml
 entities:
   - entity: binary_sensor.entry_motion
@@ -45,6 +47,39 @@ title: Motion Sensors
 show_header_toggle: false
 ```
 
+Motion detected history:
+
+```yaml
+entities:
+  - entity: binary_sensor.south_warehouse_motion
+    name: Ryan's Side
+  - entity: binary_sensor.north_warehouse_motion
+    name: Ron's Side
+  - entity: binary_sensor.north_office_motion
+    name: Office
+  - entity: binary_sensor.south_office_motion
+    name: Kid's Area
+title: Motion History
+type: history-graph
+hours_to_show: 2
+```
+
+Door status:
+
+```yaml
+entities:
+  - label: House
+    type: section
+  - entity: binary_sensor.front_door
+    name: Front Door
+  - entity: binary_sensor.office_door
+    name: Office Door
+  - entity: binary_sensor.garage_door
+    name: Garage Door
+type: entities
+show_header_toggle: false
+```
+
 #### Alarm Panel
 
 Using [Home Assistant's built-in Alarm Panel Card](https://www.home-assistant.io/lovelace/alarm-panel/):
@@ -52,6 +87,9 @@ Using [Home Assistant's built-in Alarm Panel Card](https://www.home-assistant.io
 ```yaml
 type: alarm-panel
 entity: alarm_control_panel.adt_pulse
+states:
+  - arm_away
+  - arm_home
 ```
 
 ## See Also

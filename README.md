@@ -30,6 +30,21 @@ binary_sensors:
 
 #### Sensors
 
+```yaml
+entities:
+  - entity: binary_sensor.entry_motion
+    name: Entry
+  - entity: binary_sensor.office_motion
+    name: Office
+  - entity: binary_sensor.kids_room_motion
+    name: Kid's Rom
+  - entity: binary_sensor.garage_motion
+    name: Garage
+type: glance
+title: Motion Sensors
+show_header_toggle: false
+```
+
 #### Alarm Panel
 
 Using [Home Assistant's built-in Alarm Panel Card](https://www.home-assistant.io/lovelace/alarm-panel/):

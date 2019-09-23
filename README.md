@@ -35,7 +35,7 @@ entities:
   - entity: binary_sensor.office_motion
     name: Office
   - entity: binary_sensor.kids_room_motion
-    name: Kid's Rom
+    name: Kid's Area
   - entity: binary_sensor.garage_motion
     name: Garage
 type: glance
@@ -49,14 +49,14 @@ Motion detected history:
 
 ```yaml
 entities:
-  - entity: binary_sensor.south_warehouse_motion
-    name: Ryan's Side
-  - entity: binary_sensor.north_warehouse_motion
-    name: Ron's Side
-  - entity: binary_sensor.north_office_motion
+  - entity: binary_sensor.entry_motion
+    name: Entry
+  - entity: binary_sensor.office_motion
     name: Office
-  - entity: binary_sensor.south_office_motion
+  - entity: binary_sensor.kids_room_motion
     name: Kid's Area
+  - entity: binary_sensor.garage_motion
+    name: Garage
 title: Motion History
 type: history-graph
 hours_to_show: 2

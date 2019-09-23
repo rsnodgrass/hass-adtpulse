@@ -30,6 +30,8 @@ binary_sensors:
 
 #### Sensors
 
+![Lovelace Example](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_motion_status.png?raw=true)
+
 Current status of motion detectors:
 
 ```yaml
@@ -46,6 +48,8 @@ type: glance
 title: Motion Sensors
 show_header_toggle: false
 ```
+
+![Lovelace Example](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_motion_history.png?raw=true)
 
 Motion detected history:
 
@@ -83,6 +87,8 @@ show_header_toggle: false
 #### Alarm Panel
 
 Using [Home Assistant's built-in Alarm Panel Card](https://www.home-assistant.io/lovelace/alarm-panel/):
+
+![Lovelace Example](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_alarm_panel.png?raw=true)
 
 ```yaml
 type: alarm-panel

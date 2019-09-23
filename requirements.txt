@@ -1,1 +1,1 @@
-pyadtpulse>=0.0.5
+pyadtpulse>=0.0.6

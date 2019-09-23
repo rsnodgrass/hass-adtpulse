@@ -99,12 +99,6 @@ states:
 * [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt)
 * [ADT Pulse management portal](https://portal.adtpulse.com/)
 
-## KNOWN BUGS
-
-* alarm state not updated when it changes
-* arm/disarm not working
-* too many simultaneous calls to ADT to check if changes are made
-
 ## Not Supported
 
 No plans to implement support for the following (however, feel free to contribute):

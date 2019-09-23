@@ -84,12 +84,13 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
     def code_format(self):
         return None
 
-    def _update_callback(self):
+    def _adt_updated_callback(self):
         #LOG.warning("ADT Pulse data updated...actually update state!")
+        
         # FIXME: is this even needed?  can we disable this sensor from polling, since the __init__ update mechanism updates this
         self.async_schedule_update_ha_state() # notify HASS this entity has been updated
 
     async def async_added_to_hass(self):
         """Register callbacks."""
-        # register callback ADT Pulse data has been updated
-        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
+        # register callback to learn ADT Pulse data has been updated
+        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback)

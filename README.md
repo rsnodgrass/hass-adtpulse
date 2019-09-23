@@ -95,6 +95,7 @@ states:
 ## See Also
 
 * [ADT Pulse Home Assistant support community](https://community.home-assistant.io/t/adt-pulse-integration/10160/)
+* [pyadtpulse](https://github.com/rsnodgrass/pyadtpulse)
 * [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt)
 * [ADT Pulse management portal](https://portal.adtpulse.com/)
 

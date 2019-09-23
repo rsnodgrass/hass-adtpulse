@@ -85,7 +85,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
         return None
 
     def _update_callback(self):
-        LOG.warning("ADT Pulse data updated...actually update state!")
+        #LOG.warning("ADT Pulse data updated...actually update state!")
         # FIXME: is this even needed?  can we disable this sensor from polling, since the __init__ update mechanism updates this
         self.async_schedule_update_ha_state() # notify HASS this entity has been updated
 

@@ -62,9 +62,9 @@ class ADTPulseSensor(BinarySensorDevice):
 
         self._zone_id = zone_details.get('id')
         self._name = zone_details.get('name')
-        self._determine_device_class()
-
         self._update_zone(zone_details)
+
+        self._determine_device_class()
 
         LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 

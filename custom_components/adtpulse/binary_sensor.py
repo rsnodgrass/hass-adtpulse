@@ -13,8 +13,9 @@ import datetime
 
 from requests import Session
 from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
-from . import ADTPULSE_SERVICE
+from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 
 LOG = logging.getLogger(__name__)
 
@@ -53,19 +54,19 @@ class ADTPulseSensor(BinarySensorDevice):
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion', 'tags': ['sensor', 'motion'],
     #         'status': 'Motion', 'activityTs': 1569078085275}
 
-    def __init__(self, hass, adt_service, site, zone):
+    def __init__(self, hass, adt_service, site, zone_details):
         """Initialize the binary_sensor."""
         self._hass = hass
         self._adt_service = adt_service
         self._site = site
-        self._zone = zone
 
-        self._name = zone.get('name')
+        self._zone_id = zone_details.get('id')
+        self._name = zone_details.get('name')
         self._determine_device_class()
 
-        self._last_activity_timestamp = zone.get('activityTs')
+        self._update_zone(zone_details)
 
-        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self._name}'")
+        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     def _determine_device_class(self):
         # map the ADT Pulse device type tag to a binary_sensor class so the proper status
@@ -84,7 +85,7 @@ class ADTPulseSensor(BinarySensorDevice):
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if self._device_class is 'door':
-            if 'Window' in self._name or 'window' in self._name:
+            if 'Window' in self.name or 'window' in self.name:
                 self._device_class = 'window'
 
         if not self._device_class:
@@ -94,7 +95,7 @@ class ADTPulseSensor(BinarySensorDevice):
     @property
     def id(self):
         """Return the id of the ADT sensor."""
-        return self._zone.get('id')
+        return self._zone_id
 
     @property
     def name(self):
@@ -103,13 +104,14 @@ class ADTPulseSensor(BinarySensorDevice):
 
     @property
     def should_poll(self):
-        """Polling needed until periodic refresh of JSON data supported."""
+        """Updates occur periodically from __init__ when changes detected"""
         return True
 
     @property
     def is_on(self):
         """Return True if the binary sensor is on."""
-        return self._zone.get('status')
+        status = self._zone.get('status')
+        return ADT_STATUS_MAP.get(status)
 
     @property
     def device_class(self):
@@ -121,18 +123,21 @@ class ADTPulseSensor(BinarySensorDevice):
         """Return the timestamp for the last sensor actvity."""
         return self._zone.get('activityTs')
 
-    def update(self):
-        """Trigger the process to update this sensors state."""
-        #FIXME!  self._adtpulseservice.trigger_update() 
+#    def update(self):
+#        """Trigger the process to update this sensors state."""
+#        #FIXME!  self._adtpulseservice.trigger_update() 
 
-    def update_state(self, state, last_activity_timestamp):
-        # compare timestamp to determine if an event occured, since comparing state values
-        # might have missed a previous state change before flipping back to the same state
-        state_changed = last_activity_timestamp > self._last_activity_timestamp
-  
-        self._last_activity_timestamp = last_activity_timestamp
-        self._state = state
+    def _update_zone(self, zone_details):
+        self._zone = zone_details
+        self.async_schedule_update_ha_state() # notify HASS this entity has been updated
 
-        # emit message on state change
-#        if state_changed:
-#            LOG.error(f"ADT Pulse state change notifications not available: {desc['name']}")
+    def _update_callback(self):
+        # find the latest data for this zone
+        for zone in self._site.zones:
+            if zone.get('id') == self._zone_id:
+                self._update_zone(zone)
+
+    async def async_added_to_hass(self):
+        """Register callbacks."""
+        # register callback ADT Pulse data has been updated
+        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)

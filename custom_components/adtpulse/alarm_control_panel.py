@@ -2,13 +2,14 @@
 import logging
 
 import homeassistant.components.alarm_control_panel as alarm
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_DISARMED,
 )
 
-from . import ADTPulseEntity, ADTPULSE_SERVICE
+from . import ADTPulseEntity, ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 
 LOG = logging.getLogger(__name__)
 
@@ -82,8 +83,13 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
     @property
     def code_format(self):
         return None
-        
-    # def async_update(self):
-    
-    # FIXME: add support for changed by (once pyadtpulse supports history)
-    #def changed_by(self):
+
+    def _update_callback(self):
+        LOG.warning("ADT Pulse data updated...actually update state!")
+        # FIXME: is this even needed?  can we disable this sensor from polling, since the __init__ update mechanism updates this
+        self.async_schedule_update_ha_state() # notify HASS this entity has been updated
+
+    async def async_added_to_hass(self):
+        """Register callbacks."""
+        # register callback ADT Pulse data has been updated
+        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)

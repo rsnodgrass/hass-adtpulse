@@ -129,7 +129,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
     def _update_zone(self, zone_details):
         self._zone = zone_details
-        self.async_schedule_update_ha_state() # notify HASS this entity has been updated
+        # FIXME: needed?  self.async_schedule_update_ha_state() # notify HASS this entity has been updated
 
     def _update_callback(self):
         # find the latest data for this zone

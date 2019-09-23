@@ -43,7 +43,7 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
         return
 
     for site in adt_service.sites:
-        for zone in site.zones(auto_update=False):
+        for zone in site.zones:
             sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
     add_entities_callback(sensors)
@@ -62,7 +62,7 @@ class ADTPulseSensor(BinarySensorDevice):
 
         self._zone_id = zone_details.get('id')
         self._name = zone_details.get('name')
-        self._update_zone(zone_details)
+        self._update_zone_status(zone_details)
 
         self._determine_device_class()
 
@@ -123,19 +123,14 @@ class ADTPulseSensor(BinarySensorDevice):
         """Return the timestamp for the last sensor actvity."""
         return self._zone.get('activityTs')
 
-#    def update(self):
-#        """Trigger the process to update this sensors state."""
-#        #FIXME!  self._adtpulseservice.trigger_update() 
-
-    def _update_zone(self, zone_details):
+    def _update_zone_status(self, zone_details):
         self._zone = zone_details
-        # FIXME: needed?  self.async_schedule_update_ha_state() # notify HASS this entity has been updated
 
     def _adt_updated_callback(self):
         # find the latest data for this zone
-        for zone in self._site.zones(auto_update=False):
+        for zone in self._site.zones:
             if zone.get('id') == self._zone_id:
-                self._update_zone(zone)
+                self._update_zone_status(zone)
 
     async def async_added_to_hass(self):
         """Register callbacks."""

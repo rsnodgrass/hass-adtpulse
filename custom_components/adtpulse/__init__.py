@@ -39,7 +39,7 @@ CONFIG_SCHEMA = vol.Schema({
         ADTPULSE_DOMAIN: vol.Schema({
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=60): cv.positive_int # FIXME: 10 seconds?
+            vol.Optional(CONF_SCAN_INTERVAL, default=30): cv.positive_int
         })
     }, extra=vol.ALLOW_EXTRA
 )
@@ -67,11 +67,10 @@ def setup(hass, config):
 
     def refresh_adtpulse_data(event_time):
         """Call ADTPulse service to refresh latest data"""
-        LOG.debug("Updating data from ADTPulse cloud API")
+        LOG.debug("Checking ADT Pulse cloud service for updates")
 
         adtpulse_service = hass.data[ADTPULSE_SERVICE]
         if adtpulse_service.updates_exist:
-            # FIXME: fetch latest data!
             adtpulse_service.update()
 
             # notify all listeners (alarm and sensors) that they may have new data

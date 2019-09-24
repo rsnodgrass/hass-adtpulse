@@ -99,7 +99,11 @@ states:
 * [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt)
 * [ADT Pulse management portal](https://portal.adtpulse.com/)
 
-## Not Supported
+## TODO
+
+* add notification when alarm is triggered and when alarm end
+
+### Not Supported
 
 No plans to implement support for the following (however, feel free to contribute):
 

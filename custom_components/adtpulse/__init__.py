@@ -24,8 +24,8 @@ ADTPULSE_SERVICE = 'adtpulse_service'
 
 SIGNAL_ADTPULSE_UPDATED = 'adtpulse_updated'
 
-EVENT_ADTPULSE_ALARM = "adtpulse_alarm"
-EVENT_ADTPULSE_ALARM_END = "adtpulse_alarm_end"
+EVENT_ALARM = 'adtpulse_alarm'
+EVENT_ALARM_END = 'adtpulse_alarm_end'
 
 NOTIFICATION_TITLE = 'ADT Pulse'
 NOTIFICATION_ID = 'adtpulse_notification'

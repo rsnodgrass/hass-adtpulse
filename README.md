@@ -14,7 +14,7 @@ Easiest is by setting up [Home Assistant Community Store (HACS)](https://github.
 
 ### Step 2: Configure ADT Pulse
 
-Example configuration.yaml entry:
+To enable ADT Pulse, add the following to your configuration.yaml:
 
 ```yaml
 adtpulse:

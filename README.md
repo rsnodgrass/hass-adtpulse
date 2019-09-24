@@ -2,6 +2,8 @@
 
 A native Home Assistant component to enable integration with [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as current status of all sensors (motion, door/window).
 
+This platform supports the following services: alarm_arm_away, alarm_arm_home, and alarm_disarm.
+
 ## Installation
 
 If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/).
@@ -90,6 +92,29 @@ entity: alarm_control_panel.adt_pulse
 states:
   - arm_away
   - arm_home
+```
+
+## Automation Example
+
+```yaml
+automation:
+  - alias: "Alarm: Disarmed Daytime"
+    trigger:
+      platform: state
+      entity_id: alarm_control_panel.your_adt_alarm
+      to: 'disarmed'
+    condition:
+      condition: sun
+      before: sunset
+    action:
+      service: lights.turn_on
+  - alias: "Alarm: Armed Away"
+    trigger:
+      platform: state
+      entity_id: alarm_control_panel.your_adt_alarm
+      to: 'armed_away'
+    action:
+      service: lights.turn_off
 ```
 
 ## See Also

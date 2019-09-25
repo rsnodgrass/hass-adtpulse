@@ -10,7 +10,7 @@ If you have trouble with installation and configuration, visit the [ADT Pulse Ho
 
 ### Step 1: Install Custom Components
 
-Easiest is by setting up [Home Assistant Community Store (HACS)](https://github.com/custom-components/hacs) and then adding the "Integration" repository: *rsnodgrass/hass-sensorpush*. However you can also manually copy all the files in [custom_components/adtpulse/](https://github.com/rsnodgrass/hass-adtpulse/custom_components/adtpulse) directory to `/config/custom_components/adtpulse` on your Home Assistant installation.
+Easiest is by setting up [Home Assistant Community Store (HACS)](https://github.com/custom-components/hacs) and then adding the "Integration" repository: *rsnodgrass/hass-adtpulse*. However you can also manually copy all the files in [custom_components/adtpulse/](https://github.com/rsnodgrass/hass-adtpulse/custom_components/adtpulse) directory to `/config/custom_components/adtpulse` on your Home Assistant installation.
 
 ### Step 2: Configure ADT Pulse
 

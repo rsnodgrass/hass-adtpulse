@@ -14,7 +14,7 @@ from homeassistant.helpers import config_validation as cv, discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import CONF_NAME, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL
 
 LOG = logging.getLogger(__name__)
 
@@ -39,7 +39,8 @@ CONFIG_SCHEMA = vol.Schema({
         ADTPULSE_DOMAIN: vol.Schema({
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=30): cv.positive_int
+            vol.Optional(CONF_SCAN_INTERVAL, default=30): cv.positive_int,
+            vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string
         })
     }, extra=vol.ALLOW_EXTRA
 )
@@ -54,7 +55,14 @@ def setup(hass, config):
     try:
         # share reference to the service with other components/platforms running within HASS
         from pyadtpulse import PyADTPulse
-        hass.data[ADTPULSE_SERVICE] = PyADTPulse(username, password)
+        service = PyADTPulse(username, password)
+
+        host = conf.get(CONF_HOST)
+        if host:
+            LOG.debug("Using ADT Pulse API host %s", host)
+            service.set_api_host(host)
+
+        hass.data[ADTPULSE_SERVICE] = service
 
     except (ConnectTimeout, HTTPError) as ex:
         LOG.error("Unable to connect to ADT Pulse: %s", str(ex))

@@ -1,3 +1,7 @@
+## 0.0.3 (2019-12-16)
+
+* added ability to override the ADT Pulse host (for Canada use portal-ca.adtpulse.com, etc)
+
 ## 0.0.2 (2019-09-19)
 
 * complete reimplementation to use pyadtpulse and single adtpulse: config entry

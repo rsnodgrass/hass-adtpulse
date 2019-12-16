@@ -22,6 +22,13 @@ adtpulse:
   password: your_password
 ```
 
+Additionally, for Canada ADT Pulse customers, the ADT Pulse service host is configurable:
+
+```yaml
+adtpulse:
+  host: portal-ca.adtpulse.com
+```
+
 ## Lovelace
 
 #### Sensors

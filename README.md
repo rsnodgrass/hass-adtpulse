@@ -4,6 +4,8 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 
 This platform supports the following services: alarm_arm_away, alarm_arm_home, and alarm_disarm.
 
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+
 ## Installation
 
 If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/).

@@ -8,6 +8,10 @@ from homeassistant.const import (
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_DISARMED,
 )
+from homeassistant.components.alarm_control_panel.const import (
+    SUPPORT_ALARM_ARM_AWAY,
+    SUPPORT_ALARM_ARM_HOME,
+)
 
 from . import ADTPulseEntity, ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 
@@ -40,6 +44,11 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
     def icon(self):
         """Return the icon."""
         return 'mdi:security'
+
+    @property
+    def supported_features(self) -> int:
+        """Return the list of supported features."""
+        return SUPPORT_ALARM_ARM_HOME | SUPPORT_ALARM_ARM_AWAY
 
     @property
     def state(self):

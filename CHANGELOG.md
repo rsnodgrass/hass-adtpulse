@@ -1,3 +1,7 @@
+## 0.0.4 (2019-2-28)
+
+* added supported_features return for home/away
+	
 ## 0.0.3 (2019-12-16)
 
 * added ability to override the ADT Pulse host (for Canada use portal-ca.adtpulse.com, etc)

@@ -12,7 +12,9 @@ If you have trouble with installation and configuration, visit the [ADT Pulse Ho
 
 ### Step 1: Install Custom Components
 
-Easiest is by setting up [Home Assistant Community Store (HACS)](https://github.com/custom-components/hacs) and then adding the "Integration" repository: *rsnodgrass/hass-adtpulse*. However you can also manually copy all the files in [custom_components/adtpulse/](https://github.com/rsnodgrass/hass-adtpulse/custom_components/adtpulse) directory to `/config/custom_components/adtpulse` on your Home Assistant installation.
+Make sure that [Home Assistant Community Store (HACS)](https://github.com/custom-components/hacs) is installed and then add the "Integration" repository: *rsnodgrass/hass-adtpulse*.
+
+Note: Manual installation by direct download and copying is not supported, if you have issues, please first try installing this integration with HACS.
 
 ### Step 2: Configure ADT Pulse
 
@@ -136,6 +138,10 @@ automation:
 ## TODO
 
 * add notification when alarm is triggered and when alarm end
+
+## Support
+
+This integration was developed to cover use cases for my home integration, which I wanted to contribute to the community. Additional features beyond what has already been provided are the responsibility of the community to implement (unless trivial to add). 
 
 ### Not Supported
 

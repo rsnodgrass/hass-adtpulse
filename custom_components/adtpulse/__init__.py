@@ -60,7 +60,7 @@ def setup(hass, config):
         host = conf.get(CONF_HOST)
         if host:
             LOG.debug("Using ADT Pulse API host %s", host)
-            service.set_api_host(host)
+            service.set_service_host(host)
 
         hass.data[ADTPULSE_SERVICE] = service
 

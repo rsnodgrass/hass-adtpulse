@@ -2,8 +2,6 @@
 
 A native Home Assistant component to enable integration with [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as current status of all sensors (motion, door/window).
 
-This platform supports the following services: alarm_arm_away, alarm_arm_home, and alarm_disarm.
-
 ![beta_badge](https://img.shields.io/badge/maturity-Beta-yellow.png)
 ![release_badge](https://img.shields.io/github/v/release/rsnodgrass/hass-adtpulse.svg)
 ![release_date](https://img.shields.io/github/release-date/rsnodgrass/hass-adtpulse.svg)
@@ -11,6 +9,12 @@ This platform supports the following services: alarm_arm_away, alarm_arm_home, a
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
+
+This platform supports the following services:
+
+* `alarm_arm_away`
+* `alarm_arm_home`
+* `alarm_disarm`
 
 ## Installation
 

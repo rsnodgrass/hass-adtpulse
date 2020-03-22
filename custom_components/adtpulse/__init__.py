@@ -39,7 +39,7 @@ CONFIG_SCHEMA = vol.Schema({
         ADTPULSE_DOMAIN: vol.Schema({
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=10): cv.positive_int,
+            vol.Optional(CONF_SCAN_INTERVAL, default=5): cv.positive_int,
             vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string
         })
     }, extra=vol.ALLOW_EXTRA

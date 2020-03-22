@@ -2,15 +2,14 @@
 
 A native Home Assistant component to enable integration with [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as current status of all sensors (motion, door/window).
 
-NOTE: Since this uses the ADT Pulse cloud service, which is not real-time, there can be 15+ second delays detecting state changes to panels, sensors, switches. For those use cases that require status updates in seconds (e.g. motion sensors), it is recommended setting [adt-pulse-mqtt](https://github.com/digitalcraig/adt-pulse-mqtt). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where latency is not an issue.
-
 ![beta_badge](https://img.shields.io/badge/maturity-Beta-yellow.png)
 ![release_badge](https://img.shields.io/github/v/release/rsnodgrass/hass-adtpulse.svg)
 ![release_date](https://img.shields.io/github/release-date/rsnodgrass/hass-adtpulse.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
-
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
+
+NOTE: Since this uses the ADT Pulse cloud service, which is not real-time, there can be 15+ second delays detecting state changes to panels, sensors, switches. For those use cases that require status updates in seconds (e.g. motion sensors), it is recommended setting [adt-pulse-mqtt](https://github.com/digitalcraig/adt-pulse-mqtt). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where latency is not an issue.
 
 This platform supports the following services:
 

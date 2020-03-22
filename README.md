@@ -2,6 +2,8 @@
 
 A native Home Assistant component to enable integration with [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as current status of all sensors (motion, door/window).
 
+NOTE: Since this uses the ADT Pulse cloud service, which is not real-time, there can be 30+ second delays detecting state changes to panels, sensors, switches. For those use cases that require status updates in seconds (e.g. motion sensors), it is recommended setting [adt-pulse-mqtt](https://github.com/digitalcraig/adt-pulse-mqtt). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where latency is not an issue.
+
 ![beta_badge](https://img.shields.io/badge/maturity-Beta-yellow.png)
 ![release_badge](https://img.shields.io/github/v/release/rsnodgrass/hass-adtpulse.svg)
 ![release_date](https://img.shields.io/github/release-date/rsnodgrass/hass-adtpulse.svg)

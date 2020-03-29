@@ -93,6 +93,28 @@ class ADTPulseSensor(BinarySensorDevice):
         return self._zone_id
 
     @property
+    def icon(self):
+        """Return icon for the ADT sensor."""
+        sensor_type = self._zone.get('')
+        if sensor_type == 'doorWindow':
+            if self.state:
+                return 'mdi:door-open'
+            else:
+                return 'mdi:door'
+        elif sensor_type == 'motion':
+            return 'mdi:motion-sensor'
+        elif sensor_type == 'smoke':
+            if self.state:
+                return 'mdi:fire'
+            else:
+                return 'mdi:smoke-detector'
+        elif sensor_type == 'glass':
+            return 'mdi:window-closed-varint'
+        elif sensor_type == 'co':
+            return 'mdi:molecule-co'
+        return 'mdi:window-closed-varint'
+
+    @property
     def name(self):
         """Return the name of the ADT sensor."""
         return self._name

@@ -15,18 +15,13 @@ from requests import Session
 from homeassistant.components.binary_sensor import BinarySensorDevice
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
+from pyadtpulse.const import STATE_OK
+
 from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 
 LOG = logging.getLogger(__name__)
 
 ADTPULSE_DATA = 'adtpulse'
-
-ADT_STATUS_MAP = {
-    'Closed':    False,
-    'Open':      True,
-    'No Motion': False,
-    'Motion':    True
-}
 
 ADT_DEVICE_CLASS_TAG_MAP = {
     'doorWindow': 'door',
@@ -111,7 +106,8 @@ class ADTPulseSensor(BinarySensorDevice):
     def is_on(self):
         """Return True if the binary sensor is on."""
         status = self._zone.get('status')
-        return ADT_STATUS_MAP.get(status)
+        # sensor is considered tripped if the state is anything but OK
+        return not status == STATE_OK
 
     @property
     def device_class(self):
@@ -120,14 +116,14 @@ class ADTPulseSensor(BinarySensorDevice):
 
     @property
     def last_activity(self):
-        """Return the timestamp for the last sensor actvity."""
-        return self._zone.get('activityTs')
+        """Return the timestamp for the last sensor activity."""
+        return self._zone.get('timestamp')
 
     def _update_zone_status(self, zone_details):
         self._zone = zone_details
 
     def _adt_updated_callback(self):
-        # find the latest data for this zone
+        # find the latest data for each zone
         for zone in self._site.zones:
             if zone.get('id') == self._zone_id:
                 self._update_zone_status(zone)

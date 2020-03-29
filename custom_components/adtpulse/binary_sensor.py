@@ -112,10 +112,10 @@ class ADTPulseSensor(BinarySensorDevice):
             else:
                 return 'mdi:smoke-detector'
         elif sensor_type == 'glass':
-            return 'mdi:window-closed-varint'
+            return 'mdi:window-closed-variant'
         elif sensor_type == 'co':
             return 'mdi:molecule-co'
-        return 'mdi:window-closed-varint'
+        return 'mdi:window-closed-variant'
 
     @property
     def name(self):

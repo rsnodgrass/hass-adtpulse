@@ -102,7 +102,10 @@ class ADTPulseSensor(BinarySensorDevice):
             else:
                 return 'mdi:door'
         elif sensor_type == 'motion':
-            return 'mdi:motion-sensor'
+            if self.state:
+                return 'mdi:run-fast'
+            else:
+                return 'mdi:motion-sensor'
         elif sensor_type == 'smoke':
             if self.state:
                 return 'mdi:fire'

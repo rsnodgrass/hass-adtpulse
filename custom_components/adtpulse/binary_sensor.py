@@ -38,8 +38,9 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
         return
 
     for site in adt_service.sites:
-        for zone in site.zones:
-            sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
+        if site.zones:
+            for zone in site.zones:
+                sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
     add_entities_callback(sensors)
 

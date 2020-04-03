@@ -43,7 +43,7 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
 
     for site in adt_service.sites:
         if not site.zones:
-            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s", adt_service.sites)
+            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s ... %s", adt_service.sites, adt_service)
             continue
             
         for zone in site.zones:

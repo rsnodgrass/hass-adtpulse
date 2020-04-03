@@ -24,6 +24,10 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
 
+    if not adt_service.sites:
+        LOG.error("ADT Pulse service failed to return sites: %s", adt_service)
+        return
+
     alarm_devices = []
     for site in adt_service.sites:
         alarm_devices.append( ADTPulseAlarm(hass, adt_service, site) )

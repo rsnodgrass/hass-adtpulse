@@ -37,11 +37,17 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
         LOG.error("ADT Pulse service not initialized, cannot create sensors")
         return
 
+    if not adt_service.sites:
+        LOG.error("ADT's Pulse service returned NO sites: %s", adt_service)
+        return
+
     for site in adt_service.sites:
-        LOG.debug(f"Received sites from ADT service: %s", adt_service.sites)
-        if site.zones:
-            for zone in site.zones:
-                sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
+        if not site.zones:
+            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s", adt_service.sites)
+            next
+            
+        for zone in site.zones:
+            sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
     add_entities_callback(sensors)
 

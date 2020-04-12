@@ -94,6 +94,10 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
         }
 
     @property
+    def unique_id(self):
+        return f"adt_pulse_alarm_{self._site.id}"
+    
+    @property
     def code_format(self):
         return None
 

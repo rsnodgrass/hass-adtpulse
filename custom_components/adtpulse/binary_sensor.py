@@ -101,6 +101,10 @@ class ADTPulseSensor(BinarySensorDevice):
         return self._zone_id
 
     @property
+    def unique_id(self):
+        return f"adt_pulse_sensor_{self._site.id}_{self._zone_id}"
+    
+    @property
     def icon(self):
         """Return icon for the ADT sensor."""
         sensor_type = self._zone.get('')

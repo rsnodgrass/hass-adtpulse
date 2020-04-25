@@ -27,9 +27,10 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     'doorWindow': 'door',
     'motion':     'motion',
     'smoke':      'smoke',
-    'glass':      'door', # FIXME
-    'co':         'door', # FIXME: gas
-    'fire':       'smoke'
+    'glass':      'problem',
+    'co':         'gas',
+    'fire':       'heat',
+    'garage':     'garage_door' # FIXME: need ADT type
 }
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):

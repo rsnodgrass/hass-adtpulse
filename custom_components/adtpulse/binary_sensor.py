@@ -27,7 +27,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     'doorWindow': 'door',
     'motion':     'motion',
     'smoke':      'smoke',
-    'glass':      'problem',
+    'glass':      'vibration',
     'co':         'gas',
     'fire':       'heat',
     'garage':     'garage_door' # FIXME: need ADT type

@@ -26,7 +26,10 @@ ADTPULSE_DATA = 'adtpulse'
 ADT_DEVICE_CLASS_TAG_MAP = {
     'doorWindow': 'door',
     'motion':     'motion',
-    'smoke':      'smoke'
+    'smoke':      'smoke',
+    'glass':      'door', # FIXME
+    'co':         'door', # FIXME: gas
+    'fire':       'smoke'
 }
 
 def setup_platform(hass, config, add_entities_callback, discovery_info=None):

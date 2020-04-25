@@ -92,9 +92,11 @@ class ADTPulseSensor(BinarySensorDevice):
                 self._device_class = 'window'
 
         if not self._device_class:
-            LOG.warn(f"Ignoring unsupported ADT Pulse sensor type {tags}")
+            LOG.warn(f"Ignoring unsupported sensor type from ADT Pulse cloud service configured tags: {tags}")
             # FIXME: throw exception
-        
+        else:
+           LOG.info(f"Determined {self._name} device class {self._device_class} from ADT Pulse service configured tags {tags}"
+
     @property
     def id(self):
         """Return the id of the ADT sensor."""

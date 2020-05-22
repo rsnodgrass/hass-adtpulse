@@ -35,7 +35,7 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     # FIXME: why this??? data.devices.extend(alarm_devices)
     add_entities_callback(alarm_devices)
 
-class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanel):
+class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
 
     def __init__(self, hass, service, site):

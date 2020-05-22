@@ -12,7 +12,7 @@ import datetime
 #from datetime import timedelta
 
 from requests import Session
-from homeassistant.components.binary_sensor import BinarySensorDevice
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 
 from pyadtpulse.const import STATE_OK
@@ -55,7 +55,7 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
 
     add_entities_callback(sensors)
 
-class ADTPulseSensor(BinarySensorDevice):
+class ADTPulseSensor(BinarySensorEntity):
     """HASS binary sensor implementation for ADT Pulse."""
 
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion', 'tags': ['sensor', 'motion'],

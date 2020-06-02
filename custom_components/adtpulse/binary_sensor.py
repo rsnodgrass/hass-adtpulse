@@ -30,6 +30,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     'glass':      'vibration',
     'co':         'gas',
     'fire':       'heat',
+    'flood':      'moisture',
     'garage':     'garage_door' # FIXME: need ADT type
 }
 

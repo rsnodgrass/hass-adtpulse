@@ -2,7 +2,7 @@
   "domain": "adtpulse",
   "name": "ADT Pulse",
   "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
-  "requirements": ["pyadtpulse>=0.1.5"],
+  "requirements": ["pyadtpulse>=0.1.6"],
   "dependencies": [],
   "codeowners": ["@rsnodgrass"]
 }

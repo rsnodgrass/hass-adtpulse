@@ -100,7 +100,7 @@ class ADTPulseSensor(BinarySensorEntity):
             LOG.warn(f"Ignoring unsupported sensor type from ADT Pulse cloud service configured tags: {tags}")
             # FIXME: throw exception
         else:
-           LOG.info(f"Determined {self._name} device class {self._device_class} from ADT Pulse service configured tags {tags}"
+           LOG.info(f"Determined {self._name} device class {self._device_class} from ADT Pulse service configured tags {tags}")
 
     @property
     def id(self):

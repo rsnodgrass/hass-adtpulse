@@ -160,4 +160,5 @@ This integration was developed to cover use cases for my home integration, which
 
 No plans to implement support for the following (however, feel free to contribute):
 
+* Home Assistant config flow (would be nice to add)
 * ADT Pulse cameras, lighting and dimmers

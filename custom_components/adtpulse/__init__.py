@@ -103,7 +103,7 @@ class ADTPulseEntity(Entity):
     """Base Entity class for ADT Pulse devices"""
 
     def __init__(self, hass, service, name):
-        self._hass = hass
+        self.hass = hass
         self._service = service
         self._name = name
 
@@ -131,7 +131,7 @@ class ADTPulseEntity(Entity):
     async def async_added_to_hass(self):
         """Register callbacks."""
         # register callback when cached ADTPulse data has been updated
-        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
+        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
 
     @callback
     def _update_callback(self):

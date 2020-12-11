@@ -64,7 +64,7 @@ class ADTPulseSensor(BinarySensorEntity):
 
     def __init__(self, hass, adt_service, site, zone_details):
         """Initialize the binary_sensor."""
-        self._hass = hass
+        self.hass = hass
         self._adt_service = adt_service
         self._site = site
 
@@ -175,4 +175,4 @@ class ADTPulseSensor(BinarySensorEntity):
     async def async_added_to_hass(self):
         """Register callbacks."""
         # register callback to learn ADT Pulse data has been updated
-        async_dispatcher_connect(self._hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback)
+        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback)

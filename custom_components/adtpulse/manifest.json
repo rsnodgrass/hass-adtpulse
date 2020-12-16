@@ -3,7 +3,7 @@
   "name": "ADT Pulse",
   "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
   "requirements": [
-     "pyadtpulse>=0.2.4",
+     "pyadtpulse>=0.2.5",
      "beautifulsoup4>=4.9.0",
      "backoff>=1.10.0"
   ],

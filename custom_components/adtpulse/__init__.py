@@ -137,8 +137,5 @@ class ADTPulseEntity(Entity):
     def _update_callback(self):
         """Call update method."""
 
-# FIXME: update based on the latest...
-#        LOG.info(f"Updated {self._name} to {self._state} {self.unit_of_measurement} : {latest_result}")
-
         # inform HASS that ADT Pulse data for this entity has been updated
         self.async_schedule_update_ha_state()

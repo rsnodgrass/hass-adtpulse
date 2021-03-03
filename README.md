@@ -5,8 +5,10 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 ![beta_badge](https://img.shields.io/badge/maturity-Beta-yellow.png)
 ![release_badge](https://img.shields.io/github/v/release/rsnodgrass/hass-adtpulse.svg)
 ![release_date](https://img.shields.io/github/release-date/rsnodgrass/hass-adtpulse.svg)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+[![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/DYks67r)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
 NOTE: *Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay is based on the refresh_interval you have configured (default is 5 seconds). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.

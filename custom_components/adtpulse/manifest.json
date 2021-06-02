@@ -1,13 +1,14 @@
 {
-  "domain": "adtpulse",
-  "name": "ADT Pulse",
-  "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
-  "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
-  "requirements": [
-     "pyadtpulse>=0.2.6",
-     "beautifulsoup4>=4.9.0",
-     "backoff>=1.10.0"
-  ],
-  "dependencies": [],
-  "codeowners": ["@rsnodgrass"]
+    "domain": "adtpulse",
+    "name": "ADT Pulse",
+    "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
+    "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
+    "version": "0.1.8",
+    "requirements": [
+	"pyadtpulse>=0.2.6",
+	"beautifulsoup4>=4.9.0",
+	"backoff>=1.10.0"
+    ],
+    "dependencies": [],
+    "codeowners": ["@rsnodgrass"]
 }

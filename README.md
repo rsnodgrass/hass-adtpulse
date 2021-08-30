@@ -19,6 +19,8 @@ This platform supports the following services:
 * `alarm_arm_home`
 * `alarm_disarm`
 
+## ACCOUNTS THAT HAVE ENABLED ADT PULSE'S 2FA (Two Factor Authentication) IS NOT SUPPORTED! - AUGUST 29, 2021
+
 ## Installation
 
 If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/).

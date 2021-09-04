@@ -19,6 +19,12 @@ This platform supports the following services:
 * `alarm_arm_home`
 * `alarm_disarm`
 
+## WARNING: ADT Accounts with 2FA May Not Work
+
+Workaround from `@mrholshi`:
+
+*Create an additional "service" account user and give that account access to your site. This can be used as long as that "service" account does not op-in to 2FA in either the Pulse app or portal. Login using the Pulse web portal to set up the security question. This account can only log in the first time to set security questions, since any login after that will prompt to set up 2FA.*
+
 ## Installation
 
 If you have trouble with installation and configuration, visit the [ADT Pulse Home Assistant community discussion](https://community.home-assistant.io/t/adt-pulse-integration/10160/).

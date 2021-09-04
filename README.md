@@ -19,11 +19,15 @@ This platform supports the following services:
 * `alarm_arm_home`
 * `alarm_disarm`
 
+<<<<<<< HEAD
 ## WARNING: ADT Accounts with 2FA May Not Work
 
 Workaround from `@mrholshi`:
 
 *Create an additional "service" account user and give that account access to your site. This can be used as long as that "service" account does not op-in to 2FA in either the Pulse app or portal. Login using the Pulse web portal to set up the security question. This account can only log in the first time to set security questions, since any login after that will prompt to set up 2FA.*
+=======
+## ACCOUNTS THAT HAVE ENABLED ADT PULSE'S 2FA (Two Factor Authentication) IS NOT SUPPORTED! - AUGUST 29, 2021
+>>>>>>> 0a0b93a16c110408f6c9049f8561fc5b7108429c
 
 ## Installation
 

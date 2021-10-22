@@ -14,7 +14,7 @@ from homeassistant.helpers import config_validation as cv, discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL
+from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_DEVICE_ID
 
 LOG = logging.getLogger(__name__)
 
@@ -42,7 +42,8 @@ CONFIG_SCHEMA = vol.Schema({
             vol.Required(CONF_USERNAME): cv.string,
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
-            vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string
+            vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string,
+            vol.Optional(CONF_DEVICE_ID, default=''): cv.string
         })
     }, extra=vol.ALLOW_EXTRA
 )
@@ -53,11 +54,12 @@ def setup(hass, config):
 
     username = conf.get(CONF_USERNAME)
     password = conf.get(CONF_PASSWORD)
+    fingerprint = conf.get(CONF_DEVICE_ID)
 
     try:
         # share reference to the service with other components/platforms running within HASS
         from pyadtpulse import PyADTPulse
-        service = PyADTPulse(username, password)
+        service = PyADTPulse(username, password, fingerprint)
 
         host = conf.get(CONF_HOST)
         if host:

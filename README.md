@@ -52,6 +52,25 @@ adtpulse:
   host: portal-ca.adtpulse.com
 ```
 
+For accounts that have 2FA enabled, there is an alternative solution by setting the optional setting below. The option below uses the "trusted device" option that ADT provides so that you can bypass 2FA.
+
+```yaml
+adtpulse:
+  device_id: SOMEUNIQUEDEVICEID
+```
+
+#### Step to Get Your Trusted Device
+1. Go to the ADT Pulse Login page but do not login.
+2. Open up the developer tools for your browser and make sure you enable the network capturing option and recording is enabled
+3. Login to your account
+4. If the device isn't trusted, it will prompt you for a code, afterwards you will be asked if you want to trust the device. Give it a name and click Save and Continue.
+
+![ADT Save Device](https://github.com/sbabcock23/hass-adtpulse/blob/deviceid/docs/adt_save_device.jpg?raw=true)
+
+5. Open up the developer tools and look for the page called "signin.jsp". Under the form data, look for "fingerprint". Copy that value and use it for the device_id value in your configuration.yaml file. If for some reason you didn't record, just re-login to your account again with the same browser.
+
+![ADT Form Data](https://github.com/sbabcock23/hass-adtpulse/blob/deviceid/docs/adt_form_data.jpg?raw=true)
+
 ## Lovelace
 
 #### Sensors

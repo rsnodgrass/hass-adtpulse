@@ -5,7 +5,7 @@
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
     "version": "0.1.9",
     "requirements": [
-	"pyadtpulse>=0.2.7",
+	"pyadtpulse>=0.2.8",
 	"beautifulsoup4>=4.9.0",
 	"backoff>=1.10.0"
     ],

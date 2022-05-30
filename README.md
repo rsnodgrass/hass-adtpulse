@@ -11,6 +11,10 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/DYks67r)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
+## Archived
+
+This repo has been archived - please consider forking to continue development.
+
 ## THIS IS NOT SUPPORTED!
 
 NOTE: *Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay is based on the refresh_interval you have configured (default is 5 seconds). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.

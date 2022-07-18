@@ -15,7 +15,7 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 
 This repo has been archived - please consider forking to continue development.
 
-For help, discuss on the [https://community.home-assistant.io/t/adt-pulse-integration/10160/](ADT Pulse Home Assistant support community thread). Pull Requests may be accepted.
+For help, discuss on the [ADT Pulse Home Assistant support community thread](https://community.home-assistant.io/t/adt-pulse-integration/10160/). Pull Requests may be accepted.
 
 ## THIS IS NOT SUPPORTED!
 

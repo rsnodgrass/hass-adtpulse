@@ -13,7 +13,7 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 
 ## Archived
 
-This repo has been archived - please consider forking to continue development.
+This repo has been archived - please consider forking to continue development.  See also https://github.com/mrjackyliang/homebridge-adt-pulse.
 
 ## THIS IS NOT SUPPORTED!
 

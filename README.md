@@ -2,16 +2,14 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+**This repo has been archived.**
+
 ## RECOMMENDED REPLACEMENT
 
 Install [HomeBridge](https://homebridge.io/) on a separate host from Home Assistant and install
 the [ADT Pulse Plug-In](https://github.com/mrjackyliang/homebridge-adt-pulse). 
 
 ADT sensors and alarm panel integration works perfect with Home Assistant's native HomeKit integration, including fast sensor status updates.
-
-## Archived
-
-**This repo has been archived - please consider forking to continue development.**
 
 ## See Also
 

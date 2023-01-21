@@ -1,55 +1,64 @@
-"""
-ADT Pulse for Home Assistant
+"""ADT Pulse for Home Assistant.
+
 See https://github.com/rsnodgrass/hass-adtpulse
 """
 import logging
-
-import time
 from datetime import timedelta
-import voluptuous as vol
-from requests.exceptions import HTTPError, ConnectTimeout
+from typing import Dict, Optional
 
-from homeassistant.core import callback
-from homeassistant.helpers import config_validation as cv, discovery
+import voluptuous as vol
+from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD,
+                                 CONF_SCAN_INTERVAL, CONF_USERNAME)
+from homeassistant.core import Config, HomeAssistant, callback
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import discovery
+from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
+                                              dispatcher_send)
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_DEVICE_ID
+from requests.exceptions import ConnectTimeout, HTTPError
 
 LOG = logging.getLogger(__name__)
 
-ADTPULSE_DOMAIN = 'adtpulse'
+ADTPULSE_DOMAIN = "adtpulse"
 
-ADTPULSE_SERVICE = 'adtpulse_service'
+ADTPULSE_SERVICE = "adtpulse_service"
 
-SIGNAL_ADTPULSE_UPDATED = 'adtpulse_updated'
+SIGNAL_ADTPULSE_UPDATED = "adtpulse_updated"
 
-EVENT_ALARM = 'adtpulse_alarm'
-EVENT_ALARM_END = 'adtpulse_alarm_end'
+EVENT_ALARM = "adtpulse_alarm"
+EVENT_ALARM_END = "adtpulse_alarm_end"
 
-NOTIFICATION_TITLE = 'ADT Pulse'
-NOTIFICATION_ID = 'adtpulse_notification'
+NOTIFICATION_TITLE = "ADT Pulse"
+NOTIFICATION_ID = "adtpulse_notification"
 
-ATTR_SITE_ID   = 'site_id'
-ATTR_DEVICE_ID = 'device_id'
+ATTR_SITE_ID = "site_id"
+ATTR_DEVICE_ID = "device_id"
 
-SUPPORTED_PLATFORMS = [ 'alarm_control_panel', 'binary_sensor' ]
+SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
-DEFAULT_SCAN_INTERVAL=60
+DEFAULT_SCAN_INTERVAL = 60
 
-CONFIG_SCHEMA = vol.Schema({
-        ADTPULSE_DOMAIN: vol.Schema({
-            vol.Required(CONF_USERNAME): cv.string,
-            vol.Required(CONF_PASSWORD): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
-            vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string,
-            vol.Optional(CONF_DEVICE_ID, default=''): cv.string
-        })
-    }, extra=vol.ALLOW_EXTRA
+CONFIG_SCHEMA = vol.Schema(
+    {
+        ADTPULSE_DOMAIN: vol.Schema(
+            {
+                vol.Required(CONF_USERNAME): cv.string,
+                vol.Required(CONF_PASSWORD): cv.string,
+                vol.Optional(
+                    CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
+                ): cv.positive_int,
+                vol.Optional(CONF_HOST, default="portal.adtpulse.com"): cv.string,
+                vol.Optional(CONF_DEVICE_ID, default=""): cv.string,
+            }
+        )
+    },
+    extra=vol.ALLOW_EXTRA,
 )
 
-def setup(hass, config):
-    """Initialize the ADTPulse integration"""
+
+def setup(hass: HomeAssistant, config: Config) -> bool:
+    """Initialize the ADTPulse integration."""
     conf = config[ADTPULSE_DOMAIN]
 
     username = conf.get(CONF_USERNAME)
@@ -57,8 +66,10 @@ def setup(hass, config):
     fingerprint = conf.get(CONF_DEVICE_ID)
 
     try:
-        # share reference to the service with other components/platforms running within HASS
+        # share reference to the service with other components/platforms
+        # running within HASS
         from pyadtpulse import PyADTPulse
+
         service = PyADTPulse(username, password, fingerprint)
 
         host = conf.get(CONF_HOST)
@@ -77,22 +88,26 @@ def setup(hass, config):
         )
         return False
 
-    def refresh_adtpulse_data(event_time):
-        """Call ADTPulse service to refresh latest data"""
+    def refresh_adtpulse_data() -> bool:
+        """Call ADTPulse service to refresh latest data."""
         LOG.debug("Checking ADT Pulse cloud service for updates")
 
         adtpulse_service = hass.data[ADTPULSE_SERVICE]
         if adtpulse_service.updates_exist:
-            adtpulse_service.update()
+            LOG.debug("Found updates to ADT Pulse Data")
+            if not adtpulse_service.update():
+                LOG.warning("ADT Pulse update failed")
+                return False
+        return True
 
-            # notify all listeners (alarm and sensors) that they may have new data
-            dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
+    # notify all listeners (alarm and sensors) that they may have new data
+    dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
 
     # subscribe for notifications that an update should be triggered
-    hass.services.register(ADTPULSE_DOMAIN, 'update', refresh_adtpulse_data)
+    hass.services.register(ADTPULSE_DOMAIN, "update", refresh_adtpulse_data)
 
     # automatically update ADTPulse data (samples) on the scan interval
-    scan_interval = timedelta(seconds = conf.get(CONF_SCAN_INTERVAL))
+    scan_interval = timedelta(seconds=conf.get(CONF_SCAN_INTERVAL))
     track_time_interval(hass, refresh_adtpulse_data, scan_interval)
 
     for platform in SUPPORTED_PLATFORMS:
@@ -102,42 +117,61 @@ def setup(hass, config):
 
 
 class ADTPulseEntity(Entity):
-    """Base Entity class for ADT Pulse devices"""
+    """Base Entity class for ADT Pulse devices."""
 
-    def __init__(self, hass, service, name):
+    def __init__(self, hass: HomeAssistant, service: str, name: str):
+        """Initialize an ADTPulse entity.
+
+        Args:
+            hass (HomeAssistant): HASS object
+            service (str): service name
+            name (str): entity name
+        """
         self.hass = hass
         self._service = service
         self._name = name
 
         self._state = None
-        self._attrs = {}
-        
+        self._attrs: Dict = {}
+
     @property
-    def name(self):
-        """Return the display name for this sensor"""
+    def name(self) -> str:
+        """Return the display name for this sensor."""
         return self._name
 
     @property
-    def icon(self):
-        return 'mdi:gauge'
+    def icon(self) -> str:
+        """Return the mdi icon.
+
+        Returns:
+            str: mdi icon name
+        """
+        return "mdi:gauge"
 
     @property
-    def state(self):
+    def state(self) -> Optional[str]:
+        """Return the entity state.
+
+        Returns:
+            Optional[str]: the entity state
+        """
         return self._state
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> Dict:
         """Return the device state attributes."""
         return self._attrs
 
-    async def async_added_to_hass(self):
+    async def async_added_to_hass(self) -> None:
         """Register callbacks."""
         # register callback when cached ADTPulse data has been updated
-        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
+        async_dispatcher_connect(
+            self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback
+        )
 
     @callback
-    def _update_callback(self):
+    def _update_callback(self) -> None:
         """Call update method."""
-
+        LOG.debug("Scheduling ADT Pulse entity update")
         # inform HASS that ADT Pulse data for this entity has been updated
         self.async_schedule_update_ha_state()

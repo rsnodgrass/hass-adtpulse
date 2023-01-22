@@ -7,15 +7,20 @@ from datetime import timedelta
 from typing import Dict, Optional
 
 import voluptuous as vol
-from homeassistant.const import (CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD,
-                                 CONF_SCAN_INTERVAL, CONF_USERNAME)
-from homeassistant.core import Config, HomeAssistant, callback
+from homeassistant.const import (
+    CONF_DEVICE_ID,
+    CONF_HOST,
+    CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
+    CONF_USERNAME,
+)
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
-                                              dispatcher_send)
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatcher_send
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import track_time_interval
+from homeassistant.helpers.typing import ConfigType
 from requests.exceptions import ConnectTimeout, HTTPError
 
 LOG = logging.getLogger(__name__)
@@ -46,10 +51,12 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
                 vol.Optional(
-                    CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL
+                    CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL  # type: ignore
                 ): cv.positive_int,
-                vol.Optional(CONF_HOST, default="portal.adtpulse.com"): cv.string,
-                vol.Optional(CONF_DEVICE_ID, default=""): cv.string,
+                vol.Optional(
+                    CONF_HOST, default="portal.adtpulse.com"  # type: ignore
+                ): cv.string,
+                vol.Optional(CONF_DEVICE_ID, default=""): cv.string,  # type: ignore
             }
         )
     },
@@ -57,7 +64,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def setup(hass: HomeAssistant, config: Config) -> bool:
+def setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Initialize the ADTPulse integration."""
     conf = config[ADTPULSE_DOMAIN]
 
@@ -104,11 +111,13 @@ def setup(hass: HomeAssistant, config: Config) -> bool:
     dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
 
     # subscribe for notifications that an update should be triggered
-    hass.services.register(ADTPULSE_DOMAIN, "update", refresh_adtpulse_data)
+    hass.services.register(
+        ADTPULSE_DOMAIN, "update", refresh_adtpulse_data  # type: ignore
+    )
 
     # automatically update ADTPulse data (samples) on the scan interval
     scan_interval = timedelta(seconds=conf.get(CONF_SCAN_INTERVAL))
-    track_time_interval(hass, refresh_adtpulse_data, scan_interval)
+    track_time_interval(hass, refresh_adtpulse_data, scan_interval)  # type: ignore
 
     for platform in SUPPORTED_PLATFORMS:
         discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)

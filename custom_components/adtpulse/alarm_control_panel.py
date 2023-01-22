@@ -26,7 +26,7 @@ def setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     add_entities_callback: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType = None,
+    discovery_info: DiscoveryInfoType = {}
 ):
     """Set up an alarm control panel for ADT Pulse."""
     adt_service = hass.data.get(ADTPULSE_SERVICE)

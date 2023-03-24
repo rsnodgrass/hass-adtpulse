@@ -21,6 +21,7 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatche
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import track_time_interval
 from homeassistant.helpers.typing import ConfigType
+from pyadtpulse import PyADTPulse
 from requests.exceptions import ConnectTimeout, HTTPError
 
 LOG = logging.getLogger(__name__)
@@ -75,8 +76,6 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
     try:
         # share reference to the service with other components/platforms
         # running within HASS
-        from pyadtpulse import PyADTPulse
-
         service = PyADTPulse(username, password, fingerprint)
 
         host = conf.get(CONF_HOST)
@@ -99,7 +98,7 @@ def setup(hass: HomeAssistant, config: ConfigType) -> bool:
         """Call ADTPulse service to refresh latest data."""
         LOG.debug("Checking ADT Pulse cloud service for updates")
 
-        adtpulse_service = hass.data[ADTPULSE_SERVICE]
+        adtpulse_service: PyADTPulse = hass.data[ADTPULSE_SERVICE]
         if adtpulse_service.updates_exist:
             LOG.debug("Found updates to ADT Pulse Data")
             if not adtpulse_service.update():

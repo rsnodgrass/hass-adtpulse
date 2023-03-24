@@ -11,7 +11,10 @@ from typing import Optional
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.core import Config, HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from pyadtpulse import PyADTPulse
+from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.const import STATE_OK
+from pyadtpulse.zones import ADTPulseFlattendZone
 
 from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 
@@ -36,7 +39,7 @@ def setup_platform(
 ) -> None:
     """Set up sensors for an ADT Pulse installation."""
     sensors = []
-    adt_service = hass.data.get(ADTPULSE_SERVICE)
+    adt_service: Optional[PyADTPulse] = hass.data.get(ADTPULSE_SERVICE)
     if not adt_service:
         LOG.error("ADT Pulse service not initialized, cannot create sensors")
         return
@@ -46,6 +49,8 @@ def setup_platform(
         return
 
     for site in adt_service.sites:
+        if not isinstance(site, ADTPulseSite):
+            raise RuntimeError("pyadtpulse returned invalid site object type")
         if not site.zones:
             LOG.error(
                 "ADT's Pulse service returned NO zones (sensors) for site: "
@@ -65,13 +70,19 @@ class ADTPulseSensor(BinarySensorEntity):
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion',
     # 'tags': ['sensor', 'motion'], 'status': 'Motion', 'activityTs': 1569078085275}
 
-    def __init__(self, hass: HomeAssistant, adt_service, site, zone_details):
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        adt_service: PyADTPulse,
+        site: ADTPulseSite,
+        zone_details: ADTPulseFlattendZone,
+    ):
         """Initialize the binary_sensor."""
         self.hass = hass
         self._adt_service = adt_service
         self._site = site
 
-        self._zone_id = zone_details.get("id")
+        self._zone_id = zone_details.get("id_")
         self._name = zone_details.get("name")
         self._update_zone_status(zone_details)
 
@@ -112,7 +123,7 @@ class ADTPulseSensor(BinarySensorEntity):
             )
 
     @property
-    def id(self) -> int:
+    def id(self) -> str:
         """Return the id of the ADT sensor."""
         return self._zone_id
 
@@ -185,8 +196,10 @@ class ADTPulseSensor(BinarySensorEntity):
 
     def _adt_updated_callback(self) -> None:
         # find the latest data for each zone
+        if self._site.zones is None:
+            return
         for zone in self._site.zones:
-            if zone.get("id") == self._zone_id:
+            if zone.get("id_") == self._zone_id:
                 self._update_zone_status(zone)
 
     async def async_added_to_hass(self) -> None:

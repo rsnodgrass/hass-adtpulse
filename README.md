@@ -11,9 +11,9 @@ A native Home Assistant component to enable integration with [ADT Pulse](https:/
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/DYks67r)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
-## Archived
+## THANK YOU rlippmann@
 
-This repo has been archived - please consider forking to continue development.  See also https://github.com/mrjackyliang/homebridge-adt-pulse.
+[rlippmann@](https://github.com/rlippmann) has been busy making major contributions to pyadtpulse to support async behavior. He is currently (2023) working on switching the HA ADTPulse integration to utilize the async model.
 
 ## THIS IS NOT SUPPORTED!
 
@@ -178,6 +178,7 @@ automation:
 * [pyadtpulse](https://github.com/rsnodgrass/pyadtpulse)
 * [adt-pulse-mqtt](https://github.com/haruny/adt-pulse-mqtt)
 * [ADT Pulse management portal](https://portal.adtpulse.com/)
+* https://github.com/mrjackyliang/homebridge-adt-pulse
 
 ## TODO
 

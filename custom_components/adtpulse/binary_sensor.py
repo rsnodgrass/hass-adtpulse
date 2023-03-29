@@ -5,101 +5,85 @@ motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
+from __future__ import annotations
 import logging
 from typing import Optional
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.core import Config, HomeAssistant
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.components.binary_sensor import (
+    BinarySensorEntity,
+    BinarySensorDeviceClass,
+)
+from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
-from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.const import STATE_OK
-from pyadtpulse.zones import ADTPulseFlattendZone
+from pyadtpulse.site import ADTPulseSite
+from pyadtpulse.zones import ADTPulseZoneData
 
-from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
+from custom_components.adtpulse.coordinator import ADTPulseDataUpdateCoordinator
+
+from . import ADTPulseEntity
 
 LOG = logging.getLogger(__name__)
 
 ADTPULSE_DATA = "adtpulse"
 
+# FIXME: should be BinarySensorEntityDescription?
 ADT_DEVICE_CLASS_TAG_MAP = {
-    "doorWindow": "door",
-    "motion": "motion",
-    "smoke": "smoke",
-    "glass": "vibration",
-    "co": "gas",
-    "fire": "heat",
-    "flood": "moisture",
-    "garage": "garage_door",  # FIXME: need ADT type
+    "doorWindow": BinarySensorDeviceClass.DOOR,
+    "motion": BinarySensorDeviceClass.WINDOW,
+    "smoke": BinarySensorDeviceClass.SMOKE,
+    "glass": BinarySensorDeviceClass.TAMPER,
+    "co": BinarySensorDeviceClass.GAS,
+    "fire": BinarySensorDeviceClass.HEAT,
+    "flood": BinarySensorDeviceClass.MOISTURE,
+    "garage": BinarySensorDeviceClass.GARAGE_DOOR,  # FIXME: need ADT type
 }
 
 
-def setup_platform(
-    hass: HomeAssistant, config: Config, add_entities_callback, discovery_info=None
-) -> None:
-    """Set up sensors for an ADT Pulse installation."""
-    sensors = []
-    adt_service: Optional[PyADTPulse] = hass.data.get(ADTPULSE_SERVICE)
-    if not adt_service:
-        LOG.error("ADT Pulse service not initialized, cannot create sensors")
-        return
-
-    if not adt_service.sites:
-        LOG.error("ADT's Pulse service returned NO sites: %s", adt_service)
-        return
-
-    for site in adt_service.sites:
-        if not isinstance(site, ADTPulseSite):
-            raise RuntimeError("pyadtpulse returned invalid site object type")
-        if not site.zones:
-            LOG.error(
-                "ADT's Pulse service returned NO zones (sensors) for site: "
-                f"{adt_service.sites} ... {adt_service}"
-            )
-            continue
-
-        for zone in site.zones:
-            sensors.append(ADTPulseSensor(hass, adt_service, site, zone))
-
-    add_entities_callback(sensors)
-
-
-class ADTPulseSensor(BinarySensorEntity):
-    """HASS binary sensor implementation for ADT Pulse."""
+class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
+    """HASS zone binary sensor implementation for ADT Pulse."""
 
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion',
     # 'tags': ['sensor', 'motion'], 'status': 'Motion', 'activityTs': 1569078085275}
 
     def __init__(
         self,
-        hass: HomeAssistant,
-        adt_service: PyADTPulse,
+        coordinator: ADTPulseDataUpdateCoordinator,
         site: ADTPulseSite,
-        zone_details: ADTPulseFlattendZone,
+        zone_id: int,
     ):
         """Initialize the binary_sensor."""
-        self.hass = hass
-        self._adt_service = adt_service
         self._site = site
+        self._zone_id = zone_id
 
-        self._zone_id = zone_details.get("id_")
-        self._name = zone_details.get("name")
-        self._update_zone_status(zone_details)
-
-        self._determine_device_class()
-
+        if self._site.zones_as_dict is None:
+            raise RuntimeError("ADT pulse returned null zone")
+        my_zone = self._site.zones_as_dict[zone_id]
+        self._determine_device_class(my_zone)
+        super().__init__(coordinator, my_zone.name, my_zone.state)
+        self._update_entity_data()
+        self._id = my_zone.id_
         LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
-    def _determine_device_class(self) -> None:
+    def _update_entity_data(self) -> None:
+        if self._site.zones_as_dict is None:
+            raise RuntimeError(f"No Pulse zones detected updating sensor {self._name}")
+        my_zone = self._site.zones_as_dict[self._zone_id]
+        self._status = my_zone.status
+        self._last_activity_timestamp = my_zone.last_activity_timestamp
+        self._set_icon()
+
+    # FIXME: this should be a BinarySensorEntityDescription
+    def _determine_device_class(self, zone_data: ADTPulseZoneData) -> None:
         # map the ADT Pulse device type tag to a binary_sensor class
         # so the proper status codes and icons are displayed. If device class
         # is not specified, binary_sensordefault to a generic on/off sensor
         self._device_class = None
-        tags = self._zone.get("tags")
+        tags = zone_data.tags  # type: ignore
 
         if "sensor" in tags:
             for tag in tags:
-                device_class = ADT_DEVICE_CLASS_TAG_MAP.get(tag)
+                device_class = ADT_DEVICE_CLASS_TAG_MAP[tag]
                 if device_class:
                     self._device_class = device_class
                     break
@@ -108,14 +92,14 @@ class ADTPulseSensor(BinarySensorEntity):
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if self._device_class == "door":
             if "Window" in self.name or "window" in self.name:
-                self._device_class = "window"
+                self._device_class = BinarySensorDeviceClass.WINDOW
 
         if not self._device_class:
             LOG.warn(
                 "Ignoring unsupported sensor type from ADT Pulse cloud service "
                 f"configured tags: {tags}"
             )
-            # FIXME: throw exception
+            raise ValueError(f"Unknown ADT Pulse device class {self._device_class}")
         else:
             LOG.info(
                 f"Determined {self._name} device class {self._device_class} "
@@ -125,7 +109,7 @@ class ADTPulseSensor(BinarySensorEntity):
     @property
     def id(self) -> str:
         """Return the id of the ADT sensor."""
-        return self._zone_id
+        return self._id
 
     @property
     def unique_id(self) -> str:
@@ -138,48 +122,47 @@ class ADTPulseSensor(BinarySensorEntity):
 
     @property
     def icon(self) -> str:
+        """Get icon.
+
+        Returns:
+            str: returns mdi:icon corresponding to current state
+        """
+        return self._icon
+
+    def _set_icon(self):
         """Return icon for the ADT sensor."""
-        sensor_type = self._zone.get("")
+        sensor_type = self._device_class
         if sensor_type == "doorWindow":
             if self.state:
-                return "mdi:door-open"
+                self._icon = "mdi:door-open"
             else:
-                return "mdi:door"
+                self._icon = "mdi:door"
+            return
         elif sensor_type == "motion":
             if self.state:
-                return "mdi:run-fast"
+                self._icon = "mdi:run-fast"
             else:
-                return "mdi:motion-sensor"
+                self._icon = "mdi:motion-sensor"
+            return
         elif sensor_type == "smoke":
             if self.state:
-                return "mdi:fire"
+                self._icon = "mdi:fire"
             else:
-                return "mdi:smoke-detector"
+                self._icon = "mdi:smoke-detector"
+            return
         elif sensor_type == "glass":
-            return "mdi:window-closed-variant"
+            self._icon = "mdi:window-closed-variant"
+            return
         elif sensor_type == "co":
-            return "mdi:molecule-co"
-        return "mdi:window-closed-variant"
-
-    @property
-    def name(self) -> str:
-        """Return the name of the ADT sensor."""
-        return self._name
-
-    @property
-    def should_poll(self) -> bool:
-        """Return True always.
-
-        Updates occur periodically from __init__ when changes detected.
-        """
-        return True
+            self._icon = "mdi:molecule-co"
+            return
+        self._icon = "mdi:window-closed-variant"
 
     @property
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
-        status = self._zone.get("state")
         # sensor is considered tripped if the state is anything but OK
-        return not status == STATE_OK
+        return not self._status == STATE_OK
 
     @property
     def device_class(self) -> Optional[str]:
@@ -189,22 +172,53 @@ class ADTPulseSensor(BinarySensorEntity):
     @property
     def last_activity(self) -> float:
         """Return the timestamp for the last sensor activity."""
-        return self._zone.get("timestamp")
+        return self._last_activity_timestamp
 
-    def _update_zone_status(self, zone_details):
-        self._zone = zone_details
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        self._update_entity_data()
+        return super()._handle_coordinator_update()
 
-    def _adt_updated_callback(self) -> None:
-        # find the latest data for each zone
-        if self._site.zones is None:
-            return
-        for zone in self._site.zones:
-            if zone.get("id_") == self._zone_id:
-                self._update_zone_status(zone)
 
-    async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
-        # register callback to learn ADT Pulse data has been updated
-        async_dispatcher_connect(
-            self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback
+class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
+    """HASS Gateway Online Binary Sensor."""
+
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, service: PyADTPulse):
+        """Initialize gateway sensor.
+
+        Args:
+            coordinator (ADTPulseDataUpdateCoordinator):
+                HASS data update coordinator
+            service (PyADTPulse): API Pulse connection object
+        """
+        self._service = service
+        self._status = service.gateway_online
+        self._device_class = BinarySensorDeviceClass.CONNECTIVITY
+        super().__init__(
+            coordinator, f"ADT Pulse Gateway for {self._service.username}", self._status
         )
+
+    @property
+    def is_on(self) -> bool:
+        """Return if gatway is online.
+
+        Returns:
+            bool: True if online
+        """
+        return self._status
+
+    # FIXME: Gateways only support one site?
+    @property
+    def unique_id(self) -> str:
+        """Return HA unique id.
+
+        Returns:
+           str : HA unique entity id
+        """
+        return f"adt_pulse_gateway_connection_{self._service.sites[0].id}"
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        LOG.warning(f"Setting Pulse Gateway status to {self._service.gateway_online}")
+        self._status = self._service.gateway_online
+        return super()._handle_coordinator_update()

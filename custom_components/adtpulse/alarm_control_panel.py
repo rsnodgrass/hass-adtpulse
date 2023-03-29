@@ -1,60 +1,57 @@
 """Support for ADT Pulse alarm control panels."""
+from __future__ import annotations
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
     SUPPORT_ALARM_ARM_AWAY,
     SUPPORT_ALARM_ARM_HOME,
+    SUPPORT_ALARM_ARM_CUSTOM_BYPASS,
 )
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_DISARMED,
+    STATE_ALARM_ARMING,
+    STATE_ALARM_DISARMING,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.typing import DiscoveryInfoType, ConfigType
 
-from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED, ADTPulseEntity
+from homeassistant.helpers.update_coordinator import callback
+from custom_components.adtpulse.coordinator import ADTPulseDataUpdateCoordinator
+
+from . import ADTPulseEntity
+from pyadtpulse.site import (
+    ADTPulseSite,
+    ADT_ALARM_UNKNOWN,
+    ADT_ALARM_ARMING,
+    ADT_ALARM_AWAY,
+    ADT_ALARM_DISARMING,
+    ADT_ALARM_HOME,
+    ADT_ALARM_OFF,
+)
 
 LOG = logging.getLogger(__name__)
 
-
-def setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    add_entities_callback: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType = {}
-):
-    """Set up an alarm control panel for ADT Pulse."""
-    adt_service = hass.data.get(ADTPULSE_SERVICE)
-    if not adt_service:
-        LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
-        return
-
-    if not adt_service.sites:
-        LOG.error("ADT Pulse service failed to return sites: %s", adt_service)
-        return
-
-    alarm_devices = []
-    for site in adt_service.sites:
-        alarm_devices.append(ADTPulseAlarm(hass, adt_service, site))
-
-    # FIXME: why this??? data.devices.extend(alarm_devices)
-    add_entities_callback(alarm_devices)
+ALARM_MAP = {
+    ADT_ALARM_ARMING: STATE_ALARM_ARMING,
+    ADT_ALARM_AWAY: STATE_ALARM_ARMED_AWAY,
+    ADT_ALARM_DISARMING: STATE_ALARM_DISARMING,
+    ADT_ALARM_HOME: STATE_ALARM_ARMED_HOME,
+    ADT_ALARM_OFF: STATE_ALARM_DISARMED,
+    ADT_ALARM_UNKNOWN: None,
+}
 
 
-# FIXME: do we need to subclass both entities?
 class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
 
-    def __init__(self, hass: HomeAssistant, service, site):
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         name = f"ADT {site.name}"
         self._site = site
-        super().__init__(hass, service, name)
+        self._data_from_fetch = True
+        super().__init__(coordinator, name, ALARM_MAP[self._site.status])
 
     @property
     def icon(self) -> str:
@@ -64,33 +61,44 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     @property
     def supported_features(self) -> int:
         """Return the list of supported features."""
-        return SUPPORT_ALARM_ARM_HOME | SUPPORT_ALARM_ARM_AWAY
+        return (
+            SUPPORT_ALARM_ARM_HOME
+            | SUPPORT_ALARM_ARM_AWAY
+            | SUPPORT_ALARM_ARM_CUSTOM_BYPASS
+        )
 
-    @property
-    def state(self) -> Optional[str]:
-        """Return the state of the device."""
-        if self._site.is_disarmed:
-            self._state = STATE_ALARM_DISARMED
-        elif self._site.is_away:
-            self._state = STATE_ALARM_ARMED_AWAY
-        elif self._site.is_home:
-            self._state = STATE_ALARM_ARMED_HOME
-        else:
-            self._state = None
-        return self._state
-
-    # FIXME: change to async def alarm_disarm(self, code=None)!!!
-    def alarm_disarm(self, code=None):
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        self._site.disarm()
+        if await self._site.async_disarm():
+            self._state = STATE_ALARM_DISARMING
+            self._data_from_fetch = False
+        else:
+            LOG.warning(f"Could not disam ADT alarm for site {self._site.id}")
 
-    def alarm_arm_home(self, code=None):
+    async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        self._site.arm_home()
+        if await self._site.async_arm_home():
+            self._state = STATE_ALARM_ARMING
+            self._data_from_fetch = False
+        else:
+            LOG.warning(f"Could not arm home ADT alarm for site {self._site.id}")
 
-    def alarm_arm_away(self, code=None):
+    async def async_alarm_arm_away(self):
         """Send arm away command."""
-        self._site.arm_away()
+        if await self._site.async_arm_away():
+            self._state = STATE_ALARM_ARMING
+            self._data_from_fetch = False
+        else:
+            LOG.warning(f"Could not arm away ADT alarm for site {self._site.id}")
+
+    # Pulse can arm away or home with bypass
+    async def async_alarm_arm_custom_bypass(self) -> None:
+        """Send force arm command."""
+        if await self._site.async_arm_away(True):
+            self._state = STATE_ALARM_ARMING
+            self._data_from_fetch = False
+        else:
+            LOG.warning(f"Could not force arm ADT alarm for site {self._site.id}")
 
     @property
     def name(self) -> str:
@@ -102,7 +110,8 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """Return the state attributes."""
         return {
             # FIXME: add timestamp for this state change?
-            "site_id": self._site.id
+            "site_id": self._site.id,
+            "site_name": self._site.name,
         }
 
     @property
@@ -119,22 +128,25 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """Return code format.
 
         Returns:
-            _None (not implmented)
+            None (not implmented)
         """
         return None
 
-    def _adt_updated_callback(self) -> None:
-        # LOG.warning("ADT Pulse data updated...actually update state!")
+    @property
+    def assumed_state(self) -> bool:
+        """Return if state has been fetched or assumed.
 
-        # FIXME: is this even needed?  can we disable this sensor from polling,
-        # since the __init__ update mechanism updates this?
+        Returns:
+            bool: True means data assumed
+        """
+        return self._data_from_fetch
 
-        # notify HASS this entity has been updated
-        self.async_schedule_update_ha_state()
-
-    async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
-        # register callback to learn ADT Pulse data has been updated
-        async_dispatcher_connect(
-            self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        LOG.debug(
+            f"Updating Pulse alarm from {self._state} "
+            f"to {ALARM_MAP[self._site.status]} for site {self._site.id}"
         )
+        self._state = ALARM_MAP[self._site.status]
+        self._data_from_fetch = True
+        super()._handle_coordinator_update()

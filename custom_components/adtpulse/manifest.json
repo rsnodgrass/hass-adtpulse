@@ -1,6 +1,7 @@
 {
     "domain": "adtpulse",
     "name": "ADT Pulse",
+    "config_flow": true,
     "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
     "version": "0.1.11",

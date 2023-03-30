@@ -88,16 +88,12 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
 
 async def async_connect_or_timeout(hass, adtpulse):
     #Need to add appropriate logic
-    """userId = None
-    try:
-        userId = adtpulse._userId
-        if userId != None or "":
-            _LOGGER.info("Success Connecting to ADTPulse")
-    except Exception as err:
-        _LOGGER.error("Error connecting to ADTPulse")
-        raise CannotConnect from err"""
-    _LOGGER.info("Future check if it connects")
+    if adtpulse:
+        _LOGGER.info("Valid Object continuing")
 
+    else:
+        _LOGGER.error("Error with ADT object (probably a connection issue)")
+        raise CannotConnect
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""

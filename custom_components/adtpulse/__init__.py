@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
+from homeassistant.helpers.check_config import ConfigType
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyadtpulse import PyADTPulse
 from pyadtpulse.site import ADTPulseSite
@@ -55,6 +56,19 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Start up the ADT Pulse HA integration.
+
+    Args:
+        hass (HomeAssistant): Home Assistant Object
+        config (ConfigType): Configuration type
+
+    Returns:
+        bool: True if successful
+    """
+    return True
 
 
 async def async_setup_entry(

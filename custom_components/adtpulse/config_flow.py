@@ -6,7 +6,7 @@ from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
 
 from . import CannotConnect, async_connect_or_timeout
-from .const import (  # pylint:disable=unused-import
+from .const import ( 
     CONF_PASSWORD,
     CONF_FINGERPRINT,
     CONF_USERNAME,
@@ -87,6 +87,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
         )
 
 async def async_connect_or_timeout(hass, adtpulse):
+    #Need to add appropriate logic
     """userId = None
     try:
         userId = adtpulse._userId

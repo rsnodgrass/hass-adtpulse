@@ -1,6 +1,6 @@
 # ADT Pulse for Home Assistant
 
-A native Home Assistant component to enable integration with [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as current status of all sensors (motion, door/window).
+Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) security systems for both alarming/disarming, as well as sensor status (motion, door, window, etc).
 
 ![beta_badge](https://img.shields.io/badge/maturity-Beta-yellow.png)
 ![release_badge](https://img.shields.io/github/v/release/rsnodgrass/hass-adtpulse.svg)

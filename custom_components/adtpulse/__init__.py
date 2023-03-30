@@ -75,8 +75,8 @@ async def async_setup_entry(
     hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> bool:
     """Initialize the ADTPulse integration."""
-    conf = config.data[ADTPULSE_DOMAIN]
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
+    conf = config.data[ADTPULSE_DOMAIN]
     username = conf.get(CONF_USERNAME)
     password = conf.get(CONF_PASSWORD)
     fingerprint = conf.get(CONF_DEVICE_ID)

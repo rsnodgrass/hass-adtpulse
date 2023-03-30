@@ -1,13 +1,11 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 import logging
-from typing import Dict
+from typing import Dict, Coroutine, Optional
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
-    SUPPORT_ALARM_ARM_AWAY,
-    SUPPORT_ALARM_ARM_HOME,
-    SUPPORT_ALARM_ARM_CUSTOM_BYPASS,
+    AlarmControlPanelEntityFeature,
 )
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
@@ -50,8 +48,16 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """Initialize the alarm control panel."""
         name = f"ADT {site.name}"
         self._site = site
-        self._data_from_fetch = True
         super().__init__(coordinator, name, ALARM_MAP[self._site.status])
+
+    @property
+    def status(self) -> str:
+        """Return the alarm status.
+
+        Returns:
+            str: the status
+        """
+        return ALARM_MAP[self._site.status]
 
     @property
     def icon(self) -> str:
@@ -62,43 +68,37 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     def supported_features(self) -> int:
         """Return the list of supported features."""
         return (
-            SUPPORT_ALARM_ARM_HOME
-            | SUPPORT_ALARM_ARM_AWAY
-            | SUPPORT_ALARM_ARM_CUSTOM_BYPASS
+            AlarmControlPanelEntityFeature.ARM_AWAY
+            | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+            | AlarmControlPanelEntityFeature.ARM_HOME
         )
+
+    async def _perform_alarm_action(
+        self, arm_disarm_func: Coroutine[Optional[bool], None, bool], action: str
+    ) -> None:
+        if await arm_disarm_func:
+            await self.async_update_ha_state()
+        else:
+            LOG.warning(f"Could not {action} ADT Pulse alarm")
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        if await self._site.async_disarm():
-            self._state = STATE_ALARM_DISARMING
-            self._data_from_fetch = False
-        else:
-            LOG.warning(f"Could not disam ADT alarm for site {self._site.id}")
+        await self._perform_alarm_action(self._site.async_disarm(), "disarm")
 
     async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        if await self._site.async_arm_home():
-            self._state = STATE_ALARM_ARMING
-            self._data_from_fetch = False
-        else:
-            LOG.warning(f"Could not arm home ADT alarm for site {self._site.id}")
+        await self._perform_alarm_action(self._site.async_arm_home(), "arm home")
 
     async def async_alarm_arm_away(self):
         """Send arm away command."""
-        if await self._site.async_arm_away():
-            self._state = STATE_ALARM_ARMING
-            self._data_from_fetch = False
-        else:
-            LOG.warning(f"Could not arm away ADT alarm for site {self._site.id}")
+        await self._perform_alarm_action(self._site.async_arm_away(), "arm away")
 
     # Pulse can arm away or home with bypass
     async def async_alarm_arm_custom_bypass(self) -> None:
         """Send force arm command."""
-        if await self._site.async_arm_away(True):
-            self._state = STATE_ALARM_ARMING
-            self._data_from_fetch = False
-        else:
-            LOG.warning(f"Could not force arm ADT alarm for site {self._site.id}")
+        await self._perform_alarm_action(
+            self._site.async_arm_away(force_arm=True), "force arm"
+        )
 
     @property
     def name(self) -> str:
@@ -132,21 +132,10 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """
         return None
 
-    @property
-    def assumed_state(self) -> bool:
-        """Return if state has been fetched or assumed.
-
-        Returns:
-            bool: True means data assumed
-        """
-        return self._data_from_fetch
-
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Updating Pulse alarm from {self._state} "
-            f"to {ALARM_MAP[self._site.status]} for site {self._site.id}"
+            f"Updating Pulse alarm to {ALARM_MAP[self._site.status]} "
+            f"for site {self._site.id}"
         )
-        self._state = ALARM_MAP[self._site.status]
-        self._data_from_fetch = True
         super()._handle_coordinator_update()

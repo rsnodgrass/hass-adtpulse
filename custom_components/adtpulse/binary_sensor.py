@@ -55,23 +55,14 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         """Initialize the binary_sensor."""
         self._site = site
         self._zone_id = zone_id
-
-        if self._site.zones_as_dict is None:
-            raise RuntimeError("ADT pulse returned null zone")
-        my_zone = self._site.zones_as_dict[zone_id]
-        self._determine_device_class(my_zone)
+        my_zone = self._get_my_zone()
         super().__init__(coordinator, my_zone.name, my_zone.state)
-        self._update_entity_data()
-        self._id = my_zone.id_
         LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
-    def _update_entity_data(self) -> None:
+    def _get_my_zone(self) -> ADTPulseZoneData:
         if self._site.zones_as_dict is None:
-            raise RuntimeError(f"No Pulse zones detected updating sensor {self._name}")
-        my_zone = self._site.zones_as_dict[self._zone_id]
-        self._status = my_zone.status
-        self._last_activity_timestamp = my_zone.last_activity_timestamp
-        self._set_icon()
+            raise RuntimeError("ADT pulse returned null zone")
+        return self._site.zones_as_dict[self._zone_id]
 
     # FIXME: this should be a BinarySensorEntityDescription
     def _determine_device_class(self, zone_data: ADTPulseZoneData) -> None:
@@ -109,7 +100,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @property
     def id(self) -> str:
         """Return the id of the ADT sensor."""
-        return self._id
+        return self._get_my_zone().id_
 
     @property
     def unique_id(self) -> str:
@@ -162,7 +153,10 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
-        return not self._status == STATE_OK
+        zones = self._site.zones_as_dict
+        if zones is None:
+            return False
+        return not zones[self._zone_id] == STATE_OK
 
     @property
     def device_class(self) -> Optional[str]:
@@ -172,11 +166,14 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @property
     def last_activity(self) -> float:
         """Return the timestamp for the last sensor activity."""
-        return self._last_activity_timestamp
+        return self._get_my_zone().last_activity_timestamp
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        self._update_entity_data()
+        LOG.debug(
+            f"Setting ADT Pulse zone {self.id}, to {self.state} "
+            f"at timestamp {self.last_activity}"
+        )
         return super()._handle_coordinator_update()
 
 
@@ -192,10 +189,11 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             service (PyADTPulse): API Pulse connection object
         """
         self._service = service
-        self._status = service.gateway_online
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
         super().__init__(
-            coordinator, f"ADT Pulse Gateway for {self._service.username}", self._status
+            coordinator,
+            f"ADT Pulse Gateway for {self._service.username}",
+            self._service.gateway_online,
         )
 
     @property
@@ -205,7 +203,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         Returns:
             bool: True if online
         """
-        return self._status
+        return self._service.gateway_online
 
     # FIXME: Gateways only support one site?
     @property
@@ -219,6 +217,5 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        LOG.warning(f"Setting Pulse Gateway status to {self._service.gateway_online}")
-        self._status = self._service.gateway_online
+        LOG.debug(f"Setting Pulse Gateway status to {self._service.gateway_online}")
         return super()._handle_coordinator_update()

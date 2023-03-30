@@ -3,22 +3,42 @@ ADT Pulse for Home Assistant
 See https://github.com/rsnodgrass/hass-adtpulse
 """
 import logging
+import asyncio
 
 import time
 from datetime import timedelta
 import voluptuous as vol
 from requests.exceptions import HTTPError, ConnectTimeout
 
-from homeassistant.core import callback
+from pyadtpulse import PyADTPulse
+
 from homeassistant.helpers import config_validation as cv, discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
 from homeassistant.helpers.event import track_time_interval
 from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_DEVICE_ID
 
-LOG = logging.getLogger(__name__)
 
-ADTPULSE_DOMAIN = 'adtpulse'
+from homeassistant import exceptions
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import discovery
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatcher_send
+from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.event import track_time_interval
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
+
+from .const import (  # pylint:disable=unused-import
+    ADTPULSE_DOMAIN,
+)
+
+LOG = logging.getLogger(__name__)
 
 ADTPULSE_SERVICE = 'adtpulse_service'
 
@@ -43,66 +63,85 @@ CONFIG_SCHEMA = vol.Schema({
             vol.Required(CONF_PASSWORD): cv.string,
             vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
             vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string,
-            vol.Optional(CONF_DEVICE_ID, default=''): cv.string
+            vol.Required(CONF_DEVICE_ID, default=''): cv.string
         })
     }, extra=vol.ALLOW_EXTRA
 )
 
-def setup(hass, config):
-    """Initialize the ADTPulse integration"""
-    conf = config[ADTPULSE_DOMAIN]
 
-    username = conf.get(CONF_USERNAME)
-    password = conf.get(CONF_PASSWORD)
-    fingerprint = conf.get(CONF_DEVICE_ID)
-
-    try:
-        # share reference to the service with other components/platforms running within HASS
-        from pyadtpulse import PyADTPulse
-        service = PyADTPulse(username, password, fingerprint)
-
-        host = conf.get(CONF_HOST)
-        if host:
-            LOG.debug("Using ADT Pulse API host %s", host)
-            service.set_service_host(host)
-
-        hass.data[ADTPULSE_SERVICE] = service
-
-    except (ConnectTimeout, HTTPError) as ex:
-        LOG.error("Unable to connect to ADT Pulse: %s", str(ex))
-        hass.components.persistent_notification.create(
-            f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",
-            title=NOTIFICATION_TITLE,
-            notification_id=NOTIFICATION_ID,
-        )
-        return False
-
-    def refresh_adtpulse_data(event_time):
-        """Call ADTPulse service to refresh latest data"""
-        LOG.debug("Checking ADT Pulse cloud service for updates")
-
-        adtpulse_service = hass.data[ADTPULSE_SERVICE]
-        if adtpulse_service.updates_exist:
-            adtpulse_service.update()
-
-            # notify all listeners (alarm and sensors) that they may have new data
-            dispatcher_send(hass, SIGNAL_ADTPULSE_UPDATED)
-
-    # subscribe for notifications that an update should be triggered
-    hass.services.register(ADTPULSE_DOMAIN, 'update', refresh_adtpulse_data)
-
-    # automatically update ADTPulse data (samples) on the scan interval
-    scan_interval = timedelta(seconds = conf.get(CONF_SCAN_INTERVAL))
-    track_time_interval(hass, refresh_adtpulse_data, scan_interval)
-
-    for platform in SUPPORTED_PLATFORMS:
-        discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)
-
+async def async_setup(hass: HomeAssistant, config: dict):
+    hass.data.setdefault(ADTPULSE_DOMAIN, {})
     return True
 
 
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data["username"], entry.data["password"], entry.data["fingerprint"])
+    hass.data[ADTPULSE_DOMAIN][entry.entry_id] = adtpulse
+
+    coordinator = ADTPulseDataUpdateCoordinator(hass, adtpulse)
+    await coordinator.async_refresh()
+
+    if not coordinator.last_update_success:
+        raise ConfigEntryNotReady
+
+    hass.data.setdefault(ADTPULSE_DOMAIN, {})
+    hass.data[ADTPULSE_DOMAIN][entry.entry_id] = coordinator
+
+    # This creates each HA object for each platform your device requires.
+    # It's done by calling the `async_setup_entry` function in each platform module.
+    for component in SUPPORTED_PLATFORMS:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(entry, component)
+        )
+
+    return True
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    # This is called when an entry/configured device is to be removed. The class
+    # needs to unload itself, and remove callbacks. See the classes for further
+    # details
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in SUPPORTED_PLATFORMS
+            ]
+        )
+    )
+    if unload_ok:
+        hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
+
+class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
+    """Class to manage the refresh of the adtpulse data api"""
+
+    def __init__(self, hass, adtpulse):
+        self._adtpulse = adtpulse
+        self._hass = hass
+        super().__init__(
+            hass,
+            LOG,
+            name=ADTPULSE_DOMAIN,
+        )
+
+    @property
+    def adtpulse(self):
+        return self._adtpulse
+
+
+    async def _async_update_data(self):
+        """Update data via library."""
+        try:
+            await self._hass.async_add_executor_job(self.adtpulse.update)
+        except Exception as error:
+            LOG.error("Error updating ADT Pulse data\n{error}")
+            raise UpdateFailed(error) from error
+        return self.adtpulse
+
 class ADTPulseEntity(Entity):
-    """Base Entity class for ADT Pulse devices"""
+    #Base Entity class for ADT Pulse devices
 
     def __init__(self, hass, service, name):
         self.hass = hass
@@ -114,7 +153,7 @@ class ADTPulseEntity(Entity):
         
     @property
     def name(self):
-        """Return the display name for this sensor"""
+        #Return the display name for this sensor
         return self._name
 
     @property
@@ -127,17 +166,31 @@ class ADTPulseEntity(Entity):
 
     @property
     def extra_state_attributes(self):
-        """Return the device state attributes."""
+        #Return the device state attributes.
         return self._attrs
 
     async def async_added_to_hass(self):
-        """Register callbacks."""
+        #Register callbacks.
         # register callback when cached ADTPulse data has been updated
         async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
 
     @callback
     def _update_callback(self):
-        """Call update method."""
+        #Call update method.
 
         # inform HASS that ADT Pulse data for this entity has been updated
         self.async_schedule_update_ha_state()
+
+async def async_connect_or_timeout(hass, adtpulse):
+    userId = None
+    try:
+        userId = adtpulse._userId
+        if userId != None or "":
+            LOG.info("Success Connecting to ADTPulse")
+    except Exception as err:
+        LOG.error("Error connecting to ADTPulse")
+        raise CannotConnect from err
+
+
+class CannotConnect(exceptions.HomeAssistantError):
+    """Error to indicate we cannot connect."""

@@ -45,12 +45,10 @@ def setup_platform(hass, config, add_entities_callback, discovery_info=None):
     if not adt_service.sites:
         LOG.error("ADT's Pulse service returned NO sites: %s", adt_service)
         return
-
     for site in adt_service.sites:
         if not site.zones:
             LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s ... %s", adt_service.sites, adt_service)
             continue
-            
         for zone in site.zones:
             sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
 
@@ -67,8 +65,7 @@ class ADTPulseSensor(BinarySensorEntity):
         self.hass = hass
         self._adt_service = adt_service
         self._site = site
-
-        self._zone_id = zone_details.get('id')
+        self._zone_id = zone_details.get('id_')
         self._name = zone_details.get('name')
         self._update_zone_status(zone_details)
 

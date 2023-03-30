@@ -18,8 +18,11 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             hass (HomeAssistant): hass object
             pulse_site (ADTPulseSite): ADT Pulse site
         """
+        LOG.debug(f"{ADTPULSE_DOMAIN}: creating update coordinator")
         super().__init__(hass, LOG, name=ADTPULSE_DOMAIN)
         self._service = pulse_service
 
     async def _async_update_data(self) -> None:
+        LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator waiting for updates")
         await self._service.wait_for_update()
+        LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator received update notification")

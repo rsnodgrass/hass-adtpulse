@@ -72,7 +72,7 @@ async def async_setup_entry(
 
     host = conf.get(CONF_HOST)
     if host:
-        LOG.debug("Using ADT Pulse API host %s", host)
+        LOG.debug(f"Using ADT Pulse API host {host}")
     service = PyADTPulse(
         username,
         password,
@@ -85,6 +85,7 @@ async def async_setup_entry(
     hass.data[ADTPULSE_SERVICE] = service
     try:
         if not await service.async_login():
+            LOG.error(f"{ADTPULSE_DOMAIN} could not log in as user {username}")
             raise ConfigEntryAuthFailed(
                 f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
             )

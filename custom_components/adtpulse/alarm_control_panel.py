@@ -60,7 +60,7 @@ async def async_setup_platform(
         return
 
     if not adt_service.sites:
-        LOG.error("ADT Pulse service failed to return sites: %s", adt_service)
+        LOG.error(f"ADT Pulse service failed to return sites: {adt_service}")
         return
 
     for site in adt_service.sites:
@@ -73,6 +73,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
+        LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.name}")
         name = f"ADT {site.name}"
         self._site = site
         super().__init__(coordinator, name, ALARM_MAP[self._site.status])
@@ -103,6 +104,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     async def _perform_alarm_action(
         self, arm_disarm_func: Coroutine[Optional[bool], None, bool], action: str
     ) -> None:
+        LOG.debug(f"{ADTPULSE_DOMAIN}: Setting Alarm to  {action}")
         if await arm_disarm_func:
             await self.async_update_ha_state()
         else:

@@ -86,11 +86,12 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         zone_id: int,
     ):
         """Initialize the binary_sensor."""
+        LOG.debug(f"{ADTPULSE_DOMAIN}: adding zone sensor for site {site.id}")
         self._site = site
         self._zone_id = zone_id
         my_zone = self._get_my_zone()
         super().__init__(coordinator, my_zone.name, my_zone.state)
-        LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
+        LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     def _get_my_zone(self) -> ADTPulseZoneData:
         if self._site.zones_as_dict is None:
@@ -221,6 +222,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
                 HASS data update coordinator
             service (PyADTPulse): API Pulse connection object
         """
+        LOG.debug(f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site")
         self._service = service
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
         super().__init__(

@@ -4,11 +4,11 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-import logging
-from typing import Dict, List, Optional
+from typing import List
 
 import voluptuous as vol
 from aiohttp.client_exceptions import ClientConnectionError
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICE_ID,
     CONF_HOST,
@@ -16,38 +16,22 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import discovery
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pyadtpulse import PyADTPulse
 from pyadtpulse.site import ADTPulseSite
 
-from custom_components.adtpulse.alarm_control_panel import ADTPulseAlarm
+from .alarm_control_panel import ADTPulseAlarm
 
 from .binary_sensor import ADTPulseGatewaySensor, ADTPulseZoneSensor
+from .const import ADTPULSE_DOMAIN, ADTPULSE_SERVICE, LOG, ADT_PULSE_COORDINATOR
 from .coordinator import ADTPulseDataUpdateCoordinator
-
-LOG = logging.getLogger(__name__)
-
-ADTPULSE_DOMAIN = "adtpulse"
-
-ADTPULSE_SERVICE = "adtpulse_service"
-
-SIGNAL_ADTPULSE_UPDATED = "adtpulse_updated"
-
-EVENT_ALARM = "adtpulse_alarm"
-EVENT_ALARM_END = "adtpulse_alarm_end"
 
 NOTIFICATION_TITLE = "ADT Pulse"
 NOTIFICATION_ID = "adtpulse_notification"
-
-ATTR_SITE_ID = "site_id"
-ATTR_DEVICE_ID = "device_id"
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
@@ -74,11 +58,11 @@ CONFIG_SCHEMA = vol.Schema(
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config: ConfigType, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> bool:
     """Initialize the ADTPulse integration."""
-    conf = config[ADTPULSE_DOMAIN]
-
+    conf = config.data[ADTPULSE_DOMAIN]
+    hass.data.setdefault(ADTPULSE_DOMAIN, {})
     username = conf.get(CONF_USERNAME)
     password = conf.get(CONF_PASSWORD)
     fingerprint = conf.get(CONF_DEVICE_ID)
@@ -124,6 +108,7 @@ async def async_setup_entry(
     # login and gateway
     for site in site_list:
         coordinator = ADTPulseDataUpdateCoordinator(hass, service)
+        hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"] = coordinator
         async_add_entities([ADTPulseAlarm(coordinator, site)])
         async_add_entities([ADTPulseGatewaySensor(coordinator, service)])
         zone_list = site.zones_as_dict
@@ -139,68 +124,9 @@ async def async_setup_entry(
             ADTPulseZoneSensor(coordinator, site, zone) for zone in zone_list.keys()
         )
 
-    # FIXME: use async task -> forward entry?
     for platform in SUPPORTED_PLATFORMS:
-        discovery.load_platform(hass, platform, ADTPULSE_DOMAIN, {}, config)
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(config, platform)
+        )
 
     return True
-
-
-class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
-    """Base Entity class for ADT Pulse devices."""
-
-    def __init__(
-        self,
-        coordinator: ADTPulseDataUpdateCoordinator,
-        name: str,
-        initial_state: Optional[str | bool],
-    ):
-        """Initialize an ADTPulse entity.
-
-        Args:
-            coordinator (ADTPulseDataUpdateCoordinator): update coordinator to use
-            name (str): entity name
-            state (str): inital state
-        """
-        self._name = name
-
-        self._state = initial_state
-        self._attrs: Dict = {}
-        super().__init__(coordinator)
-
-    @property
-    def name(self) -> str:
-        """Return the display name for this sensor."""
-        return self._name
-
-    @property
-    def icon(self) -> str:
-        """Return the mdi icon.
-
-        Returns:
-            str: mdi icon name
-        """
-        return "mdi:gauge"
-
-    @property
-    def state(self) -> Optional[str | bool]:
-        """Return the entity state.
-
-        Returns:
-            Optional[str|bool]: the entity state
-        """
-        return self._state
-
-    @property
-    def extra_state_attributes(self) -> Dict:
-        """Return the device state attributes."""
-        return self._attrs
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Call update method."""
-        LOG.debug(
-            f"Scheduling ADT Pulse entity {self._name} " f"update to {self._state}"
-        )
-        # inform HASS that ADT Pulse data for this entity has been updated
-        self.async_schedule_update_ha_state()

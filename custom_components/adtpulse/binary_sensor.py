@@ -6,26 +6,25 @@ automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
 from __future__ import annotations
-import logging
+
 from typing import Optional
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorEntity,
     BinarySensorDeviceClass,
+    BinarySensorEntity,
 )
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.config import ConfigType
+from homeassistant.helpers.discovery import DiscoveryInfoType
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import STATE_OK
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from custom_components.adtpulse.coordinator import ADTPulseDataUpdateCoordinator
-
-from . import ADTPulseEntity
-
-LOG = logging.getLogger(__name__)
-
-ADTPULSE_DATA = "adtpulse"
+from .base_entity import ADTPulseEntity
+from .const import ADTPULSE_DOMAIN, LOG, ADTPULSE_SERVICE, ADT_PULSE_COORDINATOR
+from .coordinator import ADTPulseDataUpdateCoordinator
 
 # FIXME: should be BinarySensorEntityDescription?
 ADT_DEVICE_CLASS_TAG_MAP = {
@@ -38,6 +37,40 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "flood": BinarySensorDeviceClass.MOISTURE,
     "garage": BinarySensorDeviceClass.GARAGE_DOOR,  # FIXME: need ADT type
 }
+
+
+async def async_setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    async_add_entities: AddEntitiesCallback,
+    discovery_info: Optional[DiscoveryInfoType] = None,
+) -> None:
+    """Set up sensors for an ADT Pulse installation."""
+    adt_service: Optional[PyADTPulse] = hass.data[ADTPULSE_DOMAIN].get(ADTPULSE_SERVICE)
+    if not adt_service:
+        LOG.error("ADT Pulse service not initialized, cannot create sensors")
+        return
+
+    if not adt_service.sites:
+        LOG.error(f"ADT's Pulse service returned NO sites: {adt_service}")
+        return
+
+    for site in adt_service.sites:
+        if not isinstance(site, ADTPulseSite):
+            raise RuntimeError("pyadtpulse returned invalid site object type")
+        if not site.zones_as_dict:
+            LOG.error(
+                "ADT's Pulse service returned NO zones (sensors) for site: "
+                f"{adt_service.sites} ... {adt_service}"
+            )
+            continue
+        coordinator = hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"]
+        entities = [
+            ADTPulseZoneSensor(coordinator, site, zone_id)
+            for zone_id in site.zones_as_dict.keys()
+        ]
+        async_add_entities(entities)
+        async_add_entities([ADTPulseGatewaySensor(coordinator, adt_service)])
 
 
 class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):

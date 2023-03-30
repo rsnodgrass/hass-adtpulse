@@ -1,33 +1,39 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
+
 import logging
-from typing import Dict, Coroutine, Optional
+from typing import Coroutine, Dict, Optional
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
     AlarmControlPanelEntityFeature,
 )
+from homeassistant.core import HomeAssistant
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMED_HOME,
-    STATE_ALARM_DISARMED,
     STATE_ALARM_ARMING,
+    STATE_ALARM_DISARMED,
     STATE_ALARM_DISARMING,
 )
-
 from homeassistant.helpers.update_coordinator import callback
-from custom_components.adtpulse.coordinator import ADTPulseDataUpdateCoordinator
-
-from . import ADTPulseEntity
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.discovery import DiscoveryInfoType
+from homeassistant.config import ConfigType
 from pyadtpulse.site import (
-    ADTPulseSite,
-    ADT_ALARM_UNKNOWN,
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
     ADT_ALARM_DISARMING,
     ADT_ALARM_HOME,
     ADT_ALARM_OFF,
+    ADT_ALARM_UNKNOWN,
+    ADTPulseSite,
 )
+
+from .const import ADT_PULSE_COORDINATOR, ADTPULSE_DOMAIN, ADTPULSE_SERVICE
+
+from .base_entity import ADTPulseEntity
+from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = logging.getLogger(__name__)
 
@@ -39,6 +45,27 @@ ALARM_MAP = {
     ADT_ALARM_OFF: STATE_ALARM_DISARMED,
     ADT_ALARM_UNKNOWN: None,
 }
+
+
+async def async_setup_platform(
+    hass: HomeAssistant,
+    config: ConfigType,
+    async_add_entities: AddEntitiesCallback,
+    discovery_info: DiscoveryInfoType = {},
+):
+    """Set up an alarm control panel for ADT Pulse."""
+    adt_service = hass.data[ADTPULSE_DOMAIN][ADTPULSE_SERVICE]
+    if not adt_service:
+        LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
+        return
+
+    if not adt_service.sites:
+        LOG.error("ADT Pulse service failed to return sites: %s", adt_service)
+        return
+
+    for site in adt_service.sites:
+        coordinator = hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"]
+        async_add_entities([ADTPulseAlarm(coordinator, site)])
 
 
 class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):

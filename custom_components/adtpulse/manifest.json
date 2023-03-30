@@ -7,7 +7,8 @@
     "requirements": [
 	"pyadtpulse>=1.0.0",
 	"beautifulsoup4>=4.9.0",
-	"backoff>=1.10.0"
+	"backoff>=1.10.0",
+    "uvloop>=0.17.0"
     ],
     "dependencies": [],
     "codeowners": [],

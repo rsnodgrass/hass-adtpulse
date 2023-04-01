@@ -11,7 +11,14 @@ from .const import (
     CONF_FINGERPRINT,
     CONF_USERNAME,
     ADTPULSE_DOMAIN,
+    DEFAULT_SCAN_INTERVAL,
+    ADTPULSE_URL_US,
+    ADTPULSE_URL_CA,
+    CONF_HOSTNAME,
+    CONF_POLLING,
 )
+
+from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS, ADT_DEFAULT_POLL_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,20 +38,31 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_FINGERPRINT): str,
+        vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In([ADTPULSE_URL_US, ADTPULSE_URL_CA]),
+        vol.Required(CONF_POLLING, default=DEFAULT_SCAN_INTERVAL): str,
     }
 )
 
-
 async def validate_input(hass: core.HomeAssistant, data: dict):
     try:
-        
-        adtpulse = await hass.async_add_executor_job(PyADTPulse, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_FINGERPRINT])
-    except:
-        _LOGGER.error("ERROR VALIDATING INPUT")
+        polling = 0
+        try:
+            polling = float(data[CONF_POLLING])
+            if polling <= 0:
+                _LOGGER.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+                raise InvalidPolling
+        except Exception as e:
+            _LOGGER.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+            _LOGGER.debug(e)
+            raise InvalidPolling
+        adtpulse = await hass.async_add_executor_job(PyADTPulse, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_FINGERPRINT], data[CONF_HOSTNAME], ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
+    except Exception as e:
+        _LOGGER.error(f"ADT Pulse: Cannot Connect. Please check your username, password, etc. Error was: {e}")
+        raise CannotConnect
 
     info = await async_connect_or_timeout(hass, adtpulse)
 
-    return {"title": data[CONF_USERNAME]}
+    return {"title": "ADT" + data[CONF_USERNAME]}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
@@ -75,8 +93,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
-
                 return self.async_create_entry(title=info["title"], data=user_input)
+            except InvalidPolling:
+                errors["base"] = "invalid_polling"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -98,6 +119,10 @@ async def async_connect_or_timeout(hass, adtpulse):
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
 
+class InvalidPolling(exceptions.HomeAssistantError):
+    """Error to indicate polling is incorrect value."""
+
+
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options."""
 
@@ -112,6 +137,16 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        CONF_POLLING_RATE,
+                        default=self.config_entry.options.get(
+                            CONF_POLLING_RATE, DEFAULT_SCAN_INTERVAL
+                        ),
+                    ): str,
+                }
+            ),
         )
 
 

@@ -5,11 +5,15 @@
         "data": {
           "username": "username",
           "password": "password",
-          "fingerprint": "fingerprint"
+          "fingerprint": "fingerprint",
+          "hostname": "hostname",
+          "polling": "polling"
         }
       }
     },
     "error": {
+      "invalid_polling": "Invalid Polling Value. Please select a positive integer.",
+      "cannot_connect": "Cannot Connect. Please validate username and password",
       "unknown": "Unkown Error"
     },
     "abort": {

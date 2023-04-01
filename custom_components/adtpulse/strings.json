@@ -5,11 +5,15 @@
         "data": {
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
-          "fingerprint": "[%key:common::config_flow::data::fingerprint%]"
+          "fingerprint": "[%key:common::config_flow::data::fingerprint%]",
+          "hostname": "[%key:common::config_flow::data::hostname%]",
+          "polling": "[%key:common::config_flow::data::polling%]"
         }
       }
     },
     "error": {
+      "invalid_polling": "[%key:common::config_flow::error::invalid_polling%]",
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
     "abort": {

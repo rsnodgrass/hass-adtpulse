@@ -1,15 +1,17 @@
 {
     "domain": "adtpulse",
     "name": "ADT Pulse",
+    "config_flow": true,
     "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
-    "version": "0.1.10",
+    "version": "0.1.11",
     "requirements": [
-	"pyadtpulse>=0.2.10",
+	"pyadtpulse>=1.0.0",
 	"beautifulsoup4>=4.9.0",
-	"backoff>=1.10.0"
+	"backoff>=1.10.0",
+    "uvloop>=0.17.0"
     ],
     "dependencies": [],
-    "codeowners": ["@rsnodgrass"],
+    "codeowners": [],
     "iot_class": "cloud_polling"
 }

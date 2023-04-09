@@ -1,19 +1,13 @@
-import logging
-
+"""HASS ADT Pulse Config Flow."""
+from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
+from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICE_ID
 from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
+from typing import Dict
 
-from . import CannotConnect, async_connect_or_timeout
-from .const import ( 
-    CONF_PASSWORD,
-    CONF_FINGERPRINT,
-    CONF_USERNAME,
-    ADTPULSE_DOMAIN,
-)
-
-_LOGGER = logging.getLogger(__name__)
+from .const import ADTPULSE_DOMAIN, LOG
 
 # This is the schema that used to display the UI to the user. This simple
 # schema has a single required host field, but it could include a number of fields
@@ -30,21 +24,37 @@ DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_FINGERPRINT): str,
+        vol.Required(CONF_DEVICE_ID): str,
     }
 )
 
 
-async def validate_input(hass: core.HomeAssistant, data: dict):
+async def validate_input(hass: core.HomeAssistant, data: Dict) -> Dict[str, str | bool]:
+    """Validates form input.
+
+    Args:
+        hass (core.HomeAssistant): hass object
+        data (Dict): voluptuous Schema
+
+    Raises:
+        CannotConnect: Cannot connect to ADT Pulse site
+
+    Returns:
+        Dict[str, str | bool]: "title" : username used to validate
+                               "login result": True if login succeeded
+    """
+    result = False
+    adtpulse = PyADTPulse(
+        data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_DEVICE_ID], do_login=False
+    )
     try:
-        
-        adtpulse = await hass.async_add_executor_job(PyADTPulse, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_FINGERPRINT])
-    except:
-        _LOGGER.error("ERROR VALIDATING INPUT")
-
-    info = await async_connect_or_timeout(hass, adtpulse)
-
-    return {"title": data[CONF_USERNAME]}
+        result = await adtpulse.async_login()
+    except Exception:
+        LOG.error("ERROR VALIDATING INPUT")
+    if not result:
+        LOG.error("Could not validate login info for ADT Pulse")
+        raise CannotConnect("Could not validate ADT Pulse login info")
+    return {"title": data[CONF_USERNAME], "login result": result}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
@@ -55,7 +65,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
     # This tells HA if it should be asking for updates, or it'll be notified of updates
     # automatically. This example uses PUSH, as the dummy hub will notify HA of
     # changes.
-    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
+    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
 
     @staticmethod
     @callback
@@ -75,28 +85,27 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
-
-                return self.async_create_entry(title=info["title"], data=user_input)
+                if info["login result"]:
+                    return self.async_create_entry(
+                        title=info["title"],  # type:ignore
+                        data=user_input,
+                    )
+                else:
+                    errors["base"] = "Cannot validate credentials"
             except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
+                LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
-        # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
+        # If there is no user input or there were errors, show the form again,
+        # including any errors that were found with the input.
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
 
-async def async_connect_or_timeout(hass, adtpulse):
-    #Need to add appropriate logic
-    if adtpulse:
-        _LOGGER.info("Valid Object continuing")
-
-    else:
-        _LOGGER.error("Error with ADT object (probably a connection issue)")
-        raise CannotConnect
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options."""
@@ -113,4 +122,3 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="init",
         )
-

@@ -4,26 +4,25 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-
+from typing import Optional, Any, Mapping
 import voluptuous as vol
 from aiohttp.client_exceptions import ClientConnectionError
 from asyncio import gather
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import (
     CONF_DEVICE_ID,
     CONF_HOST,
     CONF_PASSWORD,
-    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.check_config import ConfigType
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyadtpulse import PyADTPulse
 
+from .config_flow import validate_input, CannotConnect, InvalidAuth
 from .const import ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -32,17 +31,12 @@ NOTIFICATION_ID = "adtpulse_notification"
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
-DEFAULT_SCAN_INTERVAL = 60
-
 CONFIG_SCHEMA = vol.Schema(
     {
         ADTPULSE_DOMAIN: vol.Schema(
             {
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(
-                    CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL  # type: ignore
-                ): cv.positive_int,
                 vol.Optional(
                     CONF_HOST, default="portal.adtpulse.com"  # type: ignore
                 ): cv.string,
@@ -52,6 +46,15 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA,
 )
+
+
+@callback
+def _async_configured_usernames(hass: HomeAssistant) -> Optional[ConfigEntry]:
+    """Return a set of configured Pulse usernames."""
+    for entry in hass.config_entries.async_entries(ADTPULSE_DOMAIN):
+        if CONF_USERNAME in entry.data:
+            return entry
+    return None
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -64,13 +67,48 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     Returns:
         bool: True if successful
     """
+
+    def _update_entry(username: str, data: Optional[Mapping[str, Any]] = None) -> None:
+        data = data or {}
+        for entry in hass.config_entries.async_entries(ADTPULSE_DOMAIN):
+            if username != entry.title:
+                continue
+            hass.config_entries.async_update_entry(entry, data=data)
+
+    config2 = config.get(ADTPULSE_DOMAIN)
+    if not config2:
+        return True
+
+    username = config2[CONF_USERNAME]
+    password = config2[CONF_PASSWORD]
+    fingerprint = config2[CONF_DEVICE_ID]
+    if username in _async_configured_usernames(hass):
+        try:
+            await validate_input(hass, config2)
+        except (CannotConnect, InvalidAuth):
+            return False
+        _update_entry(
+            username,
+            data={
+                CONF_USERNAME: username,
+                CONF_PASSWORD: password,
+                CONF_DEVICE_ID: fingerprint,
+            },
+        )
+    else:
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                ADTPULSE_DOMAIN,
+                context={"source": SOURCE_IMPORT},
+                data={CONF_USERNAME: username},
+            )
+        )
+
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
     return True
 
 
-async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
-) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialize the ADTPulse integration."""
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]

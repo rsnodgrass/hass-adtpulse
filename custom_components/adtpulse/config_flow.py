@@ -4,8 +4,10 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICE_ID
 from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.helpers.config_entry_flow import FlowResult
 from pyadtpulse import PyADTPulse
-from typing import Dict
+from typing import Dict, Any, Optional
 
 from .const import ADTPULSE_DOMAIN, LOG
 
@@ -29,7 +31,9 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(hass: core.HomeAssistant, data: Dict) -> Dict[str, str | bool]:
+async def validate_input(
+    hass: core.HomeAssistant, data: Dict[str, str]
+) -> Dict[str, str]:
     """Validate form input.
 
     Args:
@@ -38,6 +42,7 @@ async def validate_input(hass: core.HomeAssistant, data: Dict) -> Dict[str, str 
 
     Raises:
         CannotConnect: Cannot connect to ADT Pulse site
+        InvalidAuth: login failed
 
     Returns:
         Dict[str, str | bool]: "title" : username used to validate
@@ -49,16 +54,18 @@ async def validate_input(hass: core.HomeAssistant, data: Dict) -> Dict[str, str 
     )
     try:
         result = await adtpulse.async_login()
-    except Exception:
+    except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
+        raise CannotConnect from ex
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
-        raise CannotConnect("Could not validate ADT Pulse login info")
-    return {"title": data[CONF_USERNAME], "login result": result}
+        raise InvalidAuth("Could not validate ADT Pulse login info")
+    await adtpulse.async_logout()
+    return {"title": data[CONF_USERNAME]}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
-    """Handle a config flow for Hello World."""
+    """Handle a config flow for ADT Pulse."""
 
     VERSION = 1
     # Pick one of the available connection classes in homeassistant/config_entries.py
@@ -67,34 +74,59 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
     # changes.
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
 
-    @staticmethod
-    @callback
-    def async_get_options_flow(config_entry):
-        """Get the options flow for this handler."""
-        return OptionsFlowHandler(config_entry)
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self.username = None
+        self.reauth = False
 
-    async def async_step_user(self, user_input=None):
-        """Handle the initial step."""
+    async def async_step_import(self, import_config: Dict[str, Any]) -> FlowResult:
+        """Import a config entry from configuration.yaml."""
+        return await self.async_step_user(import_config)
+
+    async def async_step_user(
+        self, user_input: Optional[Dict[str, Any]] = None
+    ) -> FlowResult:
+        """Handle the initial step.
+
+        Args:
+            user_input (Optional[Dict[str, Any]], optional): user input.
+                    Defaults to None.
+
+        Returns:
+            FlowResult: the flow result
+        """
         # This goes through the steps to take the user through the setup process.
         # Using this it is possible to update the UI and prompt for additional
         # information. This example provides a single form (built from `DATA_SCHEMA`),
         # and when that has some validated input, it calls `async_create_entry` to
         # actually create the HA config entry. Note the "title" value is returned by
         # `validate_input` above.
-        errors = {}
+        errors = info = {}
         if user_input is not None:
+            existing_entry = self._async_entry_for_username(user_input[CONF_USERNAME])
+            if existing_entry and not self.reauth:
+                return self.async_abort(reason="already_configured")
             try:
                 info = await validate_input(self.hass, user_input)
-                if info["login result"]:
-                    return self.async_create_entry(
-                        title=info["title"],  # type:ignore
-                        data=user_input,
-                    )
-                else:
-                    errors["base"] = "Cannot validate credentials"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
             except Exception:  # pylint: disable=broad-except
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
+
+            if not errors:
+                if existing_entry:
+                    self.hass.config_entries.async_update_entry(
+                        existing_entry, data=info
+                    )
+                    await self.hass.config_entries.async_reload(existing_entry.entry_id)
+                    return self.async_abort(reason="reauth_successful")
+
+                return self.async_create_entry(
+                    title=user_input[CONF_USERNAME], data=info
+                )
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
@@ -102,23 +134,24 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
 
+    async def async_step_reauth(self, data: Dict[str, str]) -> FlowResult:
+        """Handle configuration by re-auth."""
+        self.username = data[CONF_USERNAME]
+        self.reauth = True
+        return await self.async_step_user()
+
+    @callback
+    def _async_entry_for_username(self, username: str) -> Optional[ConfigEntry]:
+        """Find an existing entry for a username."""
+        for entry in self._async_current_entries():
+            if entry.data.get(CONF_USERNAME) == username:
+                return entry
+        return None
+
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
 
 
-class OptionsFlowHandler(config_entries.OptionsFlow):
-    """Handle options."""
-
-    def __init__(self, config_entry):
-        """Initialize options flow."""
-        self.config_entry = config_entry
-
-    async def async_step_init(self, user_input=None):
-        """Manage the options."""
-        if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
-
-        return self.async_show_form(
-            step_id="init",
-        )
+class InvalidAuth(exceptions.HomeAssistantError):
+    """Error to indicate there is invalid auth."""

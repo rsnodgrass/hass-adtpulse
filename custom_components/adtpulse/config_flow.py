@@ -30,7 +30,7 @@ DATA_SCHEMA = vol.Schema(
 
 
 async def validate_input(hass: core.HomeAssistant, data: Dict) -> Dict[str, str | bool]:
-    """Validates form input.
+    """Validate form input.
 
     Args:
         hass (core.HomeAssistant): hass object

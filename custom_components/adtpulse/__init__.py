@@ -4,10 +4,10 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from typing import List
 
 import voluptuous as vol
 from aiohttp.client_exceptions import ClientConnectionError
+from asyncio import gather
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICE_ID,
@@ -23,12 +23,8 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.check_config import ConfigType
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyadtpulse import PyADTPulse
-from pyadtpulse.site import ADTPulseSite
 
-from .alarm_control_panel import ADTPulseAlarm
-
-from .binary_sensor import ADTPulseGatewaySensor, ADTPulseZoneSensor
-from .const import ADTPULSE_DOMAIN, ADTPULSE_SERVICE, LOG, ADT_PULSE_COORDINATOR
+from .const import ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 NOTIFICATION_TITLE = "ADT Pulse"
@@ -50,7 +46,7 @@ CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(
                     CONF_HOST, default="portal.adtpulse.com"  # type: ignore
                 ): cv.string,
-                vol.Optional(CONF_DEVICE_ID, default=""): cv.string,  # type: ignore
+                vol.Required(CONF_DEVICE_ID, default=""): cv.string,  # type: ignore
             }
         )
     },
@@ -68,23 +64,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     Returns:
         bool: True if successful
     """
+    hass.data.setdefault(ADTPULSE_DOMAIN, {})
     return True
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> bool:
     """Initialize the ADTPulse integration."""
-    hass.data.setdefault(ADTPULSE_DOMAIN, {})
-    conf = config.data[ADTPULSE_DOMAIN]
-    username = conf.get(CONF_USERNAME)
-    password = conf.get(CONF_PASSWORD)
-    fingerprint = conf.get(CONF_DEVICE_ID)
-
+    username = entry.data[CONF_USERNAME]
+    password = entry.data[CONF_PASSWORD]
+    fingerprint = entry.data[CONF_DEVICE_ID]
     # share reference to the service with other components/platforms
     # running within HASS
 
-    host = conf.get(CONF_HOST)
+    host = entry.data[CONF_HOST]
     if host:
         LOG.debug(f"Using ADT Pulse API host {host}")
     service = PyADTPulse(
@@ -96,7 +90,7 @@ async def async_setup_entry(
         do_login=False,
     )
 
-    hass.data[ADTPULSE_SERVICE] = service
+    hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
     try:
         if not await service.async_login():
             LOG.error(f"{ADTPULSE_DOMAIN} could not log in as user {username}")
@@ -114,34 +108,38 @@ async def async_setup_entry(
             f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
         )
 
-    site_list: List[ADTPulseSite] = service.sites
-    if site_list is None:
+    if service.sites is None:
         LOG.error(f"{ADTPULSE_DOMAIN} could not retrieve any sites")
         raise ConfigEntryNotReady(f"{ADTPULSE_DOMAIN} could not retrieve any sites")
 
-    # FIXME: should probably get rid of this for loop since only support 1 site per
-    # login and gateway
-    for site in site_list:
-        coordinator = ADTPulseDataUpdateCoordinator(hass, service)
-        hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"] = coordinator
-        async_add_entities([ADTPulseAlarm(coordinator, site)])
-        async_add_entities([ADTPulseGatewaySensor(coordinator, service)])
-        zone_list = site.zones_as_dict
-        if zone_list is None:
-            LOG.error(
-                f"{ADTPULSE_DOMAIN} could not retrieve any zones for site {site.name}"
-            )
-            raise ConfigEntryNotReady(
-                f"{ADTPULSE_DOMAIN} could not retrieve any zone for site {site.name}"
-            )
-
-        async_add_entities(
-            ADTPulseZoneSensor(coordinator, site, zone) for zone in zone_list.keys()
-        )
-
+    coordinator = ADTPulseDataUpdateCoordinator(hass, service)
+    hass.data.setdefault(ADTPULSE_DOMAIN, {})
+    hass.data[ADTPULSE_DOMAIN][entry.entry_id] = coordinator
     for platform in SUPPORTED_PLATFORMS:
         hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(config, platform)
+            hass.config_entries.async_forward_entry_setup(entry, platform)
         )
 
     return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+    """Unload a config entry."""
+    # This is called when an entry/configured device is to be removed. The class
+    # needs to unload itself, and remove callbacks. See the classes for further
+    # details
+    unload_ok = all(
+        await gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in SUPPORTED_PLATFORMS
+            ]
+        )
+    )
+
+    if unload_ok:
+        pulse: PyADTPulse = hass.data[ADTPULSE_DOMAIN][entry.entry_id].adtpulse
+        await pulse.async_logout()
+        hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
+
+    return unload_ok

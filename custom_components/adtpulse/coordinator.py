@@ -19,8 +19,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             pulse_site (ADTPulseSite): ADT Pulse site
         """
         LOG.debug(f"{ADTPULSE_DOMAIN}: creating update coordinator")
+        self._adt_pulse = pulse_service
         super().__init__(hass, LOG, name=ADTPULSE_DOMAIN)
-        self._service = pulse_service
+
+    @property
+    def adtpulse(self) -> PyADTPulse:
+        return self._adt_pulse
 
     async def _async_update_data(self) -> None:
         LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator waiting for updates")

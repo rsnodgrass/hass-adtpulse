@@ -14,8 +14,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntity,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.config import ConfigType
-from homeassistant.helpers.discovery import DiscoveryInfoType
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import STATE_OK
@@ -23,7 +22,7 @@ from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
 from .base_entity import ADTPulseEntity
-from .const import ADTPULSE_DOMAIN, LOG, ADTPULSE_SERVICE, ADT_PULSE_COORDINATOR
+from .const import ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 # FIXME: should be BinarySensorEntityDescription?
@@ -39,14 +38,14 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 }
 
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: Optional[DiscoveryInfoType] = None,
+async def async_setup_enry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up sensors for an ADT Pulse installation."""
-    adt_service: Optional[PyADTPulse] = hass.data[ADTPULSE_DOMAIN].get(ADTPULSE_SERVICE)
+    coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
+        entry.entry_id
+    ]
+    adt_service = coordinator.adtpulse
     if not adt_service:
         LOG.error("ADT Pulse service not initialized, cannot create sensors")
         return
@@ -64,7 +63,6 @@ async def async_setup_platform(
                 f"{adt_service.sites} ... {adt_service}"
             )
             continue
-        coordinator = hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"]
         entities = [
             ADTPulseZoneSensor(coordinator, site, zone_id)
             for zone_id in site.zones_as_dict.keys()

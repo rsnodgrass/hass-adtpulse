@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "username",
+          "password": "password",
+          "fingerprint": "fingerprint"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Unkown Error"
+    },
+    "abort": {
+      "already_configured": "Device Already Configured for User"
+    }
+  }
+}

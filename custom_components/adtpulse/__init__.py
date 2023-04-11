@@ -16,8 +16,6 @@ from homeassistant.helpers import config_validation as cv, discovery
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.const import CONF_NAME, CONF_HOST, CONF_USERNAME, CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_DEVICE_ID
-
 
 from homeassistant import exceptions
 from homeassistant.config_entries import ConfigEntry
@@ -34,8 +32,16 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
+from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
+
 from .const import (  # pylint:disable=unused-import
     ADTPULSE_DOMAIN,
+    CONF_PASSWORD,
+    CONF_FINGERPRINT,
+    CONF_USERNAME,
+    ADTPULSE_DOMAIN,
+    CONF_HOSTNAME,
+    CONF_POLLING,
 )
 
 LOG = logging.getLogger(__name__)
@@ -55,19 +61,6 @@ ATTR_DEVICE_ID = 'device_id'
 
 SUPPORTED_PLATFORMS = [ 'alarm_control_panel', 'binary_sensor' ]
 
-DEFAULT_SCAN_INTERVAL=60
-
-CONFIG_SCHEMA = vol.Schema({
-        ADTPULSE_DOMAIN: vol.Schema({
-            vol.Required(CONF_USERNAME): cv.string,
-            vol.Required(CONF_PASSWORD): cv.string,
-            vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): cv.positive_int,
-            vol.Optional(CONF_HOST, default='portal.adtpulse.com'): cv.string,
-            vol.Required(CONF_DEVICE_ID, default=''): cv.string
-        })
-    }, extra=vol.ALLOW_EXTRA
-)
-
 
 async def async_setup(hass: HomeAssistant, config: dict):
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
@@ -75,10 +68,20 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data["username"], entry.data["password"], entry.data["fingerprint"])
+    polling = 3
+    try:
+        polling = float(entry.data[CONF_POLLING])
+        if polling <= 0:
+            LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {entry.data[CONF_POLLING]}. Please select an integer greater than 0.")
+            raise InvalidPolling
+    except Exception as e:
+        LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {entry.data[CONF_POLLING]}. Please select an integer greater than 0.")
+        LOG.debug(e)
+        raise InvalidPolling
+    adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], entry.data[CONF_FINGERPRINT], entry.data[CONF_HOSTNAME],ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = adtpulse
 
-    coordinator = ADTPulseDataUpdateCoordinator(hass, adtpulse)
+    coordinator = ADTPulseDataUpdateCoordinator(hass, adtpulse, int(polling))
     await coordinator.async_refresh()
 
     if not coordinator.last_update_success:
@@ -117,24 +120,32 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage the refresh of the adtpulse data api"""
 
-    def __init__(self, hass, adtpulse):
+    def __init__(self, hass, adtpulse, pollingRate):
         self._adtpulse = adtpulse
         self._hass = hass
+        self._pollingRate = pollingRate
         super().__init__(
             hass,
             LOG,
             name=ADTPULSE_DOMAIN,
+            update_interval=timedelta(seconds=pollingRate),
         )
 
     @property
     def adtpulse(self):
         return self._adtpulse
 
+    @property
+    def pollingRate(self):
+        return self._pollingRate
 
     async def _async_update_data(self):
         """Update data via library."""
         try:
+            LOG.info(f"Updating ADT Statuses")
             await self._hass.async_add_executor_job(self.adtpulse.update)
+            #await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
+            LOG.info(f"Finsihed Updating ADT Statuses")
         except Exception as error:
             LOG.error("Error updating ADT Pulse data\n{error}")
             raise UpdateFailed(error) from error
@@ -194,3 +205,6 @@ async def async_connect_or_timeout(hass, adtpulse):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
+class InvalidPolling(exceptions.HomeAssistantError):
+    """Error to indicate polling is incorrect value."""

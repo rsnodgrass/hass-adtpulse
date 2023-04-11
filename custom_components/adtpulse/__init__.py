@@ -69,15 +69,6 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     polling = 3
-    try:
-        polling = float(entry.data[CONF_POLLING])
-        if polling <= 0:
-            LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {entry.data[CONF_POLLING]}. Please select an integer greater than 0.")
-            raise InvalidPolling
-    except Exception as e:
-        LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {entry.data[CONF_POLLING]}. Please select an integer greater than 0.")
-        LOG.debug(e)
-        raise InvalidPolling
     adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], entry.data[CONF_FINGERPRINT], entry.data[CONF_HOSTNAME],ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = adtpulse
 

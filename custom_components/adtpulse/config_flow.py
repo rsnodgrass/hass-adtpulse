@@ -81,6 +81,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
+    async def async_step_import(self, import_data):
+        """Import blink config from configuration.yaml."""
+        self.data[CONF_POLLING] = 3
+        return await self.async_step_user(import_data)
+
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
         # This goes through the steps to take the user through the setup process.
@@ -140,9 +145,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=vol.Schema(
                 {
                     vol.Optional(
-                        CONF_POLLING_RATE,
+                        CONF_POLLING,
                         default=self.config_entry.options.get(
-                            CONF_POLLING_RATE, DEFAULT_SCAN_INTERVAL
+                            CONF_POLLING, DEFAULT_SCAN_INTERVAL
                         ),
                     ): str,
                 }

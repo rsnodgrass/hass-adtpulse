@@ -62,7 +62,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
 
     info = await async_connect_or_timeout(hass, adtpulse)
 
-    return {"title": "ADT" + data[CONF_USERNAME]}
+    return {"title": "ADT: " + data[CONF_USERNAME]}
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):

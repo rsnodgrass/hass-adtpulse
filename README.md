@@ -43,27 +43,8 @@ Note: Manual installation by direct download and copying is not supported, if yo
 
 ### Step 2: Configure ADT Pulse
 
-To enable ADT Pulse, add the following to your configuration.yaml:
+To enable ADT Pulse, add the following integration like any other integration in HA. Input the necessary details including username, password, fingerprint (please see the below step "Step to Get Your Trusted Device") and select the URL and frequency for updates.
 
-```yaml
-adtpulse:
-  username: your@email.com
-  password: your_password
-```
-
-Additionally, for Canada ADT Pulse customers, the ADT Pulse service host is configurable:
-
-```yaml
-adtpulse:
-  host: portal-ca.adtpulse.com
-```
-
-For accounts that have 2FA enabled, there is an alternative solution by setting the optional setting below. The option below uses the "trusted device" option that ADT provides so that you can bypass 2FA.
-
-```yaml
-adtpulse:
-  device_id: SOMEUNIQUEDEVICEID
-```
 
 #### Step to Get Your Trusted Device
 1. Go to the ADT Pulse Login page but do not login.

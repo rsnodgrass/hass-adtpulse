@@ -14,10 +14,14 @@ import datetime
 from requests import Session
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from pyadtpulse.const import STATE_OK
 
 from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
+from .const import (  # pylint:disable=unused-import
+    ADTPULSE_DOMAIN,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -34,33 +38,36 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     'garage':     'garage_door' # FIXME: need ADT type
 }
 
-def setup_platform(hass, config, add_entities_callback, discovery_info=None):
-    """Set up sensors for an ADT Pulse installation."""
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Add binary sensors for passed config_entry in HA."""
+    coordinator = hass.data[ADTPULSE_DOMAIN][config_entry.entry_id]
+
+    adtpulse = coordinator.data
+
     sensors = []
-    adt_service = hass.data.get(ADTPULSE_SERVICE)
-    if not adt_service:
+    if not adtpulse:
         LOG.error("ADT Pulse service not initialized, cannot create sensors")
         return
 
-    if not adt_service.sites:
-        LOG.error("ADT's Pulse service returned NO sites: %s", adt_service)
+    if not adtpulse.sites:
+        LOG.error("ADT's Pulse service returned NO sites: %s", adtpulse)
         return
-    for site in adt_service.sites:
+    for site in adtpulse.sites:
         if not site.zones:
-            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s ... %s", adt_service.sites, adt_service)
+            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s ... %s", adtpulse.sites, adtpulse)
             continue
         for zone in site.zones:
-            sensors.append( ADTPulseSensor(hass, adt_service, site, zone) )
+            sensors.append( ADTPulseSensor(hass, adtpulse, site, zone, coordinator) )
+    if sensors:
+        async_add_devices(sensors)
 
-    add_entities_callback(sensors)
-
-class ADTPulseSensor(BinarySensorEntity):
+class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     """HASS binary sensor implementation for ADT Pulse."""
 
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion', 'tags': ['sensor', 'motion'],
     #         'status': 'Motion', 'activityTs': 1569078085275}
 
-    def __init__(self, hass, adt_service, site, zone_details):
+    def __init__(self, hass, adt_service, site, zone_details, coordinator):
         """Initialize the binary_sensor."""
         self.hass = hass
         self._adt_service = adt_service
@@ -70,7 +77,7 @@ class ADTPulseSensor(BinarySensorEntity):
         self._update_zone_status(zone_details)
 
         self._determine_device_class()
-
+        super().__init__(coordinator)
         LOG.info(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     def _determine_device_class(self):

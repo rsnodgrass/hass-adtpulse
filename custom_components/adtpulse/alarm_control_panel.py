@@ -2,6 +2,7 @@
 import logging
 
 import homeassistant.components.alarm_control_panel as alarm
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.const import (
     STATE_ALARM_ARMED_AWAY,
@@ -14,35 +15,43 @@ from homeassistant.components.alarm_control_panel.const import (
 )
 
 from . import ADTPulseEntity, ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
+from .const import (  # pylint:disable=unused-import
+    ADTPULSE_DOMAIN,
+)
+
 
 LOG = logging.getLogger(__name__)
 
-def setup_platform(hass, config, add_entities_callback, discovery_info=None):
-    """Set up an alarm control panel for ADT Pulse."""
-    adt_service = hass.data.get(ADTPULSE_SERVICE)
-    if not adt_service:
+async def async_setup_entry(hass, config_entry, async_add_devices):
+    """Add binary sensors for passed config_entry in HA."""
+    LOG.info("Starting adding ADT security device")
+    coordinator = hass.data[ADTPULSE_DOMAIN][config_entry.entry_id]
+
+    adtpulse = coordinator.data
+    if not adtpulse:
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
 
-    if not adt_service.sites:
-        LOG.error("ADT Pulse service failed to return sites: %s", adt_service)
+    if not adtpulse.sites:
+        LOG.error("ADT Pulse service failed to return sites: %s", adtpulse)
         return
 
     alarm_devices = []
-    for site in adt_service.sites:
-        alarm_devices.append( ADTPulseAlarm(hass, adt_service, site) )
+    for site in adtpulse.sites:
+        alarm_devices.append( ADTPulseAlarm(hass, adtpulse, site, coordinator) )
 
-    # FIXME: why this??? data.devices.extend(alarm_devices)
-    add_entities_callback(alarm_devices)
+    if alarm_devices:
+        async_add_devices(alarm_devices)
 
-class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
+class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
 
-    def __init__(self, hass, service, site):
+    def __init__(self, hass, service, site, coordinator):
         """Initialize the alarm control panel."""
-        name = f"ADT {site.name}"
+        self._name = f"ADT {site.name}"
         self._site = site
-        super().__init__(hass, service, name)
+        super().__init__(coordinator)
+        LOG.info(f"Added ADT Alarm: {self._name} site:{site}")
 
     @property
     def icon(self):

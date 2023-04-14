@@ -30,7 +30,7 @@ from pyadtpulse.site import (
     ADTPulseSite,
 )
 
-from .const import ADT_PULSE_COORDINATOR, ADTPULSE_DOMAIN, ADTPULSE_SERVICE
+from .const import ADTPULSE_DOMAIN
 
 from .base_entity import ADTPulseEntity
 from .coordinator import ADTPulseDataUpdateCoordinator
@@ -54,17 +54,18 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType = {},
 ):
     """Set up an alarm control panel for ADT Pulse."""
-    adt_service = hass.data[ADTPULSE_DOMAIN][ADTPULSE_SERVICE]
-    if not adt_service:
+    coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
+        entry.entry_id
+    ]
+    if not coordinator:
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
 
-    if not adt_service.sites:
-        LOG.error(f"ADT Pulse service failed to return sites: {adt_service}")
+    if not coordinator.adtpulse.sites:
+        LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
         return
 
-    for site in adt_service.sites:
-        coordinator = hass.data[ADTPULSE_DOMAIN][f"{ADT_PULSE_COORDINATOR}-{site.id}"]
+    for site in coordinator.adtpulse.sites:
         async_add_entities([ADTPulseAlarm(coordinator, site)])
 
 

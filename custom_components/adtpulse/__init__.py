@@ -23,7 +23,7 @@ from homeassistant.helpers.check_config import ConfigType
 from pyadtpulse import PyADTPulse
 
 from .config_flow import validate_input, CannotConnect, InvalidAuth
-from .const import ADTPULSE_DOMAIN, LOG
+from .const import ADTPULSE_DOMAIN, LOG, CONF_FINGERPRINT, CONF_HOSTNAME
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 NOTIFICATION_TITLE = "ADT Pulse"
@@ -112,11 +112,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialize the ADTPulse integration."""
     username = entry.data[CONF_USERNAME]
     password = entry.data[CONF_PASSWORD]
-    fingerprint = entry.data[CONF_DEVICE_ID]
+    fingerprint = entry.data[CONF_FINGERPRINT]
     # share reference to the service with other components/platforms
     # running within HASS
 
-    host = entry.data[CONF_HOST]
+    host = entry.data[CONF_HOSTNAME]
     if host:
         LOG.debug(f"Using ADT Pulse API host {host}")
     service = PyADTPulse(

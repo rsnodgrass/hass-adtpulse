@@ -19,7 +19,7 @@ from homeassistant.const import (
 from homeassistant.helpers.update_coordinator import callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.discovery import DiscoveryInfoType
-from homeassistant.config import ConfigType
+from homeassistant.config_entries import ConfigEntry
 from pyadtpulse.site import (
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
@@ -47,15 +47,15 @@ ALARM_MAP = {
 }
 
 
-async def async_setup_platform(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: ConfigType,
+    config: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType = {},
 ):
     """Set up an alarm control panel for ADT Pulse."""
     coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
-        entry.entry_id
+        config.entry_id
     ]
     if not coordinator:
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
@@ -65,8 +65,9 @@ async def async_setup_platform(
         LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
         return
 
-    for site in coordinator.adtpulse.sites:
-        async_add_entities([ADTPulseAlarm(coordinator, site)])
+    async_add_entities(
+        [ADTPulseAlarm(coordinator, site) for site in coordinator.adtpulse.sites]
+    )
 
 
 class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):

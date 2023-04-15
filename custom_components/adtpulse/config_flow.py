@@ -2,7 +2,12 @@
 from __future__ import annotations
 import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
-from homeassistant.const import CONF_USERNAME, CONF_PASSWORD, CONF_DEVICE_ID
+from homeassistant.const import (
+    CONF_USERNAME,
+    CONF_PASSWORD,
+    CONF_DEVICE_ID,
+    CONF_SCAN_INTERVAL,
+)
 from homeassistant.core import callback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.config_entry_flow import FlowResult
@@ -27,6 +32,7 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_DEVICE_ID): str,
+        vol.Optional(CONF_SCAN_INTERVAL): int,
     }
 )
 
@@ -64,7 +70,7 @@ async def validate_input(
     return {"title": data[CONF_USERNAME]}
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
+class PulseConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
     """Handle a config flow for ADT Pulse."""
 
     VERSION = 1

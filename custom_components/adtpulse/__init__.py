@@ -5,19 +5,16 @@ See https://github.com/rsnodgrass/hass-adtpulse
 from __future__ import annotations
 
 from typing import Optional, Any, Mapping
-import voluptuous as vol
 from aiohttp.client_exceptions import ClientConnectionError
 from asyncio import gather
 from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import (
     CONF_DEVICE_ID,
-    CONF_HOST,
     CONF_PASSWORD,
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.check_config import ConfigType
 from pyadtpulse import PyADTPulse
@@ -30,22 +27,6 @@ NOTIFICATION_TITLE = "ADT Pulse"
 NOTIFICATION_ID = "adtpulse_notification"
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
-
-CONFIG_SCHEMA = vol.Schema(
-    {
-        ADTPULSE_DOMAIN: vol.Schema(
-            {
-                vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(
-                    CONF_HOST, default="portal.adtpulse.com"  # type: ignore
-                ): cv.string,
-                vol.Required(CONF_DEVICE_ID, default=""): cv.string,  # type: ignore
-            }
-        )
-    },
-    extra=vol.ALLOW_EXTRA,
-)
 
 
 @callback

@@ -29,15 +29,6 @@ NOTIFICATION_ID = "adtpulse_notification"
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
 
-@callback
-def _async_configured_usernames(hass: HomeAssistant) -> Optional[ConfigEntry]:
-    """Return a set of configured Pulse usernames."""
-    for entry in hass.config_entries.async_entries(ADTPULSE_DOMAIN):
-        if CONF_USERNAME in entry.data:
-            return entry
-    return None
-
-
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Start up the ADT Pulse HA integration.
 
@@ -48,43 +39,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     Returns:
         bool: True if successful
     """
-
-    def _update_entry(username: str, data: Optional[Mapping[str, Any]] = None) -> None:
-        data = data or {}
-        for entry in hass.config_entries.async_entries(ADTPULSE_DOMAIN):
-            if username != entry.title:
-                continue
-            hass.config_entries.async_update_entry(entry, data=data)
-
-    config2 = config.get(ADTPULSE_DOMAIN)
-    if not config2:
-        return True
-
-    username = config2[CONF_USERNAME]
-    password = config2[CONF_PASSWORD]
-    fingerprint = config2[CONF_DEVICE_ID]
-    if username in _async_configured_usernames(hass):
-        try:
-            await validate_input(hass, config2)
-        except (CannotConnect, InvalidAuth):
-            return False
-        _update_entry(
-            username,
-            data={
-                CONF_USERNAME: username,
-                CONF_PASSWORD: password,
-                CONF_DEVICE_ID: fingerprint,
-            },
-        )
-    else:
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                ADTPULSE_DOMAIN,
-                context={"source": SOURCE_IMPORT},
-                data={CONF_USERNAME: username},
-            )
-        )
-
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
     return True
 

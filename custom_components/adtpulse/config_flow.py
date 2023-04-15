@@ -14,7 +14,14 @@ from homeassistant.helpers.config_entry_flow import FlowResult
 from pyadtpulse import PyADTPulse
 from typing import Dict, Any, Optional
 
-from .const import ADTPULSE_DOMAIN, LOG
+from .const import (
+    ADTPULSE_DOMAIN,
+    LOG,
+    ADTPULSE_URL_US,
+    ADTPULSE_URL_CA,
+    CONF_FINGERPRINT,
+    CONF_HOSTNAME,
+)
 
 # This is the schema that used to display the UI to the user. This simple
 # schema has a single required host field, but it could include a number of fields
@@ -31,8 +38,10 @@ DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_DEVICE_ID): str,
-        vol.Optional(CONF_SCAN_INTERVAL): int,
+        vol.Required(CONF_FINGERPRINT): str,
+        vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In(
+            [ADTPULSE_URL_US, ADTPULSE_URL_CA]
+        ),
     }
 )
 
@@ -56,7 +65,11 @@ async def validate_input(
     """
     result = False
     adtpulse = PyADTPulse(
-        data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_DEVICE_ID], do_login=False
+        data[CONF_USERNAME],
+        data[CONF_PASSWORD],
+        data[CONF_FINGERPRINT],
+        service_host=data[CONF_HOSTNAME],
+        do_login=False,
     )
     try:
         result = await adtpulse.async_login()

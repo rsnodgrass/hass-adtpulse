@@ -28,5 +28,5 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> None:
         LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator waiting for updates")
-        await self._service.wait_for_update()
+        await self._adt_pulse.wait_for_update()
         LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator received update notification")

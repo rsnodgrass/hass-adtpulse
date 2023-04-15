@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Coroutine, Dict, Optional
+from typing import Coroutine, Dict, Optional, List
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
@@ -64,9 +64,11 @@ async def async_setup_entry(
         LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
         return
 
-    async_add_entities(
-        [ADTPulseAlarm(coordinator, site) for site in coordinator.adtpulse.sites]
-    )
+    alarm_devices: List[ADTPulseAlarm] = []
+    for site in coordinator.adtpulse.sites:
+        alarm_devices.append(ADTPulseAlarm(coordinator, site))
+
+    async_add_entities(alarm_devices)
 
 
 class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):

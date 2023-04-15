@@ -4,23 +4,18 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from typing import Optional, Any, Mapping
-from aiohttp.client_exceptions import ClientConnectionError
 from asyncio import gather
-from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
-from homeassistant.const import (
-    CONF_DEVICE_ID,
-    CONF_PASSWORD,
-    CONF_USERNAME,
-)
-from homeassistant.core import HomeAssistant, callback
+
+from aiohttp.client_exceptions import ClientConnectionError
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.check_config import ConfigType
 from pyadtpulse import PyADTPulse
 
-from .config_flow import validate_input, CannotConnect, InvalidAuth
-from .const import ADTPULSE_DOMAIN, LOG, CONF_FINGERPRINT, CONF_HOSTNAME
+from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 NOTIFICATION_TITLE = "ADT Pulse"

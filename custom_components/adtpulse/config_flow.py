@@ -1,26 +1,24 @@
 """HASS ADT Pulse Config Flow."""
 from __future__ import annotations
+
+from typing import Any, Dict, Optional
+
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
-from homeassistant.const import (
-    CONF_USERNAME,
-    CONF_PASSWORD,
-    CONF_DEVICE_ID,
-    CONF_SCAN_INTERVAL,
-)
-from homeassistant.core import callback
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+from homeassistant.core import callback
 from homeassistant.helpers.config_entry_flow import FlowResult
 from pyadtpulse import PyADTPulse
-from typing import Dict, Any, Optional
 
 from .const import (
     ADTPULSE_DOMAIN,
-    LOG,
-    ADTPULSE_URL_US,
     ADTPULSE_URL_CA,
+    ADTPULSE_URL_US,
     CONF_FINGERPRINT,
     CONF_HOSTNAME,
+    LOG,
 )
 
 # This is the schema that used to display the UI to the user. This simple
@@ -36,9 +34,9 @@ from .const import (
 # figure this out or look further into it.
 DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_USERNAME): str,
-        vol.Required(CONF_PASSWORD): str,
-        vol.Required(CONF_FINGERPRINT): str,
+        vol.Required(CONF_USERNAME): cv.string,
+        vol.Required(CONF_PASSWORD): cv.string,
+        vol.Required(CONF_FINGERPRINT): cv.string,
         vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In(
             [ADTPULSE_URL_US, ADTPULSE_URL_CA]
         ),
@@ -100,7 +98,12 @@ class PulseConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
 
     async def async_step_import(self, import_config: Dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
-        return await self.async_step_user(import_config)
+        new = {**import_config}
+        if self.hass.data[CONF_HOST] is not None:
+            new.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
+        if self.hass.data[CONF_DEVICE_ID] is not None:
+            new.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
+        return await self.async_step_user(new)
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None

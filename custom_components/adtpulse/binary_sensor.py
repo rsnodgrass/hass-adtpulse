@@ -126,7 +126,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         self._zone_id = zone_id
         self._my_zone = self._get_my_zone(site, zone_id)
         self._device_class = self._determine_device_class(self._my_zone)
-        super().__init__(coordinator, self._my_zone.name, self._my_zone.state)
+        super().__init__(coordinator, self._my_zone.name)
         self._set_icon()
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
@@ -153,7 +153,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         """
         return self._icon
 
-    def _set_icon(self):
+    def _set_icon(self) -> None:
         """Return icon for the ADT sensor."""
         sensor_type = self._device_class
         if sensor_type == BinarySensorDeviceClass.DOOR:
@@ -189,7 +189,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         return self._my_zone.state == STATE_OK
 
     @property
-    def device_class(self) -> Optional[str]:
+    def device_class(self) -> BinarySensorDeviceClass:
         """Return the class of the binary sensor."""
         return self._device_class
 
@@ -222,11 +222,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site")
         self._service = service
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        super().__init__(
-            coordinator,
-            f"ADT Pulse Gateway for {self._service.username}",
-            self._service.gateway_online,
-        )
+        super().__init__(coordinator, f"ADT Pulse Gateway for {self._service.username}")
 
     @property
     def is_on(self) -> bool:

@@ -16,10 +16,9 @@ from homeassistant.const import (
     STATE_ALARM_DISARMED,
     STATE_ALARM_DISARMING,
 )
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.discovery import DiscoveryInfoType
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import callback
+from homeassistant.helpers.typing import StateType
 from pyadtpulse.site import (
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
@@ -47,10 +46,7 @@ ALARM_MAP = {
 
 
 async def async_setup_entry(
-    hass: HomeAssistant,
-    config: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType = {},
+    hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up an alarm control panel for ADT Pulse."""
     coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
@@ -79,16 +75,19 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.name}")
         name = f"ADT {site.name}"
         self._site = site
-        super().__init__(coordinator, name, ALARM_MAP[self._site.status])
+        super().__init__(coordinator, name)
 
     @property
-    def status(self) -> str:
+    def state(self) -> StateType:
         """Return the alarm status.
 
         Returns:
             str: the status
         """
-        return ALARM_MAP[self._site.status]
+        if self._site.status in ALARM_MAP:
+            return ALARM_MAP[self._site.status]
+        else:
+            return None
 
     @property
     def icon(self) -> str:
@@ -96,7 +95,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         return "mdi:security"
 
     @property
-    def supported_features(self) -> int:
+    def supported_features(self) -> AlarmControlPanelEntityFeature:
         """Return the list of supported features."""
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
@@ -113,15 +112,15 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         else:
             LOG.warning(f"Could not {action} ADT Pulse alarm")
 
-    async def async_alarm_disarm(self, code: str | None = None) -> None:
+    async def async_alarm_disarm(self) -> None:
         """Send disarm command."""
         await self._perform_alarm_action(self._site.async_disarm(), "disarm")
 
-    async def async_alarm_arm_home(self, code=None):
+    async def async_alarm_arm_home(self) -> None:
         """Send arm home command."""
         await self._perform_alarm_action(self._site.async_arm_home(), "arm home")
 
-    async def async_alarm_arm_away(self):
+    async def async_alarm_arm_away(self) -> None:
         """Send arm away command."""
         await self._perform_alarm_action(self._site.async_arm_away(), "arm away")
 

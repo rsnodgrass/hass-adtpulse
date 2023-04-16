@@ -1,7 +1,7 @@
 """ADT Pulse Entity Base class."""
 from __future__ import annotations
 
-from typing import Dict, Optional
+from typing import Dict
 
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -13,22 +13,15 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
     """Base Entity class for ADT Pulse devices."""
 
-    def __init__(
-        self,
-        coordinator: ADTPulseDataUpdateCoordinator,
-        name: str,
-        initial_state: Optional[str | bool],
-    ):
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, name: str):
         """Initialize an ADTPulse entity.
 
         Args:
             coordinator (ADTPulseDataUpdateCoordinator): update coordinator to use
             name (str): entity name
-            state (str): inital state
         """
         self._name = name
 
-        self._state = initial_state
         self._attrs: Dict = {}
         super().__init__(coordinator)
 
@@ -47,15 +40,6 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return "mdi:gauge"
 
     @property
-    def state(self) -> Optional[str | bool]:
-        """Return the entity state.
-
-        Returns:
-            Optional[str|bool]: the entity state
-        """
-        return self._state
-
-    @property
     def extra_state_attributes(self) -> Dict:
         """Return the device state attributes."""
         return self._attrs
@@ -63,8 +47,6 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
     @callback
     def _handle_coordinator_update(self) -> None:
         """Call update method."""
-        LOG.debug(
-            f"Scheduling ADT Pulse entity {self._name} " f"update to {self._state}"
-        )
+        LOG.debug(f"Scheduling update ADT Pulse entity {self._name}")
         # inform HASS that ADT Pulse data for this entity has been updated
         self.async_write_ha_state()

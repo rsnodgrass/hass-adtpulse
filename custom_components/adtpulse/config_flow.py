@@ -72,10 +72,11 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
         raise CannotConnect from ex
+    finally:
+        await adtpulse.async_logout()
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
         raise InvalidAuth("Could not validate ADT Pulse login info")
-    await adtpulse.async_logout()
     return {"title": f"ADT: {data[CONF_USERNAME]}"}
 
 

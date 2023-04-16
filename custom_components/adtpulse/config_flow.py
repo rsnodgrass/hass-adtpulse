@@ -5,11 +5,10 @@ from typing import Any, Dict, Optional
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant import config_entries, core, exceptions
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigFlow, CONN_CLASS_CLOUD_PUSH
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import callback
-from homeassistant.helpers.config_entry_flow import FlowResult
+from homeassistant.core import callback, HomeAssistant
+from homeassistant.data_entry_flow import FlowResult
 from pyadtpulse import PyADTPulse
 
 from .const import (
@@ -44,9 +43,7 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(
-    hass: core.HomeAssistant, data: Dict[str, str]
-) -> Dict[str, str]:
+async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str, str]:
     """Validate form input.
 
     Args:
@@ -81,7 +78,7 @@ async def validate_input(
     return {"title": data[CONF_USERNAME]}
 
 
-class PulseConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
+class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
     """Handle a config flow for ADT Pulse."""
 
     VERSION = 1
@@ -89,21 +86,24 @@ class PulseConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
     # This tells HA if it should be asking for updates, or it'll be notified of updates
     # automatically. This example uses PUSH, as the dummy hub will notify HA of
     # changes.
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
+    CONNECTION_CLASS = CONN_CLASS_CLOUD_PUSH
 
     def __init__(self) -> None:
         """Initialize the config flow."""
         self.username = None
         self.reauth = False
 
+    # FIXME: this isn't being called for some reason
     async def async_step_import(self, import_config: Dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
         new = {**import_config}
         if self.hass.data[CONF_HOST] is not None:
             new.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
+            new.pop(CONF_HOST)
         if self.hass.data[CONF_DEVICE_ID] is not None:
             new.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
-        return await self.async_step_user(new)
+            new.pop(CONF_DEVICE_ID)
+        return self.async_create_entry(title=self.hass.data[CONF_USERNAME], data=new)
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None

@@ -76,7 +76,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
         LOG.error("Could not validate login info for ADT Pulse")
         raise InvalidAuth("Could not validate ADT Pulse login info")
     await adtpulse.async_logout()
-    return {"title": data[CONF_USERNAME]}
+    return {"title": f"ADT: {data[CONF_USERNAME]}"}
 
 
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
@@ -104,7 +104,9 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
         if self.hass.data[CONF_DEVICE_ID] is not None:
             new.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
             new.pop(CONF_DEVICE_ID)
-        return self.async_create_entry(title=self.hass.data[CONF_USERNAME], data=new)
+        return self.async_create_entry(
+            title=f"ADT: {self.hass.data[CONF_USERNAME]}", data=new
+        )
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
@@ -147,9 +149,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
                     await self.hass.config_entries.async_reload(existing_entry.entry_id)
                     return self.async_abort(reason="reauth_successful")
 
-                return self.async_create_entry(
-                    title=user_input[CONF_USERNAME], data=info
-                )
+                return self.async_create_entry(title=info["title"], data=user_input)
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.

@@ -28,7 +28,7 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 # FIXME: should be BinarySensorEntityDescription?
 ADT_DEVICE_CLASS_TAG_MAP = {
     "doorWindow": BinarySensorDeviceClass.DOOR,
-    "motion": BinarySensorDeviceClass.WINDOW,
+    "motion": BinarySensorDeviceClass.OCCUPANCY,
     "smoke": BinarySensorDeviceClass.SMOKE,
     "glass": BinarySensorDeviceClass.TAMPER,
     "co": BinarySensorDeviceClass.GAS,
@@ -38,7 +38,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 }
 
 
-async def async_setup_enry(
+async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up sensors for an ADT Pulse installation."""
@@ -77,6 +77,43 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion',
     # 'tags': ['sensor', 'motion'], 'status': 'Motion', 'activityTs': 1569078085275}
 
+    @staticmethod
+    def _get_my_zone(site: ADTPulseSite, zone_id: int) -> ADTPulseZoneData:
+        if site.zones_as_dict is None:
+            raise RuntimeError("ADT pulse returned null zone")
+        return site.zones_as_dict[zone_id]
+
+    @staticmethod
+    def _determine_device_class(zone_data: ADTPulseZoneData) -> BinarySensorDeviceClass:
+        # map the ADT Pulse device type tag to a binary_sensor class
+        # so the proper status codes and icons are displayed. If device class
+        # is not specified, binary_sensordefault to a generic on/off sensor
+        tags = zone_data.tags
+        device_class: Optional[BinarySensorDeviceClass] = None
+        if "sensor" in tags:
+            for tag in tags:
+                try:
+                    device_class = ADT_DEVICE_CLASS_TAG_MAP[tag]
+                    break
+                except KeyError:
+                    continue
+        # since ADT Pulse does not separate the concept of a door or window sensor,
+        # we try to autodetect window type sensors so the appropriate icon is displayed
+        if device_class is None:
+            LOG.warn(
+                "Ignoring unsupported sensor type from ADT Pulse cloud service "
+                f"configured tags: {tags}"
+            )
+            raise ValueError(f"Unknown ADT Pulse device class {device_class}")
+        if device_class == BinarySensorDeviceClass.DOOR:
+            if "Window" in zone_data.name or "window" in zone_data.name:
+                device_class = BinarySensorDeviceClass.WINDOW
+        LOG.info(
+            f"Determined {zone_data.name} device class {device_class} "
+            f"from ADT Pulse service configured tags {tags}"
+        )
+        return device_class
+
     def __init__(
         self,
         coordinator: ADTPulseDataUpdateCoordinator,
@@ -87,52 +124,16 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding zone sensor for site {site.id}")
         self._site = site
         self._zone_id = zone_id
-        my_zone = self._get_my_zone()
+        my_zone = self._get_my_zone(site, zone_id)
+        self._device_class = self._determine_device_class(my_zone)
+        self._set_icon()
         super().__init__(coordinator, my_zone.name, my_zone.state)
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
-
-    def _get_my_zone(self) -> ADTPulseZoneData:
-        if self._site.zones_as_dict is None:
-            raise RuntimeError("ADT pulse returned null zone")
-        return self._site.zones_as_dict[self._zone_id]
-
-    # FIXME: this should be a BinarySensorEntityDescription
-    def _determine_device_class(self, zone_data: ADTPulseZoneData) -> None:
-        # map the ADT Pulse device type tag to a binary_sensor class
-        # so the proper status codes and icons are displayed. If device class
-        # is not specified, binary_sensordefault to a generic on/off sensor
-        self._device_class = None
-        tags = zone_data.tags  # type: ignore
-
-        if "sensor" in tags:
-            for tag in tags:
-                device_class = ADT_DEVICE_CLASS_TAG_MAP[tag]
-                if device_class:
-                    self._device_class = device_class
-                    break
-
-        # since ADT Pulse does not separate the concept of a door or window sensor,
-        # we try to autodetect window type sensors so the appropriate icon is displayed
-        if self._device_class == "door":
-            if "Window" in self.name or "window" in self.name:
-                self._device_class = BinarySensorDeviceClass.WINDOW
-
-        if not self._device_class:
-            LOG.warn(
-                "Ignoring unsupported sensor type from ADT Pulse cloud service "
-                f"configured tags: {tags}"
-            )
-            raise ValueError(f"Unknown ADT Pulse device class {self._device_class}")
-        else:
-            LOG.info(
-                f"Determined {self._name} device class {self._device_class} "
-                f"from ADT Pulse service configured tags {tags}"
-            )
 
     @property
     def id(self) -> str:
         """Return the id of the ADT sensor."""
-        return self._get_my_zone().id_
+        return self._get_my_zone(self._site, self._zone_id).id_
 
     @property
     def unique_id(self) -> str:
@@ -152,31 +153,33 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         """
         return self._icon
 
+    # FIXME: do we need these anymore, or will HA take care of it based on
+    # device class?
     def _set_icon(self):
         """Return icon for the ADT sensor."""
         sensor_type = self._device_class
-        if sensor_type == "doorWindow":
+        if sensor_type == BinarySensorDeviceClass.DOOR:
             if self.state:
                 self._icon = "mdi:door-open"
             else:
                 self._icon = "mdi:door"
             return
-        elif sensor_type == "motion":
+        elif sensor_type == BinarySensorDeviceClass.MOTION:
             if self.state:
                 self._icon = "mdi:run-fast"
             else:
                 self._icon = "mdi:motion-sensor"
             return
-        elif sensor_type == "smoke":
+        elif sensor_type == BinarySensorDeviceClass.SMOKE:
             if self.state:
                 self._icon = "mdi:fire"
             else:
                 self._icon = "mdi:smoke-detector"
             return
-        elif sensor_type == "glass":
+        elif sensor_type == BinarySensorDeviceClass.WINDOW:
             self._icon = "mdi:window-closed-variant"
             return
-        elif sensor_type == "co":
+        elif sensor_type == BinarySensorDeviceClass.CO:
             self._icon = "mdi:molecule-co"
             return
         self._icon = "mdi:window-closed-variant"
@@ -198,7 +201,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @property
     def last_activity(self) -> float:
         """Return the timestamp for the last sensor activity."""
-        return self._get_my_zone().last_activity_timestamp
+        return self._get_my_zone(self._site, self._zone_id).last_activity_timestamp
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -206,6 +209,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
             f"Setting ADT Pulse zone {self.id}, to {self.state} "
             f"at timestamp {self.last_activity}"
         )
+        self._set_icon()
         return super()._handle_coordinator_update()
 
 

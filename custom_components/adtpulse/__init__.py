@@ -4,14 +4,13 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from asyncio import gather
+from asyncio import gather, TimeoutError
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.check_config import ConfigType
 from pyadtpulse import PyADTPulse
 
@@ -64,7 +63,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise ConfigEntryAuthFailed(
                 f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
             )
-    except ClientConnectionError as ex:
+    except (ClientConnectionError, TimeoutError) as ex:
         LOG.error(f"Unable to connect to ADT Pulse: {str(ex)}")
         hass.components.persistent_notification.create(
             f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",

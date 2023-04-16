@@ -51,7 +51,7 @@ async def async_setup_entry(
     config: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
     discovery_info: DiscoveryInfoType = {},
-):
+) -> None:
     """Set up an alarm control panel for ADT Pulse."""
     coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
         config.entry_id

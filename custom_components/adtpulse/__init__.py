@@ -54,7 +54,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         password,
         fingerprint,
         service_host=host,
-        websession=async_create_clientsession(hass),
         do_login=False,
     )
 

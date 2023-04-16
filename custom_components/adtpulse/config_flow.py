@@ -5,7 +5,6 @@ from typing import Any, Dict, Optional
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, CONN_CLASS_CLOUD_PUSH
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback, HomeAssistant
@@ -61,24 +60,20 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
                                "login result": True if login succeeded
     """
     result = False
-    session = async_create_clientsession(hass)
     adtpulse = PyADTPulse(
         data[CONF_USERNAME],
         data[CONF_PASSWORD],
         data[CONF_FINGERPRINT],
         service_host=data[CONF_HOSTNAME],
         do_login=False,
-        websession=session,
     )
     try:
         result = await adtpulse.async_login()
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
-        await session.close()
         raise CannotConnect from ex
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
-        await session.close()
         raise InvalidAuth("Could not validate ADT Pulse login info")
     await adtpulse.async_logout()
     return {"title": data[CONF_USERNAME]}

@@ -109,7 +109,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     ) -> None:
         LOG.debug(f"{ADTPULSE_DOMAIN}: Setting Alarm to  {action}")
         if await arm_disarm_func:
-            await self.async_update_ha_state()
+            self.async_write_ha_state()
         else:
             LOG.warning(f"Could not {action} ADT Pulse alarm")
 

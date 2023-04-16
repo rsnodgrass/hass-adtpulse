@@ -31,7 +31,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "motion": BinarySensorDeviceClass.OCCUPANCY,
     "smoke": BinarySensorDeviceClass.SMOKE,
     "glass": BinarySensorDeviceClass.TAMPER,
-    "co": BinarySensorDeviceClass.GAS,
+    "co": BinarySensorDeviceClass.CO,
     "fire": BinarySensorDeviceClass.HEAT,
     "flood": BinarySensorDeviceClass.MOISTURE,
     "garage": BinarySensorDeviceClass.GARAGE_DOOR,  # FIXME: need ADT type
@@ -124,16 +124,16 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding zone sensor for site {site.id}")
         self._site = site
         self._zone_id = zone_id
-        my_zone = self._get_my_zone(site, zone_id)
-        self._device_class = self._determine_device_class(my_zone)
+        self._my_zone = self._get_my_zone(site, zone_id)
+        self._device_class = self._determine_device_class(self._my_zone)
+        super().__init__(coordinator, self._my_zone.name, self._my_zone.state)
         self._set_icon()
-        super().__init__(coordinator, my_zone.name, my_zone.state)
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     @property
     def id(self) -> str:
         """Return the id of the ADT sensor."""
-        return self._get_my_zone(self._site, self._zone_id).id_
+        return self._my_zone.id_
 
     @property
     def unique_id(self) -> str:
@@ -153,25 +153,23 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         """
         return self._icon
 
-    # FIXME: do we need these anymore, or will HA take care of it based on
-    # device class?
     def _set_icon(self):
         """Return icon for the ADT sensor."""
         sensor_type = self._device_class
         if sensor_type == BinarySensorDeviceClass.DOOR:
-            if self.state:
+            if self.is_on:
                 self._icon = "mdi:door-open"
             else:
                 self._icon = "mdi:door"
             return
         elif sensor_type == BinarySensorDeviceClass.MOTION:
-            if self.state:
+            if self.is_on:
                 self._icon = "mdi:run-fast"
             else:
                 self._icon = "mdi:motion-sensor"
             return
         elif sensor_type == BinarySensorDeviceClass.SMOKE:
-            if self.state:
+            if self.is_on:
                 self._icon = "mdi:fire"
             else:
                 self._icon = "mdi:smoke-detector"
@@ -188,10 +186,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
-        zones = self._site.zones_as_dict
-        if zones is None:
-            return False
-        return not zones[self._zone_id] == STATE_OK
+        return self._my_zone.state == STATE_OK
 
     @property
     def device_class(self) -> Optional[str]:
@@ -201,12 +196,12 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @property
     def last_activity(self) -> float:
         """Return the timestamp for the last sensor activity."""
-        return self._get_my_zone(self._site, self._zone_id).last_activity_timestamp
+        return self._my_zone.last_activity_timestamp
 
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Setting ADT Pulse zone {self.id}, to {self.state} "
+            f"Setting ADT Pulse zone {self.id} to {self.is_on} "
             f"at timestamp {self.last_activity}"
         )
         self._set_icon()

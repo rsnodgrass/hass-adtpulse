@@ -67,4 +67,4 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
             f"Scheduling ADT Pulse entity {self._name} " f"update to {self._state}"
         )
         # inform HASS that ADT Pulse data for this entity has been updated
-        self.async_schedule_update_ha_state()
+        self.async_write_ha_state()

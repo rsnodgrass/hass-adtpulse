@@ -69,6 +69,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     polling = 3
+
     adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], entry.data[CONF_FINGERPRINT], entry.data[CONF_HOSTNAME],ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = adtpulse
 

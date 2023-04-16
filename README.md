@@ -43,6 +43,8 @@ Note: Manual installation by direct download and copying is not supported, if yo
 
 ### Step 2: Configure ADT Pulse
 
+**NOTE: As of April 2023, the ADT Pulse integration now can be configured via a config flow!**
+
 To enable ADT Pulse, add the following integration like any other integration in HA. Input the necessary details including username, password, fingerprint (please see the below step "Step to Get Your Trusted Device") and select the URL and frequency for updates.
 
 

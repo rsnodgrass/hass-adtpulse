@@ -10,6 +10,7 @@ from homeassistant.config_entries import ConfigEntry, ConfigFlow, CONN_CLASS_CLO
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback, HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
 
 from .const import (
@@ -176,9 +177,9 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
         return None
 
 
-class CannotConnect(exceptions.HomeAssistantError):
+class CannotConnect(HomeAssistantError):
     """Error to indicate we cannot connect."""
 
 
-class InvalidAuth(exceptions.HomeAssistantError):
+class InvalidAuth(HomeAssistantError):
     """Error to indicate there is invalid auth."""

@@ -8,7 +8,7 @@ from asyncio import gather, TimeoutError
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
+from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.check_config import ConfigType
@@ -86,6 +86,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
     await coordinator.async_refresh()
+    entry.async_on_unload(
+        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
+    )
+
     return True
 
 
@@ -104,8 +108,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     if unload_ok:
-        pulse: PyADTPulse = hass.data[ADTPULSE_DOMAIN][entry.entry_id].adtpulse
-        await pulse.async_logout()
+        coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
+            entry.entry_id
+        ]
+        await coordinator.stop(None)
+        await coordinator.adtpulse.async_logout()
         hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
 
     return unload_ok

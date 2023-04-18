@@ -186,7 +186,7 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
-        return self._my_zone.state == STATE_OK
+        return not self._my_zone.state == STATE_OK
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:

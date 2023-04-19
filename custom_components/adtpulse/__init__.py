@@ -110,7 +110,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return unload_ok
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
-    """Class to manage the refresh of the adtpulse data api"""
+    """Class to manage the refresh of the ADT Pulse data api"""
 
     def __init__(self, hass, adtpulse, pollingRate):
         self._adtpulse = adtpulse
@@ -134,10 +134,10 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via library."""
         try:
-            LOG.info(f"Updating ADT Statuses")
+            LOG.verbose(f"Updating ADT status")
             await self._hass.async_add_executor_job(self.adtpulse.update)
             #await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
-            LOG.info(f"Finsihed Updating ADT Statuses")
+            LOG.verbose(f"Finished updating ADT status")
         except Exception as error:
             LOG.error("Error updating ADT Pulse data\n{error}")
             raise UpdateFailed(error) from error

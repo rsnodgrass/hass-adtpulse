@@ -138,9 +138,11 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             await self._hass.async_add_executor_job(self.adtpulse.update)
             #await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
             LOG.verbose(f"Finished updating ADT status")
-        except Exception as error:
-            LOG.error("Error updating ADT Pulse data\n{error}")
+            
+        except Exception as e:
+            LOG.exception(e)
             raise UpdateFailed(error) from error
+        
         return self.adtpulse
 
 class ADTPulseEntity(Entity):

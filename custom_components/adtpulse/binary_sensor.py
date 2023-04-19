@@ -43,21 +43,23 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     coordinator = hass.data[ADTPULSE_DOMAIN][config_entry.entry_id]
 
     adtpulse = coordinator.data
-
-    sensors = []
     if not adtpulse:
         LOG.error("ADT Pulse service not initialized, cannot create sensors")
         return
 
     if not adtpulse.sites:
-        LOG.error("ADT's Pulse service returned NO sites: %s", adtpulse)
+        LOG.error(f"ADT Pulse service returned NO sites: {adtpulse}")
         return
+    
+    sensors = []
     for site in adtpulse.sites:
         if not site.zones:
-            LOG.error("ADT's Pulse service returned NO zones (sensors) for site: %s ... %s", adtpulse.sites, adtpulse)
+            LOG.error(f"ADT Pulse site '{site}' has NO zones (sensors): {adtpulse}")
             continue
+
         for zone in site.zones:
             sensors.append( ADTPulseSensor(hass, adtpulse, site, zone, coordinator) )
+
     if sensors:
         async_add_devices(sensors)
 

@@ -112,15 +112,15 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage the refresh of the ADT Pulse data api"""
 
-    def __init__(self, hass, adtpulse, pollingRate):
+    def __init__(self, hass, adtpulse, polling_rate):
         self._adtpulse = adtpulse
         self._hass = hass
-        self._pollingRate = pollingRate
+        self._polling_rate = polling_rate
         super().__init__(
             hass,
             LOG,
             name=ADTPULSE_DOMAIN,
-            update_interval=timedelta(seconds=pollingRate),
+            update_interval=timedelta(seconds=polling_rate),
         )
 
     @property
@@ -128,8 +128,8 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         return self._adtpulse
 
     @property
-    def pollingRate(self):
-        return self._pollingRate
+    def polling_rate(self):
+        return self._polling_rate
 
     async def _async_update_data(self):
         """Update data via library."""

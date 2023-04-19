@@ -2,47 +2,32 @@
 ADT Pulse for Home Assistant
 See https://github.com/rsnodgrass/hass-adtpulse
 """
-import logging
 import asyncio
-
+import logging
 import time
 from datetime import timedelta
+
 import voluptuous as vol
-from requests.exceptions import HTTPError, ConnectTimeout
-
-from pyadtpulse import PyADTPulse
-
-from homeassistant.helpers import config_validation as cv, discovery
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.dispatcher import dispatcher_send, async_dispatcher_connect
-from homeassistant.helpers.event import track_time_interval
-
 from homeassistant import exceptions
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatcher_send
+from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
+                                              dispatcher_send)
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
-
+from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
+                                                      DataUpdateCoordinator,
+                                                      UpdateFailed)
+from pyadtpulse import PyADTPulse
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
+from requests.exceptions import ConnectTimeout, HTTPError
 
-from .const import (  # pylint:disable=unused-import
-    ADTPULSE_DOMAIN,
-    CONF_PASSWORD,
-    CONF_FINGERPRINT,
-    CONF_USERNAME,
-    ADTPULSE_DOMAIN,
-    CONF_HOSTNAME,
-    CONF_POLLING,
-)
+from .const import (ADTPULSE_DOMAIN,  # pylint:disable=unused-import
+                    CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
+                    CONF_POLLING, CONF_USERNAME)
 
 LOG = logging.getLogger(__name__)
 

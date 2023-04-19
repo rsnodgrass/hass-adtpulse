@@ -4,24 +4,25 @@ motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
+import datetime
+import json
 import logging
 import re
-import json
-import requests
-import datetime
-#from datetime import timedelta
 
-from requests import Session
+import requests
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
 from pyadtpulse.const import STATE_OK
+from requests import Session
 
 from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
-from .const import (  # pylint:disable=unused-import
-    ADTPULSE_DOMAIN,
-)
+from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
+
+#from datetime import timedelta
+
+
+
 
 LOG = logging.getLogger(__name__)
 

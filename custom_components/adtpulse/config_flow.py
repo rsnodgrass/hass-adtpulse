@@ -4,21 +4,13 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
+from pyadtpulse.const import (ADT_DEFAULT_HTTP_HEADERS,
+                              ADT_DEFAULT_POLL_INTERVAL)
 
 from . import CannotConnect, async_connect_or_timeout
-from .const import ( 
-    CONF_PASSWORD,
-    CONF_FINGERPRINT,
-    CONF_USERNAME,
-    ADTPULSE_DOMAIN,
-    DEFAULT_SCAN_INTERVAL,
-    ADTPULSE_URL_US,
-    ADTPULSE_URL_CA,
-    CONF_HOSTNAME,
-    CONF_POLLING,
-)
-
-from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS, ADT_DEFAULT_POLL_INTERVAL
+from .const import (ADTPULSE_DOMAIN, ADTPULSE_URL_CA, ADTPULSE_URL_US,
+                    CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
+                    CONF_POLLING, CONF_USERNAME, DEFAULT_SCAN_INTERVAL)
 
 LOG = logging.getLogger(__name__)
 

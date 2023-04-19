@@ -113,9 +113,10 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage the refresh of the ADT Pulse data api"""
 
     def __init__(self, hass, adtpulse, polling_rate):
-        self._adtpulse = adtpulse
         self._hass = hass
+        self._adtpulse = adtpulse
         self._polling_rate = polling_rate
+
         super().__init__(
             hass,
             LOG,
@@ -188,9 +189,7 @@ class ADTPulseEntity(Entity):
 
 async def async_connect_or_timeout(hass, adtpulse):
     try:
-        userId = adtpulse._userId
-        if userId != None or "":
-            LOG.info("Success connecting to ADTPulse")
+        LOG.info(f"Connected to ADTPulse with user {adtpulse._userId}")
     except Exception as e
         LOG.exception(e)
         raise CannotConnect from e

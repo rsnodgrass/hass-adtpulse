@@ -20,7 +20,7 @@ from .const import (
 
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS, ADT_DEFAULT_POLL_INTERVAL
 
-_LOGGER = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 # This is the schema that used to display the UI to the user. This simple
 # schema has a single required host field, but it could include a number of fields
@@ -49,15 +49,15 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
         try:
             polling = float(data[CONF_POLLING])
             if polling <= 0:
-                _LOGGER.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+                LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
                 raise InvalidPolling
         except Exception as e:
-            _LOGGER.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
-            _LOGGER.debug(e)
+            LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+            LOG.debug(e)
             raise InvalidPolling
         adtpulse = await hass.async_add_executor_job(PyADTPulse, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_FINGERPRINT], data[CONF_HOSTNAME], ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
     except Exception as e:
-        _LOGGER.error(f"ADT Pulse: Cannot Connect. Please check your username, password, etc. Error was: {e}")
+        LOG.error(f"ADT Pulse: Cannot Connect. Please check your username, password, etc. Error was: {e}")
         raise CannotConnect
 
     info = await async_connect_or_timeout(hass, adtpulse)
@@ -104,7 +104,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
+                LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
         # If there is no user input or there were errors, show the form again, including any errors that were found with the input.
@@ -115,10 +115,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
 async def async_connect_or_timeout(hass, adtpulse):
     #Need to add appropriate logic
     if adtpulse:
-        _LOGGER.info("Valid Object continuing")
+        LOG.info("Valid Object continuing")
 
     else:
-        _LOGGER.error("Error with ADT object (probably a connection issue)")
+        LOG.error("Error with ADT object (probably a connection issue)")
         raise CannotConnect
 
 class CannotConnect(exceptions.HomeAssistantError):

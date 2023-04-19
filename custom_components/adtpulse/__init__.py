@@ -187,15 +187,13 @@ class ADTPulseEntity(Entity):
         self.async_schedule_update_ha_state()
 
 async def async_connect_or_timeout(hass, adtpulse):
-    userId = None
     try:
         userId = adtpulse._userId
         if userId != None or "":
-            LOG.info("Success Connecting to ADTPulse")
-    except Exception as err:
-        LOG.error("Error connecting to ADTPulse")
-        raise CannotConnect from err
-
+            LOG.info("Success connecting to ADTPulse")
+    except Exception as e
+        LOG.exception(e)
+        raise CannotConnect from e
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""

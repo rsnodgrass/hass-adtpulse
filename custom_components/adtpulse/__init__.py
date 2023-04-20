@@ -127,7 +127,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             
         except Exception as e:
             LOG.exception(e)
-            raise UpdateFailed(error) from error
+            raise UpdateFailed(e) from e
         
         return self.adtpulse
 

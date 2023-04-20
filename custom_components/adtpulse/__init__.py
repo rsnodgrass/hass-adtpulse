@@ -120,15 +120,15 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via library."""
         try:
-            LOG.verbose(f"Updating ADT status")
+            LOG.debug(f"Updating ADT status")
             await self._hass.async_add_executor_job(self.adtpulse.update)
             #await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
-            LOG.verbose(f"Finished updating ADT status")
+            LOG.debug(f"Finished updating ADT status")
             
         except Exception as e:
             LOG.exception(e)
             raise UpdateFailed(e) from e
-        
+       
         return self.adtpulse
 
 class ADTPulseEntity(Entity):

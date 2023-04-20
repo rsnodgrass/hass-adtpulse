@@ -4,7 +4,7 @@
     "config_flow": true,
     "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "requirements": [
 	"pyadtpulse>=1.0.2",
 	"beautifulsoup4>=4.9.0",

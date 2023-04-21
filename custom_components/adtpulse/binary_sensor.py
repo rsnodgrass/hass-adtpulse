@@ -202,6 +202,10 @@ class ADTPulseZoneSensor(
             "last_activity_timestamp": self._my_zone.last_activity_timestamp,
         }
 
+    @property
+    def has_entity_name(self) -> bool:
+        return True
+
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
@@ -228,16 +232,25 @@ class ADTPulseGatewaySensor(
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site")
         self._service = service
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        super().__init__(coordinator, f"ADT Pulse Gateway for {self._service.username}")
+        self._name = f"adt_pulse_gateway_{self._service.sites[0].name}"
+        super().__init__(coordinator, self._name)
 
     @property
     def is_on(self) -> bool:
-        """Return if gatway is online.
+        """Return if gateway is online.
 
         Returns:
             bool: True if online
         """
         return self._service.gateway_online
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     # FIXME: Gateways only support one site?
     @property
@@ -247,7 +260,7 @@ class ADTPulseGatewaySensor(
         Returns:
            str : HA unique entity id
         """
-        return f"adt_pulse_gateway_connection_{self._service.sites[0].id}"
+        return f"adt_pulse_gateway_{self._service.sites[0].id}"
 
     @callback
     def _handle_coordinator_update(self) -> None:

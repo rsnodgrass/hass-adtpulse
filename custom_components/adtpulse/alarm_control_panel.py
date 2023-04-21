@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from slugify import slugify
 from typing import Coroutine, Dict, List, Optional
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -74,10 +75,10 @@ class ADTPulseAlarm(
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
-        LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.name}")
-        name = f"ADT {site.name}"
+        LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.id}")
+        self._name = slugify(f"ADT {site.name}", separator="_")
         self._site = site
-        super().__init__(coordinator, name)
+        super().__init__(coordinator, self._name)
 
     @property
     def state(self) -> StateType:
@@ -144,7 +145,8 @@ class ADTPulseAlarm(
         return {
             # FIXME: add timestamp for this state change?
             "site_id": self._site.id,
-            "site_name": self._site.name,
+            "last_update_time": self._site.last_updated,
+            "alarm_state": self._site.status,
         }
 
     @property

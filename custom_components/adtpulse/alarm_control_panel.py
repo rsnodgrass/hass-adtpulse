@@ -19,6 +19,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pyadtpulse.site import (
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
@@ -29,7 +30,6 @@ from pyadtpulse.site import (
     ADTPulseSite,
 )
 
-from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -67,7 +67,9 @@ async def async_setup_entry(
     async_add_entities(alarm_devices)
 
 
-class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
+class ADTPulseAlarm(
+    CoordinatorEntity[ADTPulseDataUpdateCoordinator], alarm.AlarmControlPanelEntity
+):
     """An alarm_control_panel implementation for ADT Pulse."""
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
@@ -169,4 +171,4 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
             f"Updating Pulse alarm to {ALARM_MAP[self._site.status]} "
             f"for site {self._site.id}"
         )
-        super()._handle_coordinator_update()
+        self.async_write_ha_state()

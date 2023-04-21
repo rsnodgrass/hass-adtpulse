@@ -7,7 +7,7 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Mapping, Optional
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -16,12 +16,12 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import STATE_OK
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -71,7 +71,9 @@ async def async_setup_entry(
         async_add_entities([ADTPulseGatewaySensor(coordinator, adt_service)])
 
 
-class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
+class ADTPulseZoneSensor(
+    CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
+):
     """HASS zone binary sensor implementation for ADT Pulse."""
 
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion',
@@ -194,21 +196,25 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         return self._device_class
 
     @property
-    def last_activity(self) -> float:
-        """Return the timestamp for the last sensor activity."""
-        return self._my_zone.last_activity_timestamp
+    def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        return {
+            "status": self._my_zone.status,
+            "last_activity_timestamp": self._my_zone.last_activity_timestamp,
+        }
 
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
             f"Setting ADT Pulse zone {self.id} to {self.is_on} "
-            f"at timestamp {self.last_activity}"
+            f"at timestamp {self._my_zone.last_activity_timestamp}"
         )
         self._set_icon()
-        return super()._handle_coordinator_update()
+        self.async_write_ha_state()
 
 
-class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
+class ADTPulseGatewaySensor(
+    CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
+):
     """HASS Gateway Online Binary Sensor."""
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, service: PyADTPulse):
@@ -246,4 +252,4 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(f"Setting Pulse Gateway status to {self._service.gateway_online}")
-        return super()._handle_coordinator_update()
+        self.async_write_ha_state()

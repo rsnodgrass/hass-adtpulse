@@ -4,7 +4,7 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from asyncio import gather, TimeoutError
+from asyncio import TimeoutError, gather
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry

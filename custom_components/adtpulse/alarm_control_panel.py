@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Coroutine, Dict, Optional, List
+from typing import Coroutine, Dict, List, Optional
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (

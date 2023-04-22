@@ -4,7 +4,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
-from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS, ADT_DEFAULT_POLL_INTERVAL
+from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
 
 from . import CannotConnect, async_connect_or_timeout
 from .const import (
@@ -79,8 +79,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
         )
         raise CannotConnect
 
-    info = await async_connect_or_timeout(hass, adtpulse)
-
+    await async_connect_or_timeout(hass, adtpulse)
     return {"title": "ADT: " + data[CONF_USERNAME]}
 
 

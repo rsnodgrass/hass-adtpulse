@@ -94,7 +94,7 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
 
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
-        if self._device_class is "door":
+        if self._device_class == "door":
             if "Window" in self.name or "window" in self.name:
                 self._device_class = "window"
 

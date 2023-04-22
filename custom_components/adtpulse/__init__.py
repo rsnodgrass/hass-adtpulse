@@ -6,6 +6,7 @@ import asyncio
 import logging
 from datetime import timedelta
 
+from homeassistant import exceptions
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -14,8 +15,6 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
-
-from homeassistant import exceptions
 
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
 from .const import CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD, CONF_USERNAME
@@ -124,10 +123,8 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self):
         """Update data via library."""
         try:
-            LOG.debug(f"Updating ADT status")
             await self._hass.async_add_executor_job(self.adtpulse.update)
             # await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
-            LOG.debug(f"Finished updating ADT status")
 
         except Exception as e:
             LOG.exception(e)

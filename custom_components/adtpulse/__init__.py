@@ -20,7 +20,7 @@ from homeassistant import exceptions
 
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
 from .const import (CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
-                    CONF_POLLING, CONF_USERNAME)
+                    CONF_USERNAME)
 
 LOG = logging.getLogger(__name__)
 

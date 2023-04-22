@@ -19,25 +19,24 @@ from requests import Session
 from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
 
-#from datetime import timedelta
-
-
+# from datetime import timedelta
 
 
 LOG = logging.getLogger(__name__)
 
-ADTPULSE_DATA = 'adtpulse'
+ADTPULSE_DATA = "adtpulse"
 
 ADT_DEVICE_CLASS_TAG_MAP = {
-    'doorWindow': 'door',
-    'motion':     'motion',
-    'smoke':      'smoke',
-    'glass':      'vibration',
-    'co':         'gas',
-    'fire':       'heat',
-    'flood':      'moisture',
-    'garage':     'garage_door' # FIXME: need ADT type
+    "doorWindow": "door",
+    "motion": "motion",
+    "smoke": "smoke",
+    "glass": "vibration",
+    "co": "gas",
+    "fire": "heat",
+    "flood": "moisture",
+    "garage": "garage_door",  # FIXME: need ADT type
 }
+
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add binary sensors for passed config_entry in HA."""
@@ -51,7 +50,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     if not adtpulse.sites:
         LOG.error(f"ADT Pulse service returned NO sites: {adtpulse}")
         return
-    
+
     sensors = []
     for site in adtpulse.sites:
         if not site.zones:
@@ -59,10 +58,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
             continue
 
         for zone in site.zones:
-            sensors.append( ADTPulseSensor(hass, adtpulse, site, zone, coordinator) )
+            sensors.append(ADTPulseSensor(hass, adtpulse, site, zone, coordinator))
 
     if sensors:
         async_add_devices(sensors)
+
 
 class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     """HASS binary sensor implementation for ADT Pulse."""
@@ -75,8 +75,8 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
         self.hass = hass
         self._adt_service = adt_service
         self._site = site
-        self._zone_id = zone_details.get('id_')
-        self._name = zone_details.get('name')
+        self._zone_id = zone_details.get("id_")
+        self._name = zone_details.get("name")
         self._update_zone_status(zone_details)
 
         self._determine_device_class()
@@ -88,9 +88,9 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
         # codes and icons are displayed. If device class is not specified, binary_sensor
         # default to a generic on/off sensor
         self._device_class = None
-        tags = self._zone.get('tags')
+        tags = self._zone.get("tags")
 
-        if 'sensor' in tags:
+        if "sensor" in tags:
             for tag in tags:
                 device_class = ADT_DEVICE_CLASS_TAG_MAP.get(tag)
                 if device_class:
@@ -99,15 +99,19 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
 
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
-        if self._device_class is 'door':
-            if 'Window' in self.name or 'window' in self.name:
-                self._device_class = 'window'
+        if self._device_class is "door":
+            if "Window" in self.name or "window" in self.name:
+                self._device_class = "window"
 
         if not self._device_class:
-            LOG.warn(f"Ignoring unsupported sensor type from ADT Pulse cloud service configured tags: {tags}")
+            LOG.warn(
+                f"Ignoring unsupported sensor type from ADT Pulse cloud service configured tags: {tags}"
+            )
             # FIXME: throw exception
         else:
-           LOG.info(f"Determined {self._name} device class {self._device_class} from ADT Pulse service configured tags {tags}")
+            LOG.info(
+                f"Determined {self._name} device class {self._device_class} from ADT Pulse service configured tags {tags}"
+            )
 
     @property
     def id(self):
@@ -117,31 +121,31 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self):
         return f"adt_pulse_sensor_{self._site.id}_{self._zone_id}"
-    
+
     @property
     def icon(self):
         """Return icon for the ADT sensor."""
-        sensor_type = self._zone.get('')
-        if sensor_type == 'doorWindow':
+        sensor_type = self._zone.get("")
+        if sensor_type == "doorWindow":
             if self.state:
-                return 'mdi:door-open'
+                return "mdi:door-open"
             else:
-                return 'mdi:door'
-        elif sensor_type == 'motion':
+                return "mdi:door"
+        elif sensor_type == "motion":
             if self.state:
-                return 'mdi:run-fast'
+                return "mdi:run-fast"
             else:
-                return 'mdi:motion-sensor'
-        elif sensor_type == 'smoke':
+                return "mdi:motion-sensor"
+        elif sensor_type == "smoke":
             if self.state:
-                return 'mdi:fire'
+                return "mdi:fire"
             else:
-                return 'mdi:smoke-detector'
-        elif sensor_type == 'glass':
-            return 'mdi:window-closed-variant'
-        elif sensor_type == 'co':
-            return 'mdi:molecule-co'
-        return 'mdi:window-closed-variant'
+                return "mdi:smoke-detector"
+        elif sensor_type == "glass":
+            return "mdi:window-closed-variant"
+        elif sensor_type == "co":
+            return "mdi:molecule-co"
+        return "mdi:window-closed-variant"
 
     @property
     def name(self):
@@ -156,7 +160,7 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self):
         """Return True if the binary sensor is on."""
-        status = self._zone.get('state')
+        status = self._zone.get("state")
         # sensor is considered tripped if the state is anything but OK
         return not status == STATE_OK
 
@@ -168,7 +172,7 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def last_activity(self):
         """Return the timestamp for the last sensor activity."""
-        return self._zone.get('timestamp')
+        return self._zone.get("timestamp")
 
     def _update_zone_status(self, zone_details):
         self._zone = zone_details
@@ -176,10 +180,12 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     def _adt_updated_callback(self):
         # find the latest data for each zone
         for zone in self._site.zones:
-            if zone.get('id') == self._zone_id:
+            if zone.get("id") == self._zone_id:
                 self._update_zone_status(zone)
 
     async def async_added_to_hass(self):
         """Register callbacks."""
         # register callback to learn ADT Pulse data has been updated
-        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback)
+        async_dispatcher_connect(
+            self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback
+        )

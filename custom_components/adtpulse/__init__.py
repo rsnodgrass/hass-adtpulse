@@ -14,37 +14,43 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import (async_dispatcher_connect,
-                                              dispatcher_send)
+from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatcher_send
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.event import track_time_interval
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity,
-                                                      DataUpdateCoordinator,
-                                                      UpdateFailed)
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity,
+    DataUpdateCoordinator,
+    UpdateFailed,
+)
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
 from requests.exceptions import ConnectTimeout, HTTPError
 
-from .const import (ADTPULSE_DOMAIN,  # pylint:disable=unused-import
-                    CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
-                    CONF_POLLING, CONF_USERNAME)
+from .const import (
+    ADTPULSE_DOMAIN,  # pylint:disable=unused-import
+    CONF_FINGERPRINT,
+    CONF_HOSTNAME,
+    CONF_PASSWORD,
+    CONF_POLLING,
+    CONF_USERNAME,
+)
 
 LOG = logging.getLogger(__name__)
 
-ADTPULSE_SERVICE = 'adtpulse_service'
+ADTPULSE_SERVICE = "adtpulse_service"
 
-SIGNAL_ADTPULSE_UPDATED = 'adtpulse_updated'
+SIGNAL_ADTPULSE_UPDATED = "adtpulse_updated"
 
-EVENT_ALARM = 'adtpulse_alarm'
-EVENT_ALARM_END = 'adtpulse_alarm_end'
+EVENT_ALARM = "adtpulse_alarm"
+EVENT_ALARM_END = "adtpulse_alarm_end"
 
-NOTIFICATION_TITLE = 'ADT Pulse'
-NOTIFICATION_ID = 'adtpulse_notification'
+NOTIFICATION_TITLE = "ADT Pulse"
+NOTIFICATION_ID = "adtpulse_notification"
 
-ATTR_SITE_ID   = 'site_id'
-ATTR_DEVICE_ID = 'device_id'
+ATTR_SITE_ID = "site_id"
+ATTR_DEVICE_ID = "device_id"
 
-SUPPORTED_PLATFORMS = [ 'alarm_control_panel', 'binary_sensor' ]
+SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
@@ -55,7 +61,18 @@ async def async_setup(hass: HomeAssistant, config: dict):
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     polling = 3
 
-    adtpulse = await hass.async_add_executor_job(PyADTPulse,entry.data[CONF_USERNAME], entry.data[CONF_PASSWORD], entry.data[CONF_FINGERPRINT], entry.data[CONF_HOSTNAME],ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
+    adtpulse = await hass.async_add_executor_job(
+        PyADTPulse,
+        entry.data[CONF_USERNAME],
+        entry.data[CONF_PASSWORD],
+        entry.data[CONF_FINGERPRINT],
+        entry.data[CONF_HOSTNAME],
+        ADT_DEFAULT_HTTP_HEADERS,
+        None,
+        True,
+        polling,
+        False,
+    )
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = adtpulse
 
     coordinator = ADTPulseDataUpdateCoordinator(hass, adtpulse, int(polling))
@@ -76,6 +93,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
     # This is called when an entry/configured device is to be removed. The class
@@ -93,6 +111,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage the refresh of the ADT Pulse data api"""
@@ -122,17 +141,18 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             LOG.debug(f"Updating ADT status")
             await self._hass.async_add_executor_job(self.adtpulse.update)
-            #await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
+            # await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
             LOG.debug(f"Finished updating ADT status")
-            
+
         except Exception as e:
             LOG.exception(e)
             raise UpdateFailed(e) from e
-       
+
         return self.adtpulse
 
+
 class ADTPulseEntity(Entity):
-    #Base Entity class for ADT Pulse devices
+    # Base Entity class for ADT Pulse devices
 
     def __init__(self, hass, service, name):
         self.hass = hass
@@ -141,15 +161,15 @@ class ADTPulseEntity(Entity):
 
         self._state = None
         self._attrs = {}
-        
+
     @property
     def name(self):
-        #Return the display name for this sensor
+        # Return the display name for this sensor
         return self._name
 
     @property
     def icon(self):
-        return 'mdi:gauge'
+        return "mdi:gauge"
 
     @property
     def state(self):
@@ -157,20 +177,23 @@ class ADTPulseEntity(Entity):
 
     @property
     def extra_state_attributes(self):
-        #Return the device state attributes.
+        # Return the device state attributes.
         return self._attrs
 
     async def async_added_to_hass(self):
-        #Register callbacks.
+        # Register callbacks.
         # register callback when cached ADTPulse data has been updated
-        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback)
+        async_dispatcher_connect(
+            self.hass, SIGNAL_ADTPULSE_UPDATED, self._update_callback
+        )
 
     @callback
     def _update_callback(self):
-        #Call update method.
+        # Call update method.
 
         # inform HASS that ADT Pulse data for this entity has been updated
         self.async_schedule_update_ha_state()
+
 
 async def async_connect_or_timeout(hass, adtpulse):
     try:
@@ -179,8 +202,10 @@ async def async_connect_or_timeout(hass, adtpulse):
         LOG.exception(e)
         raise CannotConnect from e
 
+
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
 
 class InvalidPolling(exceptions.HomeAssistantError):
     """Error to indicate polling is incorrect value."""

@@ -3,9 +3,14 @@ import logging
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
-    SUPPORT_ALARM_ARM_AWAY, SUPPORT_ALARM_ARM_HOME)
-from homeassistant.const import (STATE_ALARM_ARMED_AWAY,
-                                 STATE_ALARM_ARMED_HOME, STATE_ALARM_DISARMED)
+    SUPPORT_ALARM_ARM_AWAY,
+    SUPPORT_ALARM_ARM_HOME,
+)
+from homeassistant.const import (
+    STATE_ALARM_ARMED_AWAY,
+    STATE_ALARM_ARMED_HOME,
+    STATE_ALARM_DISARMED,
+)
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -13,6 +18,7 @@ from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED, ADTPulseEntity
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
 
 LOG = logging.getLogger(__name__)
+
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add binary sensors for passed config_entry in HA."""
@@ -30,10 +36,11 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 
     alarm_devices = []
     for site in adtpulse.sites:
-        alarm_devices.append( ADTPulseAlarm(hass, adtpulse, site, coordinator) )
+        alarm_devices.append(ADTPulseAlarm(hass, adtpulse, site, coordinator))
 
     if alarm_devices:
         async_add_devices(alarm_devices)
+
 
 class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
@@ -48,7 +55,7 @@ class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEn
     @property
     def icon(self):
         """Return the icon."""
-        return 'mdi:security'
+        return "mdi:security"
 
     @property
     def supported_features(self) -> int:
@@ -57,7 +64,7 @@ class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEn
 
     @property
     def state(self):
-        """Return the state of the device."""        
+        """Return the state of the device."""
         if self._site.is_disarmed:
             self._state = STATE_ALARM_DISARMED
         elif self._site.is_away:
@@ -97,18 +104,20 @@ class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEn
     @property
     def unique_id(self):
         return f"adt_pulse_alarm_{self._site.id}"
-    
+
     @property
     def code_format(self):
         return None
 
     def _adt_updated_callback(self):
-        #LOG.warning("ADT Pulse data updated...actually update state!")
-        
+        # LOG.warning("ADT Pulse data updated...actually update state!")
+
         # FIXME: is this even needed?  can we disable this sensor from polling, since the __init__ update mechanism updates this
-        self.async_schedule_update_ha_state() # notify HASS this entity has been updated
+        self.async_schedule_update_ha_state()  # notify HASS this entity has been updated
 
     async def async_added_to_hass(self):
         """Register callbacks."""
         # register callback to learn ADT Pulse data has been updated
-        async_dispatcher_connect(self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback)
+        async_dispatcher_connect(
+            self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback
+        )

@@ -4,13 +4,20 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 from homeassistant.core import callback
 from pyadtpulse import PyADTPulse
-from pyadtpulse.const import (ADT_DEFAULT_HTTP_HEADERS,
-                              ADT_DEFAULT_POLL_INTERVAL)
+from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS, ADT_DEFAULT_POLL_INTERVAL
 
 from . import CannotConnect, async_connect_or_timeout
-from .const import (ADTPULSE_DOMAIN, ADTPULSE_URL_CA, ADTPULSE_URL_US,
-                    CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
-                    CONF_POLLING, CONF_USERNAME, DEFAULT_SCAN_INTERVAL)
+from .const import (
+    ADTPULSE_DOMAIN,
+    ADTPULSE_URL_CA,
+    ADTPULSE_URL_US,
+    CONF_FINGERPRINT,
+    CONF_HOSTNAME,
+    CONF_PASSWORD,
+    CONF_POLLING,
+    CONF_USERNAME,
+    DEFAULT_SCAN_INTERVAL,
+)
 
 LOG = logging.getLogger(__name__)
 
@@ -30,10 +37,13 @@ DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_USERNAME): str,
         vol.Required(CONF_PASSWORD): str,
         vol.Required(CONF_FINGERPRINT): str,
-        vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In([ADTPULSE_URL_US, ADTPULSE_URL_CA]),
+        vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In(
+            [ADTPULSE_URL_US, ADTPULSE_URL_CA]
+        ),
         vol.Required(CONF_POLLING, default=DEFAULT_SCAN_INTERVAL): str,
     }
 )
+
 
 async def validate_input(hass: core.HomeAssistant, data: dict):
     try:
@@ -41,15 +51,32 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
         try:
             polling = float(data[CONF_POLLING])
             if polling <= 0:
-                LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+                LOG.error(
+                    f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0."
+                )
                 raise InvalidPolling
         except Exception as e:
-            LOG.error(f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0.")
+            LOG.error(
+                f"ADT Pulse: Invalid Polling Setting. Value that was provided was: {data[CONF_POLLING]}. Please select an integer greater than 0."
+            )
             LOG.debug(e)
             raise InvalidPolling
-        adtpulse = await hass.async_add_executor_job(PyADTPulse, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_FINGERPRINT], data[CONF_HOSTNAME], ADT_DEFAULT_HTTP_HEADERS, None, True, polling, False)
+        adtpulse = await hass.async_add_executor_job(
+            PyADTPulse,
+            data[CONF_USERNAME],
+            data[CONF_PASSWORD],
+            data[CONF_FINGERPRINT],
+            data[CONF_HOSTNAME],
+            ADT_DEFAULT_HTTP_HEADERS,
+            None,
+            True,
+            polling,
+            False,
+        )
     except Exception as e:
-        LOG.error(f"ADT Pulse: Cannot Connect. Please check your username, password, etc. Error was: {e}")
+        LOG.error(
+            f"ADT Pulse: Cannot Connect. Please check your username, password, etc. Error was: {e}"
+        )
         raise CannotConnect
 
     info = await async_connect_or_timeout(hass, adtpulse)
@@ -104,8 +131,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=ADTPULSE_DOMAIN):
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
 
+
 async def async_connect_or_timeout(hass, adtpulse):
-    #Need to add appropriate logic
+    # Need to add appropriate logic
     if adtpulse:
         LOG.info("Valid Object continuing")
 
@@ -113,8 +141,10 @@ async def async_connect_or_timeout(hass, adtpulse):
         LOG.error("Error with ADT object (probably a connection issue)")
         raise CannotConnect
 
+
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
 
 class InvalidPolling(exceptions.HomeAssistantError):
     """Error to indicate polling is incorrect value."""
@@ -145,5 +175,3 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 }
             ),
         )
-
-

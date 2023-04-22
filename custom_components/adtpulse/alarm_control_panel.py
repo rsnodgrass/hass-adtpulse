@@ -14,7 +14,7 @@ from homeassistant.const import (
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import ADTPULSE_SERVICE, SIGNAL_ADTPULSE_UPDATED, ADTPulseEntity
+from . import SIGNAL_ADTPULSE_UPDATED, ADTPulseEntity
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
 
 LOG = logging.getLogger(__name__)

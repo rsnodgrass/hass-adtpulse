@@ -4,36 +4,23 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 import asyncio
 import logging
-import time
 from datetime import timedelta
 
-import voluptuous as vol
-from homeassistant import exceptions
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import discovery
-from homeassistant.helpers.dispatcher import async_dispatcher_connect, dispatcher_send
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.event import track_time_interval
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
+from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
+                                                      UpdateFailed)
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
-from requests.exceptions import ConnectTimeout, HTTPError
 
-from .const import (
-    ADTPULSE_DOMAIN,  # pylint:disable=unused-import
-    CONF_FINGERPRINT,
-    CONF_HOSTNAME,
-    CONF_PASSWORD,
-    CONF_POLLING,
-    CONF_USERNAME,
-)
+from homeassistant import exceptions
+
+from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
+from .const import (CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
+                    CONF_POLLING, CONF_USERNAME)
 
 LOG = logging.getLogger(__name__)
 

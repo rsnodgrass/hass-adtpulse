@@ -11,16 +11,14 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.update_coordinator import (DataUpdateCoordinator,
-                                                      UpdateFailed)
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import ADT_DEFAULT_HTTP_HEADERS
 
 from homeassistant import exceptions
 
 from .const import ADTPULSE_DOMAIN  # pylint:disable=unused-import
-from .const import (CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD,
-                    CONF_USERNAME)
+from .const import CONF_FINGERPRINT, CONF_HOSTNAME, CONF_PASSWORD, CONF_USERNAME
 
 LOG = logging.getLogger(__name__)
 

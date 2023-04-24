@@ -121,26 +121,28 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     def icon(self):
         """Return icon for the ADT sensor."""
         sensor_type = self._zone.get("")
-        if sensor_type == "doorWindow":
-            if self.state:
-                return "mdi:door-open"
-            else:
-                return "mdi:door"
-        elif sensor_type == "motion":
-            if self.state:
-                return "mdi:run-fast"
-            else:
-                return "mdi:motion-sensor"
->        elif sensor_type == "smoke":
-            if self.state:
-                return "mdi:fire"
-            else:
-                return "mdi:smoke-detector"
-        elif sensor_type == "glass":
-            return "mdi:window-closed-variant"
-        elif sensor_type == "co":
-            return "mdi:molecule-co"
-        return "mdi:window-closed-variant"
+        icon = "mdi:window-closed-variant"
+        match sensor_type:
+            case "doorWindow":
+                if self.state:
+                    icon = "mdi:door-open"
+                else:
+                    icon = "mdi:door"
+            case "motion":
+                if self.state:
+                    icon = "mdi:run-fast"
+                else:
+                    icon = "mdi:motion-sensor"
+            case "smoke":
+                if self.state:
+                    icon = "mdi:fire"
+                else:
+                    icon = "mdi:smoke-detector"
+            case "glass":
+                icon = "mdi:window-closed-variant"
+            case "co":
+                icon = "mdi:molecule-co"
+        return icon
 
     @property
     def name(self):
@@ -188,6 +190,4 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        return {
-            "attribution": "Data by ADT Pulse"
-        }
+        return {"attribution": "Data by ADT Pulse"}

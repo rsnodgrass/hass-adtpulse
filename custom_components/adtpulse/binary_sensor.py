@@ -131,7 +131,7 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
                 return "mdi:run-fast"
             else:
                 return "mdi:motion-sensor"
-        elif sensor_type == "smoke":
+>        elif sensor_type == "smoke":
             if self.state:
                 return "mdi:fire"
             else:
@@ -184,3 +184,10 @@ class ADTPulseSensor(CoordinatorEntity, BinarySensorEntity):
         async_dispatcher_connect(
             self.hass, SIGNAL_ADTPULSE_UPDATED, self._adt_updated_callback
         )
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        return {
+            "attribution": "Data by ADT Pulse"
+        }

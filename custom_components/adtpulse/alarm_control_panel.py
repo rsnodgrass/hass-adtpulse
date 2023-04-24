@@ -98,7 +98,8 @@ class ADTPulseAlarm(CoordinatorEntity, ADTPulseEntity, alarm.AlarmControlPanelEn
         """Return the state attributes."""
         return {
             # FIXME: add timestamp for this state change?
-            "site_id": self._site.id
+            "site_id": self._site.id,
+            "attribution": "Data by ADT Pulse",
         }
 
     @property

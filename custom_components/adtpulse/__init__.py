@@ -45,35 +45,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # share reference to the service with other components/platforms
     # running within HASS
 
-    host = entry.data[CONF_HOSTNAME]
-    if host:
-        LOG.debug(f"Using ADT Pulse API host {host}")
-    service = PyADTPulse(
-        username,
-        password,
-        fingerprint,
-        service_host=host,
-        do_login=False,
-        create_task_cb=hass.async_create_background_task,
-    )
+    service = hass.data[ADTPULSE_DOMAIN][entry.entry_id]
+    # re-use connection from config flow if possible
+    if (
+        service is None
+        or not isinstance(service, PyADTPulse)
+        or not service.is_connected
+    ):
+        host = entry.data[CONF_HOSTNAME]
+        if host:
+            LOG.debug(f"Using ADT Pulse API host {host}")
+        service = PyADTPulse(
+            username,
+            password,
+            fingerprint,
+            service_host=host,
+            do_login=False,
+            create_task_cb=hass.async_create_background_task,
+        )
 
-    hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
-    try:
-        if not await service.async_login():
-            LOG.error(f"{ADTPULSE_DOMAIN} could not log in as user {username}")
-            raise ConfigEntryAuthFailed(
-                f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
+        hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
+        try:
+            if not await service.async_login():
+                LOG.error(f"{ADTPULSE_DOMAIN} could not log in as user {username}")
+                raise ConfigEntryAuthFailed(
+                    f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
+                )
+        except (ClientConnectionError, TimeoutError) as ex:
+            LOG.error(f"Unable to connect to ADT Pulse: {str(ex)}")
+            hass.components.persistent_notification.create(
+                f"Error: {ex}<br />You will need to restart "
+                "Home Assistant after fixing.",
+                title=NOTIFICATION_TITLE,
+                notification_id=NOTIFICATION_ID,
             )
-    except (ClientConnectionError, TimeoutError) as ex:
-        LOG.error(f"Unable to connect to ADT Pulse: {str(ex)}")
-        hass.components.persistent_notification.create(
-            f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",
-            title=NOTIFICATION_TITLE,
-            notification_id=NOTIFICATION_ID,
-        )
-        raise ConfigEntryNotReady(
-            f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
-        )
+            raise ConfigEntryNotReady(
+                f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
+            )
 
     if service.sites is None:
         LOG.error(f"{ADTPULSE_DOMAIN} could not retrieve any sites")

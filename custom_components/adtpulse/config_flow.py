@@ -44,7 +44,9 @@ DATA_SCHEMA = vol.Schema(
 )
 
 
-async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str, str]:
+async def validate_input(
+    hass: HomeAssistant, data: Dict[str, str]
+) -> Dict[str, str | PyADTPulse]:
     """Validate form input.
 
     Args:
@@ -66,18 +68,17 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
         data[CONF_FINGERPRINT],
         service_host=data[CONF_HOSTNAME],
         do_login=False,
+        create_task_cb=hass.async_create_background_task,
     )
     try:
         result = await adtpulse.async_login()
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
         raise CannotConnect from ex
-    finally:
-        await adtpulse.async_logout()
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
         raise InvalidAuth("Could not validate ADT Pulse login info")
-    return {"title": f"ADT: {data[CONF_USERNAME]}"}
+    return {"title": f"ADT: {data[CONF_USERNAME]}", "Pulse Connection": adtpulse}
 
 
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
@@ -146,9 +147,21 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
                         existing_entry, data=info
                     )
                     await self.hass.config_entries.async_reload(existing_entry.entry_id)
+                    self.hass.data[ADTPULSE_DOMAIN][existing_entry.entry_id] = info[
+                        "Pulse Connection"
+                    ]
                     return self.async_abort(reason="reauth_successful")
-
-                return self.async_create_entry(title=info["title"], data=user_input)
+                flow_result = self.async_create_entry(
+                    title=str(info["title"]), data=user_input
+                )
+                existing_entry = self._async_entry_for_username(
+                    user_input[CONF_USERNAME]
+                )
+                if existing_entry is not None:
+                    self.hass.data[ADTPULSE_DOMAIN][existing_entry.entry_id] = info[
+                        "Pulse Connection"
+                    ]
+                return flow_result
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.

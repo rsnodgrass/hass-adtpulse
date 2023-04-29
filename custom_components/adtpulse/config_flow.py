@@ -32,16 +32,36 @@ from .const import (
 # quite work as documented and always gave me the "Lokalise key references" string
 # (in square brackets), rather than the actual translated value. I did not attempt to
 # figure this out or look further into it.
-DATA_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_USERNAME): cv.string,
-        vol.Required(CONF_PASSWORD): cv.string,
-        vol.Required(CONF_FINGERPRINT): cv.string,
-        vol.Required(CONF_HOSTNAME, default=ADTPULSE_URL_US): vol.In(
-            [ADTPULSE_URL_US, ADTPULSE_URL_CA]
-        ),
-    }
-)
+
+
+def _get_data_schema(previous_input: Optional[Dict[str, Any]]) -> vol.Schema:
+    if previous_input is None:
+        new_input = {}
+    else:
+        new_input = previous_input
+    DATA_SCHEMA = vol.Schema(
+        {
+            vol.Required(
+                CONF_USERNAME,
+                description={"suggested_value": new_input.get(CONF_USERNAME)},
+            ): cv.string,
+            vol.Required(
+                CONF_PASSWORD,
+                description={"suggested_value": new_input.get(CONF_PASSWORD)},
+            ): cv.string,
+            vol.Required(
+                CONF_FINGERPRINT,
+                description={"suggested_value", new_input.get(CONF_FINGERPRINT)},
+            ): cv.string,
+            vol.Required(
+                CONF_HOSTNAME,
+                description={
+                    "suggested_value": new_input.get(CONF_HOSTNAME, ADTPULSE_URL_US)
+                },
+            ): vol.In([ADTPULSE_URL_US, ADTPULSE_URL_CA]),
+        }
+    )
+    return DATA_SCHEMA
 
 
 async def validate_input(
@@ -93,7 +113,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self.username = None
+        self.username: Optional[str] = None
         self.reauth = False
 
     # FIXME: this isn't being called for some reason
@@ -166,12 +186,12 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=_get_data_schema(user_input), errors=errors
         )
 
     async def async_step_reauth(self, data: Dict[str, str]) -> FlowResult:
         """Handle configuration by re-auth."""
-        self.username = data[CONF_USERNAME]
+        self.username = data.get(CONF_USERNAME)
         self.reauth = True
         return await self.async_step_user()
 

@@ -98,16 +98,14 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
     # FIXME: this isn't being called for some reason
     async def async_step_import(self, import_config: Dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
-        new = {**import_config}
+        new_config = {**import_config}
         if self.hass.data[CONF_HOST] is not None:
-            new.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
-            new.pop(CONF_HOST)
+            new_config.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
+            new_config.pop(CONF_HOST)
         if self.hass.data[CONF_DEVICE_ID] is not None:
-            new.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
-            new.pop(CONF_DEVICE_ID)
-        return self.async_create_entry(
-            title=f"ADT: {self.hass.data[CONF_USERNAME]}", data=new
-        )
+            new_config.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
+            new_config.pop(CONF_DEVICE_ID)
+        return await self.async_step_user(new_config)
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None

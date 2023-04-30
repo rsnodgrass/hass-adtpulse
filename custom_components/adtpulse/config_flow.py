@@ -88,7 +88,7 @@ async def validate_input(
         data[CONF_FINGERPRINT],
         service_host=data[CONF_HOSTNAME],
         do_login=False,
-        create_task_cb=hass.async_create_background_task,
+        create_task_cb=hass.async_create_background_task,  # type: ignore
     )
     try:
         result = await adtpulse.async_login()
@@ -101,7 +101,7 @@ async def validate_input(
     return {"title": f"ADT: {data[CONF_USERNAME]}", "Pulse Connection": adtpulse}
 
 
-class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):
+class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
     VERSION = 1

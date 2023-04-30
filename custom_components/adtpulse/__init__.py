@@ -45,7 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # share reference to the service with other components/platforms
     # running within HASS
 
-    service = hass.data[ADTPULSE_DOMAIN][entry.entry_id]
+    service = hass.data[ADTPULSE_DOMAIN].get(entry.entry_id)
     # re-use connection from config flow if possible
     if (
         service is None

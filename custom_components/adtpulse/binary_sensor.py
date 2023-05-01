@@ -236,7 +236,7 @@ class ADTPulseGatewaySensor(
         """
         LOG.debug(
             f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site "
-            f"{self._service.sites[0].name}"
+            f"{service.sites[0].name}"
         )
         self._service = service
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY

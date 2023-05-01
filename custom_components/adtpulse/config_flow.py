@@ -44,7 +44,7 @@ def _get_data_schema(previous_input: Optional[Dict[str, Any]]) -> vol.Schema:
             vol.Required(
                 CONF_USERNAME,
                 description={"suggested_value": new_input.get(CONF_USERNAME)},
-            ): vol.Email,
+            ): cv.string,
             vol.Required(
                 CONF_PASSWORD,
                 description={"suggested_value": new_input.get(CONF_PASSWORD)},

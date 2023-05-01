@@ -10,6 +10,8 @@
       }
     },
     "error": {
+      "cannot_connect": "Cannot connect to ADT Pulse",
+      "invalid_auth": "Invalid username/password/fingerprint",
       "unknown": "Unkown Error"
     },
     "abort": {

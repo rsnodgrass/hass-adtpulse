@@ -64,9 +64,7 @@ def _get_data_schema(previous_input: Optional[Dict[str, Any]]) -> vol.Schema:
     return DATA_SCHEMA
 
 
-async def validate_input(
-    hass: HomeAssistant, data: Dict[str, str]
-) -> Dict[str, str | PyADTPulse]:
+async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str, str]:
     """Validate form input.
 
     Args:
@@ -95,10 +93,12 @@ async def validate_input(
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
         raise CannotConnect from ex
+    finally:
+        await adtpulse.async_logout()
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
         raise InvalidAuth("Could not validate ADT Pulse login info")
-    return {"title": f"ADT: {data[CONF_USERNAME]}", "Pulse Connection": adtpulse}
+    return {"title": f"ADT: {data[CONF_USERNAME]}"}
 
 
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
@@ -167,21 +167,9 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
                         existing_entry, data=info
                     )
                     await self.hass.config_entries.async_reload(existing_entry.entry_id)
-                    self.hass.data[ADTPULSE_DOMAIN][existing_entry.entry_id] = info[
-                        "Pulse Connection"
-                    ]
                     return self.async_abort(reason="reauth_successful")
-                flow_result = self.async_create_entry(
-                    title=str(info["title"]), data=user_input
-                )
-                existing_entry = self._async_entry_for_username(
-                    user_input[CONF_USERNAME]
-                )
-                if existing_entry is not None:
-                    self.hass.data[ADTPULSE_DOMAIN][existing_entry.entry_id] = info[
-                        "Pulse Connection"
-                    ]
-                return flow_result
+
+                return self.async_create_entry(title=info["title"], data=user_input)
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.

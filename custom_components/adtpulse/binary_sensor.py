@@ -133,6 +133,10 @@ class ADTPulseZoneSensor(
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     @property
+    def name(self) -> str:
+        return self._my_zone.name
+
+    @property
     def id(self) -> str:
         """Return the id of the ADT sensor."""
         return self._my_zone.id_

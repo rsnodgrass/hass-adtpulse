@@ -11,7 +11,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.check_config import ConfigType
+from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
 
 from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME, LOG

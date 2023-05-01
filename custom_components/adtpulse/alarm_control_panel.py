@@ -115,20 +115,20 @@ class ADTPulseAlarm(
         else:
             LOG.warning(f"Could not {action} ADT Pulse alarm")
 
-    async def async_alarm_disarm(self) -> None:
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
         await self._perform_alarm_action(self._site.async_disarm(), "disarm")
 
-    async def async_alarm_arm_home(self) -> None:
+    async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
         await self._perform_alarm_action(self._site.async_arm_home(), "arm home")
 
-    async def async_alarm_arm_away(self) -> None:
+    async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
         await self._perform_alarm_action(self._site.async_arm_away(), "arm away")
 
     # Pulse can arm away or home with bypass
-    async def async_alarm_arm_custom_bypass(self) -> None:
+    async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
         """Send force arm command."""
         await self._perform_alarm_action(
             self._site.async_arm_away(force_arm=True), "force arm"

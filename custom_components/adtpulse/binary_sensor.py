@@ -236,7 +236,7 @@ class ADTPulseGatewaySensor(
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site")
         self._service = service
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"adt_pulse_gateway_{self._service.sites[0].name}"
+        self._name = f"ADT Pulse Gateway Online, Site {self._service.sites[0].name}"
         super().__init__(coordinator, self._name)
 
     @property

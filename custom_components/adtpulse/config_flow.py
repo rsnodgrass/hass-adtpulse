@@ -185,8 +185,12 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
+        if user_input is None and self.init_data is not None:
+            data_schema = _get_data_schema(self.init_data)
+        else:
+            data_schema = _get_data_schema(user_input)
         return self.async_show_form(
-            step_id="user", data_schema=_get_data_schema(user_input), errors=errors
+            step_id="user", data_schema=data_schema, errors=errors
         )
 
     async def async_step_reauth(self, data: Dict[str, str]) -> FlowResult:

@@ -39,7 +39,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
 }
 
 ADT_SENSOR_ICON_MAP = {
-    BinarySensorDeviceClass.CO: ("mdi:molecule-co", "mdi:smoke-detector-variant-off"),
+    BinarySensorDeviceClass.CO: ("mdi:molecule-co", "mdi:checkbox-marked-circle"),
     BinarySensorDeviceClass.DOOR: ("mdi:door-open", "mdi:door"),
     BinarySensorDeviceClass.GARAGE_DOOR: (
         "mdi:garage-open-variant",

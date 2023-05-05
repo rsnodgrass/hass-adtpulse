@@ -45,6 +45,13 @@ ALARM_MAP = {
     ADT_ALARM_UNKNOWN: None,
 }
 
+ALARM_ICON_MAP = {
+    ADT_ALARM_AWAY: "mdi:shield-lock",
+    ADT_ALARM_HOME: "mdi:shield-home",
+    ADT_ALARM_OFF: "mdi:shield-off",
+    ADT_ALARM_UNKNOWN: "mdi:shield-bug",
+}
+
 
 async def async_setup_entry(
     hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -100,7 +107,9 @@ class ADTPulseAlarm(
     @property
     def icon(self) -> str:
         """Return the icon."""
-        return "mdi:security"
+        if self._site.status not in ALARM_ICON_MAP:
+            return "mdi:shield-alert"
+        return ALARM_ICON_MAP[self._site.status]
 
     @property
     def supported_features(self) -> AlarmControlPanelEntityFeature:

@@ -26,16 +26,34 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
-# FIXME: should be BinarySensorEntityDescription?
+# please keep these alphabetized to make changes easier
 ADT_DEVICE_CLASS_TAG_MAP = {
+    "co": BinarySensorDeviceClass.CO,
     "doorWindow": BinarySensorDeviceClass.DOOR,
+    "flood": BinarySensorDeviceClass.MOISTURE,
+    "garage": BinarySensorDeviceClass.GARAGE_DOOR,  # FIXME: need ADT type
+    "fire": BinarySensorDeviceClass.HEAT,
     "motion": BinarySensorDeviceClass.MOTION,
     "smoke": BinarySensorDeviceClass.SMOKE,
     "glass": BinarySensorDeviceClass.TAMPER,
-    "co": BinarySensorDeviceClass.CO,
-    "fire": BinarySensorDeviceClass.HEAT,
-    "flood": BinarySensorDeviceClass.MOISTURE,
-    "garage": BinarySensorDeviceClass.GARAGE_DOOR,  # FIXME: need ADT type
+}
+
+ADT_SENSOR_ICON_MAP = {
+    BinarySensorDeviceClass.CO: ("mdi:molecule-co", "mdi:smoke-detector-variant-off"),
+    BinarySensorDeviceClass.DOOR: ("mdi:door-open", "mdi:door"),
+    BinarySensorDeviceClass.GARAGE_DOOR: (
+        "mdi:garage-open-variant",
+        "mdi:garage-variant",
+    ),
+    BinarySensorDeviceClass.HEAT: ("mdi:fire", "mdi:smoke-detector-variant"),
+    BinarySensorDeviceClass.MOISTURE: ("mdi:home-flood", "mdi:heat-wave"),
+    BinarySensorDeviceClass.MOTION: ("mdi:run-fast", "mdi:motion-sensor"),
+    BinarySensorDeviceClass.SMOKE: ("mdi:fire", "mdi:smoke-detector-variant"),
+    BinarySensorDeviceClass.TAMPER: ("mdi:window-open", "mdi:window-closed"),
+    BinarySensorDeviceClass.WINDOW: (
+        "mdi:window-open-variant",
+        "mdi:window-open-variant",
+    ),
 }
 
 
@@ -131,7 +149,6 @@ class ADTPulseZoneSensor(
         self._my_zone = self._get_my_zone(site, zone_id)
         self._device_class = self._determine_device_class(self._my_zone)
         super().__init__(coordinator, self._my_zone.name)
-        self._set_icon()
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
     @property
@@ -156,37 +173,14 @@ class ADTPulseZoneSensor(
         Returns:
             str: returns mdi:icon corresponding to current state
         """
-        return self._icon
-
-    # FIXME: do we need to set icons if device class is set?
-    def _set_icon(self) -> None:
-        """Return icon for the ADT sensor."""
-        sensor_type = self._device_class
-        if sensor_type == BinarySensorDeviceClass.DOOR:
-            if self.is_on:
-                self._icon = "mdi:door-open"
-            else:
-                self._icon = "mdi:door"
-            return
-        elif sensor_type == BinarySensorDeviceClass.MOTION:
-            if self.is_on:
-                self._icon = "mdi:run-fast"
-            else:
-                self._icon = "mdi:motion-sensor"
-            return
-        elif sensor_type == BinarySensorDeviceClass.SMOKE:
-            if self.is_on:
-                self._icon = "mdi:fire"
-            else:
-                self._icon = "mdi:smoke-detector"
-            return
-        elif sensor_type == BinarySensorDeviceClass.WINDOW:
-            self._icon = "mdi:window-closed-variant"
-            return
-        elif sensor_type == BinarySensorDeviceClass.CO:
-            self._icon = "mdi:molecule-co"
-            return
-        self._icon = "mdi:window-closed-variant"
+        if self.device_class not in ADT_SENSOR_ICON_MAP:
+            LOG.error(
+                f"Unknown ADT Pulse binary sensor device type {self.device_class}"
+            )
+            return "mdi:alert-octogram"
+        if self.is_on:
+            return ADT_SENSOR_ICON_MAP[self.device_class][0]
+        return ADT_SENSOR_ICON_MAP[self.device_class][1]
 
     @property
     def is_on(self) -> bool:
@@ -226,7 +220,6 @@ class ADTPulseZoneSensor(
             f"Setting ADT Pulse zone {self.id} to {self.is_on} "
             f"at timestamp {self._my_zone.last_activity_timestamp}"
         )
-        self._set_icon()
         self.async_write_ha_state()
 
 
@@ -270,6 +263,12 @@ class ADTPulseGatewaySensor(
     def unique_id(self) -> str:
         """Return HA unique id."""
         return f"adt_pulse_gateway_{self._service.sites[0].id}"
+
+    @property
+    def icon(self) -> str:
+        if self.is_on:
+            return "mdi:lan-connect"
+        return "mdi:lan-disconnect"
 
     @property
     def attribution(self) -> str | None:

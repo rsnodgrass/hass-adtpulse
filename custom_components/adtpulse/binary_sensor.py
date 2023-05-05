@@ -29,7 +29,7 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 # FIXME: should be BinarySensorEntityDescription?
 ADT_DEVICE_CLASS_TAG_MAP = {
     "doorWindow": BinarySensorDeviceClass.DOOR,
-    "motion": BinarySensorDeviceClass.OCCUPANCY,
+    "motion": BinarySensorDeviceClass.MOTION,
     "smoke": BinarySensorDeviceClass.SMOKE,
     "glass": BinarySensorDeviceClass.TAMPER,
     "co": BinarySensorDeviceClass.CO,
@@ -90,7 +90,8 @@ class ADTPulseZoneSensor(
     def _determine_device_class(zone_data: ADTPulseZoneData) -> BinarySensorDeviceClass:
         # map the ADT Pulse device type tag to a binary_sensor class
         # so the proper status codes and icons are displayed. If device class
-        # is not specified, binary_sensordefault to a generic on/off sensor
+        # is not specified, binary_sensor defaults to a generic on/off sensor
+
         tags = zone_data.tags
         device_class: Optional[BinarySensorDeviceClass] = None
         if "sensor" in tags:
@@ -160,6 +161,7 @@ class ADTPulseZoneSensor(
         """
         return self._icon
 
+    # FIXME: do we need to set icons if device class is set?
     def _set_icon(self) -> None:
         """Return icon for the ADT sensor."""
         sensor_type = self._device_class

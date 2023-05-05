@@ -31,7 +31,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ADTPULSE_DOMAIN
+from .const import ADTPULSE_DOMAIN, ADTPULSE_DATA_ATTRIBUTION
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = logging.getLogger(__name__)
@@ -91,6 +91,11 @@ class ADTPulseAlarm(
             return ALARM_MAP[self._site.status]
         else:
             return None
+
+    @property
+    def attribution(self) -> str | None:
+        """Return API data attribution."""
+        return ADTPULSE_DATA_ATTRIBUTION
 
     @property
     def icon(self) -> str:

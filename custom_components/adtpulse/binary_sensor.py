@@ -23,7 +23,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ADTPULSE_DOMAIN, LOG
+from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 # FIXME: should be BinarySensorEntityDescription?
@@ -136,6 +136,7 @@ class ADTPulseZoneSensor(
 
     @property
     def name(self) -> str:
+        """Return the name of the zone."""
         return self._my_zone.name
 
     @property
@@ -145,11 +146,7 @@ class ADTPulseZoneSensor(
 
     @property
     def unique_id(self) -> str:
-        """Return HA unique id.
-
-        Returns:
-           str : HA unique entity id
-        """
+        """Return HA unique id."""
         return f"adt_pulse_sensor_{self._site.id}_{self._zone_id}"
 
     @property
@@ -204,6 +201,10 @@ class ADTPulseZoneSensor(
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
+        """Return extra state attributes.
+
+        currently status and last_activity_timestamp
+        """
         return {
             "status": self._my_zone.status,
             "last_activity_timestamp": self._my_zone.last_activity_timestamp,
@@ -211,7 +212,13 @@ class ADTPulseZoneSensor(
 
     @property
     def has_entity_name(self) -> bool:
+        """Return has_entity_name."""
         return True
+
+    @property
+    def attribution(self) -> str:
+        """Return API data attribution."""
+        return ADTPULSE_DATA_ATTRIBUTION
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -247,11 +254,7 @@ class ADTPulseGatewaySensor(
 
     @property
     def is_on(self) -> bool:
-        """Return if gateway is online.
-
-        Returns:
-            bool: True if online
-        """
+        """Return if gateway is online."""
         return self._service.gateway_online
 
     @property
@@ -265,12 +268,13 @@ class ADTPulseGatewaySensor(
     # FIXME: Gateways only support one site?
     @property
     def unique_id(self) -> str:
-        """Return HA unique id.
-
-        Returns:
-           str : HA unique entity id
-        """
+        """Return HA unique id."""
         return f"adt_pulse_gateway_{self._service.sites[0].id}"
+
+    @property
+    def attribution(self) -> str | None:
+        """Return API data attribution."""
+        return ADTPULSE_DATA_ATTRIBUTION
 
     @callback
     def _handle_coordinator_update(self) -> None:

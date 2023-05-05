@@ -52,7 +52,7 @@ ADT_SENSOR_ICON_MAP = {
     BinarySensorDeviceClass.TAMPER: ("mdi:window-open", "mdi:window-closed"),
     BinarySensorDeviceClass.WINDOW: (
         "mdi:window-open-variant",
-        "mdi:window-open-variant",
+        "mdi:window-closed-variant",
     ),
 }
 

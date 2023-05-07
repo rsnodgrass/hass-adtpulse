@@ -5,7 +5,8 @@
         "data": {
           "username": "username",
           "password": "password",
-          "fingerprint": "fingerprint"
+          "fingerprint": "fingerprint",
+          "hostname": "hostname"
         }
       }
     },

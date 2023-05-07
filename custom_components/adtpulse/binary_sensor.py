@@ -205,11 +205,6 @@ class ADTPulseZoneSensor(
         }
 
     @property
-    def has_entity_name(self) -> bool:
-        """Return has_entity_name."""
-        return True
-
-    @property
     def attribution(self) -> str:
         """Return API data attribution."""
         return ADTPULSE_DATA_ATTRIBUTION
@@ -253,10 +248,6 @@ class ADTPulseGatewaySensor(
     @property
     def name(self) -> str:
         return self._name
-
-    @property
-    def has_entity_name(self) -> bool:
-        return True
 
     # FIXME: Gateways only support one site?
     @property

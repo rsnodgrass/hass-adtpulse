@@ -157,14 +157,9 @@ class ADTPulseZoneSensor(
         return self._my_zone.name
 
     @property
-    def id(self) -> str:
-        """Return the id of the ADT sensor."""
-        return self._my_zone.id_
-
-    @property
     def unique_id(self) -> str:
         """Return HA unique id."""
-        return f"adt_pulse_sensor_{self._site.id}_{self._zone_id}"
+        return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
 
     @property
     def icon(self) -> str:
@@ -212,7 +207,7 @@ class ADTPulseZoneSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Setting ADT Pulse zone {self.id} to {self.is_on} "
+            f"Setting ADT Pulse zone {self.name} to on={self.is_on} "
             f"at timestamp {self._my_zone.last_activity_timestamp}"
         )
         self.async_write_ha_state()

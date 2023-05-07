@@ -104,6 +104,7 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
+
     VERSION = 1
     # Pick one of the available connection classes in homeassistant/config_entries.py
     # This tells HA if it should be asking for updates, or it'll be notified of updates
@@ -160,7 +161,6 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             except Exception:  # pylint: disable=broad-except
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
-
             if not errors:
                 if existing_entry:
                     self.hass.config_entries.async_update_entry(

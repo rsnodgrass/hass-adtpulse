@@ -98,6 +98,7 @@ class ADTPulseAlarm(
         else:
             return None
 
+
     @property
     def attribution(self) -> str | None:
         """Return API data attribution."""

@@ -89,6 +89,7 @@ async def async_setup_entry(
         async_add_entities([ADTPulseGatewaySensor(coordinator, adt_service)])
 
 
+
 class ADTPulseZoneSensor(
     CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
 ):
@@ -111,6 +112,7 @@ class ADTPulseZoneSensor(
 
         tags = zone_data.tags
         device_class: Optional[BinarySensorDeviceClass] = None
+
         if "sensor" in tags:
             for tag in tags:
                 try:
@@ -150,6 +152,7 @@ class ADTPulseZoneSensor(
         super().__init__(coordinator, self._my_zone.name)
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
+
     @property
     def name(self) -> str:
         """Return the name of the zone."""
@@ -159,6 +162,7 @@ class ADTPulseZoneSensor(
     def unique_id(self) -> str:
         """Return HA unique id."""
         return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
+
 
     @property
     def icon(self) -> str:

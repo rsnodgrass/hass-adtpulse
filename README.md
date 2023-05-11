@@ -15,21 +15,23 @@ Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) securit
 
 [rlippmann@](https://github.com/rlippmann) has been busy making major contributions to pyadtpulse to support async behavior. He is currently (2023) working on switching the HA ADTPulse integration to utilize the async model.
 
-## THIS IS NOT SUPPORTED!
+## THIS IS NOT SUPPORTED
 
-NOTE: *Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay is based on the refresh_interval you have configured (default is 5 seconds). This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.
+NOTE: \*Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay should be minimal as the integration will be pushed the data from ADT Pulse's cloud service when updates are detected. This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.
 
 This platform supports the following services:
 
 * `alarm_arm_away`
 * `alarm_arm_home`
 * `alarm_disarm`
+* `alarm_arm_custom_bypass`
+
 
 ## WARNING: ADT Accounts with 2FA May Not Work
 
-As of August 29, 2021 ADT Pulse has had 2FA added. This breaks any integration that relies on logging in with a user and password. However, the following is a workaround from `@mrholshi`:
+As of August 29, 2021 ADT Pulse has had 2FA added and is currently required for all ADT Pulse access. This breaks any integration that relies on logging in with a user and password.  Because of this, a separate username/password should be created exclusively for Home Assistant login.  A browser fingerprint is used by Pulse to indicate when a user "saves" the browser via 2FA.  Details on obtaining this fingerprint is given below.
 
-*Create an additional "service" account user and give that account access to your site. This can be used as long as that "service" account does not op-in to 2FA in either the Pulse app or portal. Login using the Pulse web portal to set up the security question. This account can only log in the first time to set security questions, since any login after that will prompt to set up 2FA.*
+
 
 ## Installation
 
@@ -47,8 +49,8 @@ Note: Manual installation by direct download and copying is not supported, if yo
 
 To enable ADT Pulse, add the following integration like any other integration in HA. Input the necessary details including username, password, fingerprint (please see the below step "Step to Get Your Trusted Device") and select the URL and frequency for updates.
 
-
 #### Step to Get Your Trusted Device
+
 1. Go to the ADT Pulse Login page but do not login.
 2. Open up the developer tools for your browser and make sure you enable the network capturing option and recording is enabled
 3. Login to your account
@@ -56,7 +58,11 @@ To enable ADT Pulse, add the following integration like any other integration in
 
 ![ADT Save Device](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_save_device.jpg?raw=true)
 
-5. Open up the developer tools and look for the page called "signin.jsp". Under the form data, look for "fingerprint". Copy that value and use it for the device_id value in your configuration.yaml file. If for some reason you didn't record, just re-login to your account again with the same browser.
+5. Get the fingerprint. There are 2 ways to do this:
+
+   - Using the same browser you used to authenticate with ADT Pulse, navigate to [this page](https://rawcdn.githack.com/rlippmann/pyadtpulse/b3a0e7097e22446623d170f0a971726fbedb6a2d/doc/browser_fingerprint.html) It will show you the browser fingerprint and allow you to copy it to your clipboard. If this doesn't work, try the next step.
+
+   - Open up the developer tools and look for the page called "signin.jsp". Under the form data, look for "fingerprint". Copy that value and use it for the device_id value in your configuration.yaml file. If for some reason you didn't record, just re-login to your account again with the same browser.
 
 ![ADT Form Data](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_form_data.jpg?raw=true)
 
@@ -130,6 +136,7 @@ entity: alarm_control_panel.adt_pulse
 states:
   - arm_away
   - arm_home
+  - arm_custom_bypass
 ```
 
 ## Automation Example
@@ -175,5 +182,5 @@ This integration was developed to cover use cases for my home integration, which
 
 No plans to implement support for the following (however, feel free to contribute):
 
-* Home Assistant config flow (would be nice to add)
-* ADT Pulse cameras, lighting and dimmers
+~~* Home Assistant config flow (would be nice to add)~~
+ * ADT Pulse cameras, lighting and dimmers

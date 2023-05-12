@@ -34,7 +34,7 @@ from .const import (
 # figure this out or look further into it.
 
 
-def _get_data_schema(previous_input: Optional[Dict[str, Any]]) -> vol.Schema:
+def _get_data_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
     if previous_input is None:
         new_input = {}
     else:
@@ -64,7 +64,7 @@ def _get_data_schema(previous_input: Optional[Dict[str, Any]]) -> vol.Schema:
     return DATA_SCHEMA
 
 
-async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str, str]:
+async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str, str]:
     """Validate form input.
 
     Args:
@@ -104,7 +104,6 @@ async def validate_input(hass: HomeAssistant, data: Dict[str, str]) -> Dict[str,
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
-
     VERSION = 1
     # Pick one of the available connection classes in homeassistant/config_entries.py
     # This tells HA if it should be asking for updates, or it'll be notified of updates
@@ -114,11 +113,11 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
     def __init__(self) -> None:
         """Initialize the config flow."""
-        self.username: Optional[str] = None
+        self.username: str | None = None
         self.reauth = False
 
     # FIXME: this isn't being called for some reason
-    async def async_step_import(self, import_config: Dict[str, Any]) -> FlowResult:
+    async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
         new_config = {**import_config}
         if self.hass.data[CONF_HOST] is not None:
@@ -130,7 +129,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         return await self.async_step_user(new_config)
 
     async def async_step_user(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step.
 
@@ -181,14 +180,14 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             step_id="user", data_schema=data_schema, errors=errors
         )
 
-    async def async_step_reauth(self, data: Dict[str, str]) -> FlowResult:
+    async def async_step_reauth(self, data: dict[str, str]) -> FlowResult:
         """Handle configuration by re-auth."""
         self.username = data.get(CONF_USERNAME)
         self.reauth = True
         return await self.async_step_user()
 
     @callback
-    def _async_entry_for_username(self, username: str) -> Optional[ConfigEntry]:
+    def _async_entry_for_username(self, username: str) -> ConfigEntry | None:
         """Find an existing entry for a username."""
         for entry in self._async_current_entries():
             if entry.data.get(CONF_USERNAME) == username:

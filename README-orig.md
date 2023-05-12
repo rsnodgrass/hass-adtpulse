@@ -185,7 +185,7 @@ automation:
 
 ## Support
 
-This integration was developed to cover use cases for my home integration, which I wanted to contribute to the community. Additional features beyond what has already been provided are the responsibility of the community to implement (unless trivial to add). 
+This integration was developed to cover use cases for my home integration, which I wanted to contribute to the community. Additional features beyond what has already been provided are the responsibility of the community to implement (unless trivial to add).
 
 ### Not Supported
 

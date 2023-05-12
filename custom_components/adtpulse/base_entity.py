@@ -1,8 +1,6 @@
 """ADT Pulse Entity Base class."""
 from __future__ import annotations
 
-from typing import Dict
-
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -22,7 +20,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         """
         self._name = name
 
-        self._attrs: Dict = {}
+        self._attrs: dict = {}
         super().__init__(coordinator)
 
     @property
@@ -40,7 +38,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return "mdi:gauge"
 
     @property
-    def extra_state_attributes(self) -> Dict:
+    def extra_state_attributes(self) -> dict:
         """Return the device state attributes."""
         return self._attrs
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Coroutine, Dict, List, Optional
+from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm
 from homeassistant.components.alarm_control_panel.const import (
@@ -67,10 +67,9 @@ async def async_setup_entry(
         LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
         return
 
-    alarm_devices: List[ADTPulseAlarm] = []
-    for site in coordinator.adtpulse.sites:
-        alarm_devices.append(ADTPulseAlarm(coordinator, site))
-
+    alarm_devices = [
+        ADTPulseAlarm(coordinator, site) for site in coordinator.adtpulse.sites
+    ]
     async_add_entities(alarm_devices)
 
 
@@ -95,9 +94,7 @@ class ADTPulseAlarm(
         """
         if self._site.status in ALARM_MAP:
             return ALARM_MAP[self._site.status]
-        else:
-            return None
-
+        return None
 
     @property
     def attribution(self) -> str | None:
@@ -121,7 +118,7 @@ class ADTPulseAlarm(
         )
 
     async def _perform_alarm_action(
-        self, arm_disarm_func: Coroutine[Optional[bool], None, bool], action: str
+        self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
         LOG.debug(f"{ADTPULSE_DOMAIN}: Setting Alarm to  {action}")
         if await arm_disarm_func:
@@ -154,7 +151,7 @@ class ADTPulseAlarm(
         return self._name
 
     @property
-    def extra_state_attributes(self) -> Dict:
+    def extra_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
             # FIXME: add timestamp for this state change?

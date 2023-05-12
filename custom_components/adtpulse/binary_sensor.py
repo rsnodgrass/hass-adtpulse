@@ -7,7 +7,7 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional
+from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -89,7 +89,6 @@ async def async_setup_entry(
         async_add_entities([ADTPulseGatewaySensor(coordinator, adt_service)])
 
 
-
 class ADTPulseZoneSensor(
     CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
 ):
@@ -111,7 +110,7 @@ class ADTPulseZoneSensor(
         # is not specified, binary_sensor defaults to a generic on/off sensor
 
         tags = zone_data.tags
-        device_class: Optional[BinarySensorDeviceClass] = None
+        device_class: BinarySensorDeviceClass | None = None
 
         if "sensor" in tags:
             for tag in tags:
@@ -152,7 +151,6 @@ class ADTPulseZoneSensor(
         super().__init__(coordinator, self._my_zone.name)
         LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
 
-
     @property
     def name(self) -> str:
         """Return the name of the zone."""
@@ -162,7 +160,6 @@ class ADTPulseZoneSensor(
     def unique_id(self) -> str:
         """Return HA unique id."""
         return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
-
 
     @property
     def icon(self) -> str:

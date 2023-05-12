@@ -67,10 +67,9 @@ async def async_setup_entry(
         LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
         return
 
-    alarm_devices: list[ADTPulseAlarm] = []
-    for site in coordinator.adtpulse.sites:
-        alarm_devices.append(ADTPulseAlarm(coordinator, site))
-
+    alarm_devices = [
+        ADTPulseAlarm(coordinator, site) for site in coordinator.adtpulse.sites
+    ]
     async_add_entities(alarm_devices)
 
 
@@ -95,8 +94,7 @@ class ADTPulseAlarm(
         """
         if self._site.status in ALARM_MAP:
             return ALARM_MAP[self._site.status]
-        else:
-            return None
+        return None
 
     @property
     def attribution(self) -> str | None:

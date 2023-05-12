@@ -66,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
             )
     except (ClientConnectionError, TimeoutError) as ex:
-        LOG.error(f"Unable to connect to ADT Pulse: {str(ex)}")
+        LOG.error(f"Unable to connect to ADT Pulse: {ex}")
         hass.components.persistent_notification.create(
             f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",
             title=NOTIFICATION_TITLE,

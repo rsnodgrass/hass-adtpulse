@@ -6,14 +6,13 @@
           "username": "username",
           "password": "password",
           "fingerprint": "fingerprint",
-          "hostname": "hostname",
-          "polling": "polling"
+          "hostname": "hostname"
         }
       }
     },
     "error": {
-      "invalid_polling": "Invalid Polling Value. Please select a positive integer.",
-      "cannot_connect": "Cannot Connect. Please validate username and password",
+      "cannot_connect": "Cannot connect to ADT Pulse",
+      "invalid_auth": "Invalid username/password/fingerprint",
       "unknown": "Unkown Error"
     },
     "abort": {

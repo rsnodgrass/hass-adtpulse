@@ -23,6 +23,7 @@ NOTIFICATION_ID = "adtpulse_notification"
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Start up the ADT Pulse HA integration.
 
@@ -90,19 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
     )
-
-
-    async def _async_update_data(self):
-        """Update data via library."""
-        try:
-            await self._hass.async_add_executor_job(self.adtpulse.update)
-            # await self._hass.async_add_executor_job(self.adtpulse.wait_for_update)
-
-        except Exception as e:
-            LOG.exception(e)
-            raise UpdateFailed(e) from e
-
-        return self.adtpulse
+    return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

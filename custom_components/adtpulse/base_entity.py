@@ -1,8 +1,6 @@
 """ADT Pulse Entity Base class."""
 from __future__ import annotations
 
-from typing import Dict
-
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 

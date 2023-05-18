@@ -1,6 +1,5 @@
 {
   "name": "ADT Pulse",
   "homeassistant": "2023.1.0",
-  "render_readme": true,
-  "documentation": "https://github.com/rsnodgrass/hass-adtpulse"
+  "render_readme": true
 }

@@ -6,7 +6,7 @@
           "username": "[%key:common::config_flow::data::username%]",
           "password": "[%key:common::config_flow::data::password%]",
           "fingerprint": "[%key:common::config_flow::data::fingerprint%]",
-          "hostname": "[%key:common::config_flow::data::hostname%]",
+          "hostname": "[%key:common::config_flow::data::hostname%]"
         }
       }
     },

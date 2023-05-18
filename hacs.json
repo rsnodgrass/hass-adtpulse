@@ -1,5 +1,4 @@
 {
-  "config_flow": true,
   "name": "ADT Pulse",
   "domains": ["alarm_control_panel", "binary_sensor"],
   "homeassistant": "2023.1.0",

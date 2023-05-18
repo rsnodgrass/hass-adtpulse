@@ -1,16 +1,16 @@
 {
     "domain": "adtpulse",
     "name": "ADT Pulse",
+    "codeowners": [],
     "config_flow": true,
+    "dependencies": [],
     "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
+    "iot_class": "cloud_push"
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
-    "version": "0.2.6",
     "requirements": [
         "pyadtpulse>=1.0.4",
         "beautifulsoup4>=4.9.0",
         "uvloop>=0.17.0"
     ],
-    "dependencies": [],
-    "codeowners": [],
-    "iot_class": "cloud_push"
+    "version": "0.2.6",
 }

@@ -12,5 +12,5 @@
         "beautifulsoup4>=4.9.0",
         "uvloop>=0.17.0"
     ],
-    "version": "0.2.6",
+    "version": "0.2.6"
 }

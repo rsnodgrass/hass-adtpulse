@@ -5,9 +5,9 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigEntry, ConfigFlow
+from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigFlow
 from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse

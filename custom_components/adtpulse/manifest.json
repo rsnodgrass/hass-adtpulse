@@ -11,5 +11,5 @@
         "pyadtpulse>=1.0.4",
         "beautifulsoup4>=4.9.0"
     ],
-    "version": "0.2.7"
+    "version": "0.2.7.1"
 }

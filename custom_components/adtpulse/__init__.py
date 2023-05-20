@@ -17,7 +17,6 @@ from pyadtpulse import PyADTPulse
 from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
-
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
 

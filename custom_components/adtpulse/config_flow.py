@@ -90,6 +90,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str,
     )
     try:
         result = await adtpulse.async_login()
+        site_id = adtpulse.sites[0]
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
         raise CannotConnect from ex
@@ -98,7 +99,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str,
     if not result:
         LOG.error("Could not validate login info for ADT Pulse")
         raise InvalidAuth("Could not validate ADT Pulse login info")
-    return {"title": f"ADT: {data[CONF_USERNAME]}"}
+    return {"title": f"ADT: Site {site_id}"}
 
 
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore

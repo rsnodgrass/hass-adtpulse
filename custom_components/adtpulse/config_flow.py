@@ -112,11 +112,6 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     # changes.
     CONNECTION_CLASS = CONN_CLASS_CLOUD_PUSH
 
-    def __init__(self) -> None:
-        """Initialize the config flow."""
-        self.username: str | None = None
-        self.reauth = False
-
     # FIXME: this isn't being called for some reason
     async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
@@ -149,9 +144,6 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         # `validate_input` above.
         errors = info = {}
         if user_input is not None:
-            existing_entry = self._async_entry_for_username(user_input[CONF_USERNAME])
-            if existing_entry and not self.reauth:
-                return self.async_abort(reason="already_configured")
             try:
                 info = await validate_input(self.hass, user_input)
             except CannotConnect:
@@ -162,38 +154,13 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
             if not errors:
-                if existing_entry:
-                    self.hass.config_entries.async_update_entry(
-                        existing_entry, data=info
-                    )
-                    await self.hass.config_entries.async_reload(existing_entry.entry_id)
-                    return self.async_abort(reason="reauth_successful")
-
                 return self.async_create_entry(title=info["title"], data=user_input)
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
-        if user_input is None and self.init_data is not None:
-            data_schema = _get_data_schema(self.init_data)
-        else:
-            data_schema = _get_data_schema(user_input)
         return self.async_show_form(
-            step_id="user", data_schema=data_schema, errors=errors
+            step_id="user", data_schema=_get_data_schema(user_input), errors=errors
         )
-
-    async def async_step_reauth(self, data: dict[str, str]) -> FlowResult:
-        """Handle configuration by re-auth."""
-        self.username = data.get(CONF_USERNAME)
-        self.reauth = True
-        return await self.async_step_user()
-
-    @callback
-    def _async_entry_for_username(self, username: str) -> ConfigEntry | None:
-        """Find an existing entry for a username."""
-        for entry in self._async_current_entries():
-            if entry.data.get(CONF_USERNAME) == username:
-                return entry
-        return None
 
 
 class CannotConnect(HomeAssistantError):

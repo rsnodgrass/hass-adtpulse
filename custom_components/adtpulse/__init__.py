@@ -50,12 +50,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if host:
         LOG.debug(f"Using ADT Pulse API host {host}")
     service = PyADTPulse(
-        username,
-        password,
-        fingerprint,
-        service_host=host,
-        do_login=False,
-        create_task_cb=hass.async_create_background_task,
+        username, password, fingerprint, service_host=host, do_login=False
     )
 
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service

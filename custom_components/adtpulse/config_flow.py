@@ -86,7 +86,6 @@ async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str,
         data[CONF_FINGERPRINT],
         service_host=data[CONF_HOSTNAME],
         do_login=False,
-        create_task_cb=hass.async_create_background_task,  # type: ignore
     )
     try:
         result = await adtpulse.async_login()

@@ -9,8 +9,7 @@
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
     "requirements": [
         "pyadtpulse>=1.0.4",
-        "beautifulsoup4>=4.9.0",
-        "uvloop>=0.17.0"
+        "beautifulsoup4>=4.9.0"
     ],
     "version": "0.2.7"
 }

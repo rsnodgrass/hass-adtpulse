@@ -17,9 +17,6 @@ from pyadtpulse import PyADTPulse
 from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME, LOG
 from .coordinator import ADTPulseDataUpdateCoordinator
 
-NOTIFICATION_TITLE = "ADT Pulse"
-NOTIFICATION_ID = "adtpulse_notification"
-
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
@@ -62,11 +59,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
     except (ClientConnectionError, TimeoutError) as ex:
         LOG.error(f"Unable to connect to ADT Pulse: {ex}")
-        hass.components.persistent_notification.create(
-            f"Error: {ex}<br />You will need to restart Home Assistant after fixing.",
-            title=NOTIFICATION_TITLE,
-            notification_id=NOTIFICATION_ID,
-        )
         raise ConfigEntryNotReady(
             f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
         )

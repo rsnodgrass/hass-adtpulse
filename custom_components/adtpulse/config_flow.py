@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
+from pyadtpulse.site import ADTPulseSite
 
 from .const import (
     ADTPULSE_DOMAIN,
@@ -89,7 +90,8 @@ async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str,
     )
     try:
         result = await adtpulse.async_login()
-        site_id = adtpulse.sites[0]
+        site: ADTPulseSite = adtpulse.sites[0]
+        site_id = site.id
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")
         raise CannotConnect from ex

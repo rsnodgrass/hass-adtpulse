@@ -1,7 +1,8 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 
-import logging
+from logging import getLogger
+from datetime import datetime
 from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -20,20 +21,20 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from pyadtpulse.site import (
+from pyadtpulse.alarm_panel import (
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
     ADT_ALARM_DISARMING,
     ADT_ALARM_HOME,
     ADT_ALARM_OFF,
     ADT_ALARM_UNKNOWN,
-    ADTPulseSite,
 )
+from pyadtpulse.site import ADTPulseSite
 
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
-LOG = logging.getLogger(__name__)
+LOG = getLogger(__name__)
 
 ALARM_MAP = {
     ADT_ALARM_ARMING: STATE_ALARM_ARMING,
@@ -63,13 +64,8 @@ async def async_setup_entry(
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
 
-    if not coordinator.adtpulse.sites:
-        LOG.error(f"ADT Pulse service failed to return sites: {coordinator.adtpulse}")
-        return
+    alarm_devices = [ADTPulseAlarm(coordinator, coordinator.adtpulse.site)]
 
-    alarm_devices = [
-        ADTPulseAlarm(coordinator, site) for site in coordinator.adtpulse.sites
-    ]
     async_add_entities(alarm_devices)
 
 
@@ -83,6 +79,7 @@ class ADTPulseAlarm(
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.id}")
         self._name = f"ADT {site.name}"
         self._site = site
+        self._alarm = site.alarm_control_panel
         super().__init__(coordinator, self._name)
 
     @property
@@ -92,8 +89,8 @@ class ADTPulseAlarm(
         Returns:
             str: the status
         """
-        if self._site.status in ALARM_MAP:
-            return ALARM_MAP[self._site.status]
+        if self._alarm.status in ALARM_MAP:
+            return ALARM_MAP[self._alarm.status]
         return None
 
     @property
@@ -104,9 +101,9 @@ class ADTPulseAlarm(
     @property
     def icon(self) -> str:
         """Return the icon."""
-        if self._site.status not in ALARM_ICON_MAP:
+        if self._alarm.status not in ALARM_ICON_MAP:
             return "mdi:shield-alert"
-        return ALARM_ICON_MAP[self._site.status]
+        return ALARM_ICON_MAP[self._alarm.status]
 
     @property
     def supported_features(self) -> AlarmControlPanelEntityFeature:
@@ -156,8 +153,10 @@ class ADTPulseAlarm(
         return {
             # FIXME: add timestamp for this state change?
             "site_id": self._site.id,
-            "last_update_time": self._site.last_updated,
-            "alarm_state": self._site.status,
+            "last_update_time": datetime.fromtimestamp(
+                self._alarm.last_update
+            ),
+            "alarm_state": self._alarm.status,
         }
 
     @property
@@ -181,7 +180,8 @@ class ADTPulseAlarm(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Updating Pulse alarm to {ALARM_MAP[self._site.status]} "
+            f"Updating Pulse alarm to "
+            f"{ALARM_MAP[self._site.alarm_control_panel.status]} "
             f"for site {self._site.id}"
         )
         self.async_write_ha_state()

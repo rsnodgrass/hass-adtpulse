@@ -5,6 +5,7 @@ See https://github.com/rsnodgrass/hass-adtpulse
 from __future__ import annotations
 
 from asyncio import TimeoutError, gather
+from logging import getLogger
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
@@ -14,8 +15,10 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
 
-from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME, LOG
+from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME
 from .coordinator import ADTPulseDataUpdateCoordinator
+
+LOG = getLogger(__name__)
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 

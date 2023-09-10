@@ -1,8 +1,8 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 
-from logging import getLogger
 from datetime import datetime
+from logging import getLogger
 from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -16,10 +16,11 @@ from homeassistant.const import (
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
     STATE_ALARM_DISARMING,
+    STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pyadtpulse.alarm_panel import (
     ADT_ALARM_ARMING,
@@ -83,7 +84,7 @@ class ADTPulseAlarm(
         super().__init__(coordinator, self._name)
 
     @property
-    def state(self) -> StateType:
+    def state(self) -> str:
         """Return the alarm status.
 
         Returns:
@@ -91,7 +92,7 @@ class ADTPulseAlarm(
         """
         if self._alarm.status in ALARM_MAP:
             return ALARM_MAP[self._alarm.status]
-        return None
+        return STATE_UNAVAILABLE
 
     @property
     def attribution(self) -> str | None:
@@ -112,6 +113,18 @@ class ADTPulseAlarm(
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
             | AlarmControlPanelEntityFeature.ARM_HOME
+        )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info.
+        
+        We set the identifiers to the site id since it is unique across all sites
+        and the zones can be identified by site id and zone name"""
+        return DeviceInfo(
+            identifiers={(ADTPULSE_DOMAIN, self._site.id)},
+            manufacturer=self._alarm.manufacturer,
+            model=self._alarm.model,
         )
 
     async def _perform_alarm_action(
@@ -153,9 +166,7 @@ class ADTPulseAlarm(
         return {
             # FIXME: add timestamp for this state change?
             "site_id": self._site.id,
-            "last_update_time": datetime.fromtimestamp(
-                self._alarm.last_update
-            ),
+            "last_update_time": datetime.fromtimestamp(self._alarm.last_update),
             "alarm_state": self._alarm.status,
         }
 

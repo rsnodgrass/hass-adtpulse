@@ -7,8 +7,8 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from logging import getLogger
 from datetime import datetime
+from logging import getLogger
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
@@ -17,6 +17,8 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from pyadtpulse.const import STATE_OK, STATE_ONLINE
@@ -218,6 +220,13 @@ class ADTPulseZoneSensor(
         }
 
     @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")}
+        )
+
+    @property
     def attribution(self) -> str:
         """Return API data attribution."""
         return ADTPULSE_DATA_ATTRIBUTION
@@ -278,6 +287,23 @@ class ADTPulseGatewaySensor(
     def attribution(self) -> str | None:
         """Return API data attribution."""
         return ADTPULSE_DATA_ATTRIBUTION
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        mac_addresses = set()
+        for i in ("broadband_lan_mac", "broadband_wan_mac", "device_lan_mac"):
+            if getattr(self._gateway, i) is not None:
+                mac_addresses.add({CONNECTION_NETWORK_MAC, getattr(self._gateway, i)})
+        di = DeviceInfo(
+            connections=mac_addresses,
+            model=self._gateway.model,
+            manufacturer=self._gateway.manufacturer,
+            hw_version=self._gateway.hardware_version,
+            sw_version=self._gateway.firmware_version,
+        )
+        if self._gateway.serial_number is not None:
+            di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}
+        return di
 
     @callback
     def _handle_coordinator_update(self) -> None:

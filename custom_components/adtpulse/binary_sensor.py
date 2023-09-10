@@ -7,8 +7,8 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from datetime import datetime
 from logging import getLogger
+from datetime import datetime
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (

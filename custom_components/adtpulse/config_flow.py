@@ -1,6 +1,7 @@
 """HASS ADT Pulse Config Flow."""
 from __future__ import annotations
 
+from logging import getLogger
 from typing import Any
 
 import homeassistant.helpers.config_validation as cv
@@ -19,8 +20,9 @@ from .const import (
     ADTPULSE_URL_US,
     CONF_FINGERPRINT,
     CONF_HOSTNAME,
-    LOG,
 )
+
+LOG = getLogger(__name__)
 
 # This is the schema that used to display the UI to the user. This simple
 # schema has a single required host field, but it could include a number of fields
@@ -90,7 +92,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str,
     )
     try:
         result = await adtpulse.async_login()
-        site: ADTPulseSite = adtpulse.sites[0]
+        site: ADTPulseSite = adtpulse.site
         site_id = site.id
     except Exception as ex:
         LOG.error("ERROR VALIDATING INPUT")

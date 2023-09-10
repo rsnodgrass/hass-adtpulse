@@ -2,13 +2,16 @@
 from __future__ import annotations
 
 from asyncio import Task
+from logging import getLogger
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import PyADTPulse
-from .const import ADTPULSE_DOMAIN, LOG
+from .const import ADTPULSE_DOMAIN
+
+LOG = getLogger(__name__)
 
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):

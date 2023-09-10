@@ -1,8 +1,8 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 
-from datetime import datetime
 from logging import getLogger
+from datetime import datetime
 from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -118,7 +118,7 @@ class ADTPulseAlarm(
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info.
-        
+
         We set the identifiers to the site id since it is unique across all sites
         and the zones can be identified by site id and zone name"""
         return DeviceInfo(

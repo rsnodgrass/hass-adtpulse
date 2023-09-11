@@ -289,6 +289,23 @@ class ADTPulseGatewaySensor(
         return ADTPULSE_DATA_ATTRIBUTION
 
     @property
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return the device state attributes."""
+        return {
+            "primary_connection_type": self._gateway.primary_connection_type,
+            "broadband_connection_status": self._gateway.broadband_connection_status,
+            "cellular_connection_status": self._gateway.cellular_connection_status,
+            "cellular_connection"
+            "_signal_strength": self._gateway.cellular_connection_signal_strength,
+            "broadband_lan_ip_address": self._gateway.broadband_lan_ip_address,
+            "device_lan_ip_address": self._gateway.device_lan_ip_address,
+            "router_lan_ip_address": self._gateway.router_lan_ip_address,
+            "router_wan_ip_address": self._gateway.router_wan_ip_address,
+            "current_poll_interval": self._gateway.poll_interval,
+            "initial_poll_interval": self._gateway._initial_poll_interval,
+        }
+
+    @property
     def device_info(self) -> DeviceInfo:
         mac_addresses = set()
         for i in ("broadband_lan_mac", "broadband_wan_mac", "device_lan_mac"):

@@ -7,8 +7,8 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from logging import getLogger
 from datetime import datetime
+from logging import getLogger
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
@@ -303,6 +303,8 @@ class ADTPulseGatewaySensor(
             "router_wan_ip_address": self._gateway.router_wan_ip_address,
             "current_poll_interval": self._gateway.poll_interval,
             "initial_poll_interval": self._gateway._initial_poll_interval,
+            "next_update": datetime.fromtimestamp(self._gateway.next_update),
+            "last_update": datetime.fromtimestamp(self._gateway.last_update),
         }
 
     @property

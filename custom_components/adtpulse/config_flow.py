@@ -6,118 +6,126 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigFlow, ConfigEntry
+from homeassistant.config_entries import (
+    CONN_CLASS_CLOUD_PUSH,
+    ConfigFlow,
+    ConfigEntry,
+    OptionsFlow,
+)
 from homeassistant.const import (
     CONF_DEVICE_ID,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_USERNAME,
+    CONF_SCAN_INTERVAL,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
+from pyadtpulse.const import (
+    DEFAULT_API_HOST,
+    API_HOST_CA,
+    ADT_DEFAULT_POLL_INTERVAL,
+    ADT_DEFAULT_RELOGIN_INTERVAL,
+    ADT_DEFAULT_KEEPALIVE_INTERVAL,
+)
 from pyadtpulse.site import ADTPulseSite
 
 from .const import (
     ADTPULSE_DOMAIN,
-    ADTPULSE_URL_CA,
-    ADTPULSE_URL_US,
     CONF_FINGERPRINT,
     CONF_HOSTNAME,
+    CONF_RELOGIN_INTERVAL,
+    CONF_KEEPALIVE_INTERVAL,
 )
 
 LOG = getLogger(__name__)
 
-# This is the schema that used to display the UI to the user. This simple
-# schema has a single required host field, but it could include a number of fields
-# such as username, password etc. See other components in the HA core code for
-# further examples.
-# Note the input displayed to the user will be translated. See the
-# translations/<lang>.json file and strings.json. See here for further information:
-# https://developers.home-assistant.io/docs/config_entries_config_flow_handler/#translations
-# At the time of writing I found the translations created by the scaffold didn't
-# quite work as documented and always gave me the "Lokalise key references" string
-# (in square brackets), rather than the actual translated value. I did not attempt to
-# figure this out or look further into it.
-
-
-def _get_data_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
-    if previous_input is None:
-        new_input = {}
-    else:
-        new_input = previous_input
-    DATA_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                CONF_USERNAME,
-                description={"suggested_value": new_input.get(CONF_USERNAME)},
-            ): cv.string,
-            vol.Required(
-                CONF_PASSWORD,
-                description={"suggested_value": new_input.get(CONF_PASSWORD)},
-            ): cv.string,
-            vol.Required(
-                CONF_FINGERPRINT,
-                description={"suggested_value", new_input.get(CONF_FINGERPRINT)},
-            ): cv.string,
-            vol.Required(
-                CONF_HOSTNAME,
-                description={
-                    "suggested_value": new_input.get(CONF_HOSTNAME, ADTPULSE_URL_US)
-                },
-            ): vol.In([ADTPULSE_URL_US, ADTPULSE_URL_CA]),
-        }
-    )
-    return DATA_SCHEMA
-
-
-async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str, str]:
-    """Validate form input.
-
-    Args:
-        hass (core.HomeAssistant): hass object
-        data (Dict): voluptuous Schema
-
-    Raises:
-        CannotConnect: Cannot connect to ADT Pulse site
-        InvalidAuth: login failed
-
-    Returns:
-        Dict[str, str | bool]: "title" : username used to validate
-                               "login result": True if login succeeded
-    """
-    result = False
-    adtpulse = PyADTPulse(
-        data[CONF_USERNAME],
-        data[CONF_PASSWORD],
-        data[CONF_FINGERPRINT],
-        service_host=data[CONF_HOSTNAME],
-        do_login=False,
-    )
-    try:
-        result = await adtpulse.async_login()
-        site: ADTPulseSite = adtpulse.site
-        site_id = site.id
-    except Exception as ex:
-        LOG.error("ERROR VALIDATING INPUT")
-        raise CannotConnect from ex
-    finally:
-        await adtpulse.async_logout()
-    if not result:
-        LOG.error("Could not validate login info for ADT Pulse")
-        raise InvalidAuth("Could not validate ADT Pulse login info")
-    return {"title": f"ADT: Site {site_id}"}
-
-
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
+    @staticmethod
+    async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str, str]:
+        """Validate form input.
+
+        Args:
+            hass (core.HomeAssistant): hass object
+            data (Dict): voluptuous Schema
+
+        Raises:
+            CannotConnect: Cannot connect to ADT Pulse site
+            InvalidAuth: login failed
+
+        Returns:
+            Dict[str, str | bool]: "title" : username used to validate
+                                "login result": True if login succeeded
+        """
+        result = False
+        adtpulse = PyADTPulse(
+            data[CONF_USERNAME],
+            data[CONF_PASSWORD],
+            data[CONF_FINGERPRINT],
+            service_host=data[CONF_HOSTNAME],
+            do_login=False,
+        )
+        try:
+            result = await adtpulse.async_login()
+            site: ADTPulseSite = adtpulse.site
+            site_id = site.id
+        except Exception as ex:
+            LOG.error("ERROR VALIDATING INPUT")
+            raise CannotConnect from ex
+        finally:
+            await adtpulse.async_logout()
+        if not result:
+            LOG.error("Could not validate login info for ADT Pulse")
+            raise InvalidAuth("Could not validate ADT Pulse login info")
+        return {"title": f"ADT: Site {site_id}"}
+    
+    @staticmethod
+    def _get_data_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
+        if previous_input is None:
+            new_input = {}
+        else:
+            new_input = previous_input
+        DATA_SCHEMA = vol.Schema(
+            {
+                vol.Required(
+                    CONF_USERNAME,
+                    description={
+                        "Username for logging into ADT Pulse": new_input.get(CONF_USERNAME)
+                    },
+                ): cv.string,
+                vol.Required(
+                    CONF_PASSWORD,
+                    description={
+                        "Password for logging into ADT Pulse": new_input.get(CONF_PASSWORD)
+                    },
+                ): cv.string,
+                vol.Required(
+                    CONF_FINGERPRINT,
+                    description={"Browser fingerprint", new_input.get(CONF_FINGERPRINT)},
+                ): cv.string,
+                vol.Required(
+                    CONF_HOSTNAME,
+                    description={
+                        "ADT Pulse host": new_input.get(CONF_HOSTNAME, DEFAULT_API_HOST)
+                    },
+                ): vol.In([DEFAULT_API_HOST, API_HOST_CA]),
+            }
+        )
+        return DATA_SCHEMA
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: ConfigEntry,
+        ) -> OptionsFlow:
+        """Create the options flow."""
+        return PulseOptionsFlowHandler(config_entry)
+
     VERSION = 1
-    # Pick one of the available connection classes in homeassistant/config_entries.py
-    # This tells HA if it should be asking for updates, or it'll be notified of updates
-    # automatically. This example uses PUSH, as the dummy hub will notify HA of
-    # changes.
     CONNECTION_CLASS = CONN_CLASS_CLOUD_PUSH
 
     _reauth_entry: ConfigEntry | None = None
@@ -194,6 +202,78 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
                 step_id="reauth_confirm", data_schema=_get_data_schema(None)
             )
         return await self.async_step_user(user_input)
+
+    
+
+class PulseOptionsFlowHandler(OptionsFlow):
+    
+    @staticmethod
+    def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
+        if previous_input is None:
+            new_input = {}
+        else:
+            new_input = previous_input
+        OPTIONS_SCHEMA = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_SCAN_INTERVAL,
+                    description={
+                        "How many seconds between background for update checks "
+                        f" (default {ADT_DEFAULT_POLL_INTERVAL} seconds)": new_input.get(
+                            CONF_SCAN_INTERVAL
+                        )
+                    },
+                ): cv.small_float,
+                vol.Optional(
+                    CONF_RELOGIN_INTERVAL,
+                    description={
+                        "Number of minutes to relogin to Pulse "
+                        f"(0 = disable, default {ADT_DEFAULT_RELOGIN_INTERVAL} minutes), "
+                        "must be greater than keepalive interval": new_input.get(
+                            CONF_PASSWORD
+                        )
+                    },
+                ): cv.positive_int,
+                vol.Optional(
+                    CONF_KEEPALIVE_INTERVAL,
+                    description={
+                        "Number of minutes between keepalive checks "
+                        f"(default {ADT_DEFAULT_KEEPALIVE_INTERVAL} minutes)",
+                        new_input.get(CONF_FINGERPRINT),
+                    },
+                ): cv.positive_int,
+            }
+        )
+        return OPTIONS_SCHEMA
+
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        """Initialize options flow."""
+        self._config_entry = config_entry
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Manage the options."""
+        if user_input is not None:
+            relog_interval = user_input.get(CONF_RELOGIN_INTERVAL)
+            keepalive_interval = user_input.get(CONF_KEEPALIVE_INTERVAL)
+            if keepalive_interval is None:
+                keepalive_interval = self._config_entry.options.get(CONF_KEEPALIVE_INTERVAL)
+            if relog_interval is None:
+                relog_interval = self._config_entry.options.get(CONF_RELOGIN_INTERVAL)
+            if keepalive_interval is None:
+                keepalive_interval = ADT_DEFAULT_KEEPALIVE_INTERVAL
+            if relog_interval is None:
+                relog_interval = ADT_DEFAULT_RELOGIN_INTERVAL
+
+            if relog_interval > keepalive_interval:
+                return self.async_create_entry(
+                    title="Pulse Integration Options", data=user_input
+                )
+
+        return self.async_show_form(
+            step_id="init", data_schema=self._get_options_schema(user_input))
+        )
 
 
 class CannotConnect(HomeAssistantError):

@@ -3,20 +3,19 @@
     "step": {
       "user": {
         "data": {
-          "username": "username",
-          "password": "password",
-          "fingerprint": "fingerprint",
-          "hostname": "hostname"
+          "fingerprint": "Browser Fingerprint"
         }
       }
-    },
-    "error": {
-      "cannot_connect": "Cannot connect to ADT Pulse",
-      "invalid_auth": "Invalid username/password/fingerprint",
-      "unknown": "Unkown Error"
-    },
-    "abort": {
-      "already_configured": "Device Already Configured for User"
+    }
+  },
+  "options": {
+      "step": {
+        "init": {
+          "data": {
+            "keepalive_interval": "Number of minutes to wait before re-authenticating",
+            "relogin_interval": "Number of minutes to wait before re-authenticating"
+          }
+        }
     }
   }
 }

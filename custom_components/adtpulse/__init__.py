@@ -115,20 +115,21 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
     coordinator = entry.data[ADTPULSE_DOMAIN][entry.entry_id].adtpulse
     old_relogin = coordinator.relogin_interval
     old_keepalive = coordinator.keepalive_interval
-    
+
     if new_poll is not None:
         LOG.debug(f"Setting new poll interval to {new_poll} seconds")
         coordinator.site.gateway.poll_interval = int(new_poll)
-    
+
     new_relogin = new_relogin or old_relogin
     new_keepalive = new_keepalive or old_keepalive
-    
+
     if new_keepalive > new_relogin:
         LOG.error(
-            f"Cannot set new keepalive to {new_keepalive}, must be less than {new_relogin}"
+            f"Cannot set new keepalive to {new_keepalive}, "
+            f"must be less than {new_relogin}"
         )
         return
-    
+
     LOG.debug(
         f"Setting new keepalive to {new_keepalive} minutes,"
         f"new relogin interval to {new_relogin} minutes"

@@ -8,27 +8,27 @@ import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.config_entries import (
     CONN_CLASS_CLOUD_PUSH,
-    ConfigFlow,
     ConfigEntry,
+    ConfigFlow,
     OptionsFlow,
 )
 from homeassistant.const import (
     CONF_DEVICE_ID,
     CONF_HOST,
     CONF_PASSWORD,
-    CONF_USERNAME,
     CONF_SCAN_INTERVAL,
+    CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
-    DEFAULT_API_HOST,
-    API_HOST_CA,
+    ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_POLL_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
-    ADT_DEFAULT_KEEPALIVE_INTERVAL,
+    API_HOST_CA,
+    DEFAULT_API_HOST,
 )
 from pyadtpulse.site import ADTPulseSite
 
@@ -36,17 +36,20 @@ from .const import (
     ADTPULSE_DOMAIN,
     CONF_FINGERPRINT,
     CONF_HOSTNAME,
-    CONF_RELOGIN_INTERVAL,
     CONF_KEEPALIVE_INTERVAL,
+    CONF_RELOGIN_INTERVAL,
 )
 
 LOG = getLogger(__name__)
+
 
 class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
     @staticmethod
-    async def validate_input(hass: HomeAssistant, data: dict[str, str]) -> dict[str, str]:
+    async def validate_input(
+        hass: HomeAssistant, data: dict[str, str]
+    ) -> dict[str, str]:
         """Validate form input.
 
         Args:
@@ -82,7 +85,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             LOG.error("Could not validate login info for ADT Pulse")
             raise InvalidAuth("Could not validate ADT Pulse login info")
         return {"title": f"ADT: Site {site_id}"}
-    
+
     @staticmethod
     def _get_data_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
         if previous_input is None:
@@ -94,18 +97,25 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
                 vol.Required(
                     CONF_USERNAME,
                     description={
-                        "Username for logging into ADT Pulse": new_input.get(CONF_USERNAME)
+                        "Username for logging into ADT Pulse": new_input.get(
+                            CONF_USERNAME
+                        )
                     },
                 ): cv.string,
                 vol.Required(
                     CONF_PASSWORD,
                     description={
-                        "Password for logging into ADT Pulse": new_input.get(CONF_PASSWORD)
+                        "Password for logging into ADT Pulse": new_input.get(
+                            CONF_PASSWORD
+                        )
                     },
                 ): cv.string,
                 vol.Required(
                     CONF_FINGERPRINT,
-                    description={"Browser fingerprint", new_input.get(CONF_FINGERPRINT)},
+                    description={
+                        "Browser fingerprint",
+                        new_input.get(CONF_FINGERPRINT),
+                    },
                 ): cv.string,
                 vol.Required(
                     CONF_HOSTNAME,
@@ -121,7 +131,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     @callback
     def async_get_options_flow(
         config_entry: ConfigEntry,
-        ) -> OptionsFlow:
+    ) -> OptionsFlow:
         """Create the options flow."""
         return PulseOptionsFlowHandler(config_entry)
 
@@ -163,7 +173,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         errors = info = {}
         if user_input is not None:
             try:
-                info = await validate_input(self.hass, user_input)
+                info = await self.validate_input(self.hass, user_input)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except InvalidAuth:
@@ -185,7 +195,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
         return self.async_show_form(
-            step_id="user", data_schema=_get_data_schema(user_input), errors=errors
+            step_id="user", data_schema=self._get_data_schema(user_input), errors=errors
         )
 
     async def async_step_reauth(self, user_input=None):
@@ -199,14 +209,12 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         """Dialog that informs the user that reauth is required."""
         if user_input is None:
             return self.async_show_form(
-                step_id="reauth_confirm", data_schema=_get_data_schema(None)
+                step_id="reauth_confirm", data_schema=self._get_data_schema(None)
             )
         return await self.async_step_user(user_input)
 
-    
 
 class PulseOptionsFlowHandler(OptionsFlow):
-    
     @staticmethod
     def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
         if previous_input is None:
@@ -219,7 +227,7 @@ class PulseOptionsFlowHandler(OptionsFlow):
                     CONF_SCAN_INTERVAL,
                     description={
                         "How many seconds between background for update checks "
-                        f" (default {ADT_DEFAULT_POLL_INTERVAL} seconds)": new_input.get(
+                        f"(default {ADT_DEFAULT_POLL_INTERVAL} seconds)": new_input.get(
                             CONF_SCAN_INTERVAL
                         )
                     },
@@ -228,10 +236,9 @@ class PulseOptionsFlowHandler(OptionsFlow):
                     CONF_RELOGIN_INTERVAL,
                     description={
                         "Number of minutes to relogin to Pulse "
-                        f"(0 = disable, default {ADT_DEFAULT_RELOGIN_INTERVAL} minutes), "
-                        "must be greater than keepalive interval": new_input.get(
-                            CONF_PASSWORD
-                        )
+                        f"(0 = disable, default {ADT_DEFAULT_RELOGIN_INTERVAL} "
+                        "minutes), must be greater "
+                        "than keepalive interval": new_input.get(CONF_PASSWORD)
                     },
                 ): cv.positive_int,
                 vol.Optional(
@@ -258,7 +265,9 @@ class PulseOptionsFlowHandler(OptionsFlow):
             relog_interval = user_input.get(CONF_RELOGIN_INTERVAL)
             keepalive_interval = user_input.get(CONF_KEEPALIVE_INTERVAL)
             if keepalive_interval is None:
-                keepalive_interval = self._config_entry.options.get(CONF_KEEPALIVE_INTERVAL)
+                keepalive_interval = self._config_entry.options.get(
+                    CONF_KEEPALIVE_INTERVAL
+                )
             if relog_interval is None:
                 relog_interval = self._config_entry.options.get(CONF_RELOGIN_INTERVAL)
             if keepalive_interval is None:
@@ -272,7 +281,7 @@ class PulseOptionsFlowHandler(OptionsFlow):
                 )
 
         return self.async_show_form(
-            step_id="init", data_schema=self._get_options_schema(user_input))
+            step_id="init", data_schema=self._get_options_schema(user_input)
         )
 
 

@@ -6,8 +6,13 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigFlow
-from homeassistant.const import CONF_DEVICE_ID, CONF_HOST, CONF_PASSWORD, CONF_USERNAME
+from homeassistant.config_entries import CONN_CLASS_CLOUD_PUSH, ConfigFlow, ConfigEntry
+from homeassistant.const import (
+    CONF_DEVICE_ID,
+    CONF_HOST,
+    CONF_PASSWORD,
+    CONF_USERNAME,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
@@ -115,6 +120,8 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     # changes.
     CONNECTION_CLASS = CONN_CLASS_CLOUD_PUSH
 
+    _reauth_entry: ConfigEntry | None = None
+
     # FIXME: this isn't being called for some reason
     async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
         """Import a config entry from configuration.yaml."""
@@ -157,13 +164,36 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
             if not errors:
-                return self.async_create_entry(title=info["title"], data=user_input)
+                if not self._reauth_entry:
+                    return super().async_create_entry(
+                        title=info["title"], data=user_input
+                    )
+                self.hass.config_entries.async_update_entry(
+                    self._reauth_entry, data=user_input
+                )
+                await self.hass.config_entries.async_reload(self._reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
         return self.async_show_form(
             step_id="user", data_schema=_get_data_schema(user_input), errors=errors
         )
+
+    async def async_step_reauth(self, user_input=None):
+        """Perform reauth upon an API authentication error."""
+        self._reauth_entry = self.hass.config_entries.async_get_entry(
+            self.context["entry_id"]
+        )
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(self, user_input=None):
+        """Dialog that informs the user that reauth is required."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reauth_confirm", data_schema=_get_data_schema(None)
+            )
+        return await self.async_step_user(user_input)
 
 
 class CannotConnect(HomeAssistantError):

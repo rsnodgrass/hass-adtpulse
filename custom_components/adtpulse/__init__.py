@@ -4,18 +4,29 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from logging import getLogger
 from asyncio import TimeoutError, gather
+from logging import getLogger
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME, EVENT_HOMEASSISTANT_STOP
+from homeassistant.const import (
+    CONF_PASSWORD,
+    CONF_SCAN_INTERVAL,
+    CONF_USERNAME,
+    EVENT_HOMEASSISTANT_STOP,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
 
-from .const import ADTPULSE_DOMAIN, CONF_FINGERPRINT, CONF_HOSTNAME
+from .const import (
+    ADTPULSE_DOMAIN,
+    CONF_FINGERPRINT,
+    CONF_HOSTNAME,
+    CONF_KEEPALIVE_INTERVAL,
+    CONF_RELOGIN_INTERVAL,
+)
 from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = getLogger(__name__)
@@ -39,17 +50,29 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialize the ADTPulse integration."""
-    username = entry.data[CONF_USERNAME]
-    password = entry.data[CONF_PASSWORD]
-    fingerprint = entry.data[CONF_FINGERPRINT]
+    username = entry.data.get(CONF_USERNAME)
+    password = entry.data.get(CONF_PASSWORD)
+    fingerprint = entry.data.get(CONF_FINGERPRINT)
+    poll_interval = float(entry.options.get(CONF_SCAN_INTERVAL))
+    keepalive = int(entry.options.get(CONF_KEEPALIVE_INTERVAL))
+    relogin = int(entry.options.get(CONF_RELOGIN_INTERVAL))
     # share reference to the service with other components/platforms
     # running within HASS
 
     host = entry.data[CONF_HOSTNAME]
     if host:
         LOG.debug(f"Using ADT Pulse API host {host}")
+    if username is None or password is None or fingerprint is None:
+        raise ConfigEntryAuthFailed("Null value for username, password, or fingerprint")
     service = PyADTPulse(
-        username, password, fingerprint, service_host=host, do_login=False
+        username,
+        password,
+        fingerprint,
+        service_host=host,
+        do_login=False,
+        keepalive_interval=keepalive,
+        poll_interval=poll_interval,
+        relogin_interval=relogin,
     )
 
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
@@ -80,7 +103,38 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
     )
+    entry.async_on_unload(entry.add_update_listener(options_listener))
     return True
+
+
+async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
+    """Handle options update."""
+    new_poll = entry.options.get(CONF_SCAN_INTERVAL)
+    new_relogin = entry.options.get(CONF_RELOGIN_INTERVAL)
+    new_keepalive = entry.options.get(CONF_KEEPALIVE_INTERVAL)
+    coordinator = entry.data[ADTPULSE_DOMAIN][entry.entry_id].adtpulse
+    old_relogin = coordinator.relogin_interval
+    old_keepalive = coordinator.keepalive_interval
+    
+    if new_poll is not None:
+        LOG.debug(f"Setting new poll interval to {new_poll} seconds")
+        coordinator.site.gateway.poll_interval = int(new_poll)
+    
+    new_relogin = new_relogin or old_relogin
+    new_keepalive = new_keepalive or old_keepalive
+    
+    if new_keepalive > new_relogin:
+        LOG.error(
+            f"Cannot set new keepalive to {new_keepalive}, must be less than {new_relogin}"
+        )
+        return
+    
+    LOG.debug(
+        f"Setting new keepalive to {new_keepalive} minutes,"
+        f"new relogin interval to {new_relogin} minutes"
+    )
+    coordinator.keepalive_interval = new_keepalive
+    coordinator.relogin_interval = new_relogin
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

@@ -12,7 +12,7 @@
       "step": {
         "init": {
           "data": {
-            "keepalive_interval": "Number of minutes to wait before re-authenticating",
+            "keepalive_interval": "Number of minutes to wait before sending a keepalive",
             "relogin_interval": "Number of minutes to wait before re-authenticating"
           }
         }

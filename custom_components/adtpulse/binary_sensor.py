@@ -226,6 +226,8 @@ class ADTPulseZoneSensor(
         return DeviceInfo(
             identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")},
             via_device=(ADTPULSE_DOMAIN, get_alarm_unique_id(self._site)),
+            name=self._my_zone.name,
+            manufacturer="ADT"
         )
 
     @property
@@ -321,6 +323,7 @@ class ADTPulseGatewaySensor(
             manufacturer=self._gateway.manufacturer,
             hw_version=self._gateway.hardware_version,
             sw_version=self._gateway.firmware_version,
+            name=f"ADT Pulse Gateway {self._gateway.s
         )
         if self._gateway.serial_number is not None:
             di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}

@@ -127,6 +127,7 @@ class ADTPulseAlarm(
             manufacturer=self._alarm.manufacturer,
             model=self._alarm.model,
             via_device=(ADTPULSE_DOMAIN, get_gateway_unique_id(self._site)),
+            name="ADT Pulse Alarm",
         )
 
     async def _perform_alarm_action(

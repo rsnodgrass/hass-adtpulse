@@ -3,34 +3,34 @@
     "step": {
       "user": {
         "data": {
-          "username": "[%key:common::config_flow::data::username%]",
-          "password": "[%key:common::config_flow::data::password%]",
-          "fingerprint": "[%key:component::adtpulse::config::step::user::data::fingerprint%]",
-          "hostname": "[%key:common::config_flow::data::hostname%]"
+          "username": "Username",
+          "password": "Password",
+          "fingerprint": "Browser Fingerprint",
+          "hostname": "ADT Pulse Hostname"
         }
       },
       "reauth_confirm": {
-        "title": "[%key:common::config_flow::title::reauth%]",
+        "title": "Reauthorization Required",
         "description": "The ADT Pulse integration needs to re-authenticate your account"
       }
     },
     "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
-      "unknown": "[%key:common::config_flow::error::unknown%]"
+      "cannot_connect": "Cannot connect to ADT Pulse",
+      "invalid_auth": "Cannot authorize with ADT Pulse with the provided credentials",
+      "unknown": "Unknown Error occurred"
     },
     "abort": {
-      "already_configured": "[%key:common::config_flow::abort::already_configured_device%]",
-      "reauth_successful": "[%key:common::config_flow::abort::reauth_successful%]"
+      "already_configured": "Pulse has already been configured",
+      "reauth_successful": "Reauthorization successful!!!"
     }
   },
   "options": {
     "step": {
       "init": {
         "data": {
-          "scan_interval": "[%key:common::config_flow::data::scan_interval%]",
-          "relogin_interval": "%[key:component::adtpusle::options::step::init::data::relogin_interval%]",
-          "keepalive_interval": "%[key:component::adtpusle::options::step::init::data::keepalive_interval%]"
+          "scan_interval": "Background Polling Interval (in seconds)",
+          "relogin_interval": "Pulse re-login Interval (in minutes)",
+          "keepalive_interval": "Pulse keepalive Interval (in minutes, must be greater than relogin_interval)",
         }
       }
     }

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any
+from typing import Any, Optional
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -87,7 +87,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         return {"title": f"ADT: Site {site_id}"}
 
     @staticmethod
-    def _get_data_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
+    def _get_data_schema(previous_input: Optional[dict[str, Any]] = None) -> vol.Schema:
         if previous_input is None:
             new_input = {}
         else:
@@ -95,33 +95,18 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         DATA_SCHEMA = vol.Schema(
             {
                 vol.Required(
-                    CONF_USERNAME,
-                    description={
-                        "Username for logging into ADT Pulse": new_input.get(
-                            CONF_USERNAME
-                        )
-                    },
+                    CONF_USERNAME, default=new_input.get(CONF_USERNAME, None)
                 ): cv.string,
                 vol.Required(
-                    CONF_PASSWORD,
-                    description={
-                        "Password for logging into ADT Pulse": new_input.get(
-                            CONF_PASSWORD
-                        )
-                    },
+                    CONF_PASSWORD, default=new_input.get(CONF_PASSWORD, None)
                 ): cv.string,
                 vol.Required(
                     CONF_FINGERPRINT,
-                    description={
-                        "Browser fingerprint",
-                        new_input.get(CONF_FINGERPRINT),
-                    },
+                    default=new_input.get(CONF_FINGERPRINT, None),
                 ): cv.string,
                 vol.Required(
                     CONF_HOSTNAME,
-                    description={
-                        "ADT Pulse host": new_input.get(CONF_HOSTNAME, DEFAULT_API_HOST)
-                    },
+                    default=new_input.get(CONF_HOSTNAME, DEFAULT_API_HOST),
                 ): vol.In([DEFAULT_API_HOST, API_HOST_CA]),
             }
         )
@@ -141,7 +126,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     _reauth_entry: ConfigEntry | None = None
 
     async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
+        self, user_input: Optional[dict[str, Any]] = None
     ) -> FlowResult:
         """Handle the initial step.
 
@@ -204,7 +189,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
 class PulseOptionsFlowHandler(OptionsFlow):
     @staticmethod
-    def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
+    def _get_options_schema(previous_input: Optional[dict[str, Any]]) -> vol.Schema:
         if previous_input is None:
             new_input = {}
         else:
@@ -214,27 +199,19 @@ class PulseOptionsFlowHandler(OptionsFlow):
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
                     description={
-                        "How many seconds between background for update checks "
-                        f"(default {ADT_DEFAULT_POLL_INTERVAL} seconds)": new_input.get(
-                            CONF_SCAN_INTERVAL
-                        )
+                        "suggested_value": new_input.get(CONF_SCAN_INTERVAL, None)
                     },
                 ): cv.small_float,
                 vol.Optional(
                     CONF_RELOGIN_INTERVAL,
                     description={
-                        "Number of minutes to relogin to Pulse "
-                        f"(0 = disable, default {ADT_DEFAULT_RELOGIN_INTERVAL} "
-                        "minutes), must be greater "
-                        "than keepalive interval": new_input.get(CONF_PASSWORD)
+                        "suggested_value": new_input.get(CONF_RELOGIN_INTERVAL, None)
                     },
                 ): cv.positive_int,
                 vol.Optional(
                     CONF_KEEPALIVE_INTERVAL,
                     description={
-                        "Number of minutes between keepalive checks "
-                        f"(default {ADT_DEFAULT_KEEPALIVE_INTERVAL} minutes)",
-                        new_input.get(CONF_FINGERPRINT),
+                        "suggested_value": new_input.get(CONF_KEEPALIVE_INTERVAL, None)
                     },
                 ): cv.positive_int,
             }
@@ -246,7 +223,7 @@ class PulseOptionsFlowHandler(OptionsFlow):
         self._config_entry = config_entry
 
     async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
+        self, user_input: Optional[dict[str, Any]] = None
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:

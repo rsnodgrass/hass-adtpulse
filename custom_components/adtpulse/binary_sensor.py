@@ -25,6 +25,7 @@ from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
+from .alarm_control_panel import get_alarm_unique_id
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -60,6 +61,11 @@ ADT_SENSOR_ICON_MAP = {
         "mdi:window-closed-variant",
     ),
 }
+
+
+def get_gateway_unique_id(site: ADTPulseSite) -> str:
+    """Get unique ID for gateway."""
+    return f"adt_pulse_gateway_{site.id}"
 
 
 async def async_setup_entry(
@@ -223,7 +229,8 @@ class ADTPulseZoneSensor(
     def device_info(self) -> DeviceInfo:
         """Return device info."""
         return DeviceInfo(
-            identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")}
+            identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")},
+            via_device=(ADTPULSE_DOMAIN, get_alarm_unique_id(self._site)),
         )
 
     @property
@@ -275,8 +282,8 @@ class ADTPulseGatewaySensor(
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""
-        return f"adt_pulse_gateway_{self._site.id}"
-
+        return get_gateway_unique_id(self._site)
+    
     @property
     def icon(self) -> str:
         if self.is_on:

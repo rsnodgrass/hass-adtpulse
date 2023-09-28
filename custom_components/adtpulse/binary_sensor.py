@@ -25,7 +25,7 @@ from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from .alarm_control_panel import get_alarm_unique_id
+from . import get_alarm_unique_id, get_gateway_unique_id
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -61,11 +61,6 @@ ADT_SENSOR_ICON_MAP = {
         "mdi:window-closed-variant",
     ),
 }
-
-
-def get_gateway_unique_id(site: ADTPulseSite) -> str:
-    """Get unique ID for gateway."""
-    return f"adt_pulse_gateway_{site.id}"
 
 
 async def async_setup_entry(

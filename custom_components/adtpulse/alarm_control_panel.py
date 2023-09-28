@@ -32,7 +32,7 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from .binary_sensor import get_gateway_unique_id
+from . import get_alarm_unique_id, get_gateway_unique_id
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -53,11 +53,6 @@ ALARM_ICON_MAP = {
     ADT_ALARM_OFF: "mdi:shield-off",
     ADT_ALARM_UNKNOWN: "mdi:shield-bug",
 }
-
-
-def get_alarm_unique_id(site: ADTPulseSite) -> str:
-    """Get unique ID for alarm."""
-    return f"adt_pulse_alarm_{site.id}"
 
 
 async def async_setup_entry(

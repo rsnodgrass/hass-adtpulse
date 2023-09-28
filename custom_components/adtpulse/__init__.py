@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from logging import getLogger
 from asyncio import TimeoutError, gather
-
+from typing import Any
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -14,11 +14,15 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
     EVENT_HOMEASSISTANT_STOP,
+    CONF_HOST,
+    CONF_DEVICE_ID
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
+from pyadtpulse.site import ADTPulseSite
 
 from .const import (
     ADTPULSE_DOMAIN,
@@ -32,6 +36,16 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 LOG = getLogger(__name__)
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
+
+
+def get_gateway_unique_id(site: ADTPulseSite) -> str:
+    """Get unique ID for gateway."""
+    return f"adt_pulse_gateway_{site.id}"
+
+
+def get_alarm_unique_id(site: ADTPulseSite) -> str:
+    """Get unique ID for alarm."""
+    return f"adt_pulse_alarm_{site.id}"
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:

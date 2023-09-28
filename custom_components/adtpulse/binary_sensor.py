@@ -170,8 +170,7 @@ class ADTPulseZoneSensor(
         """Return HA unique id."""
         if self._is_trouble_indicator:
             return f"adt_pulse_trouble_sensor_{self._site.id}_{self._my_zone.id_}"
-        else:
-            return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
+        return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
 
     @property
     def icon(self) -> str:
@@ -227,7 +226,7 @@ class ADTPulseZoneSensor(
             identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")},
             via_device=(ADTPULSE_DOMAIN, get_alarm_unique_id(self._site)),
             name=self._my_zone.name,
-            manufacturer="ADT"
+            manufacturer="ADT",
         )
 
     @property
@@ -323,10 +322,12 @@ class ADTPulseGatewaySensor(
             manufacturer=self._gateway.manufacturer,
             hw_version=self._gateway.hardware_version,
             sw_version=self._gateway.firmware_version,
-            name=f"ADT Pulse Gateway {self._gateway.s
         )
         if self._gateway.serial_number is not None:
             di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}
+            di["name"] = f"ADT Pulse Gateway {self._gateway.serial_number}"
+        else:
+            di["name"] = f"ADT Pulse Gateway {self._site.id}"
         return di
 
     @callback

@@ -1,8 +1,8 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 
-from datetime import datetime
 from logging import getLogger
+from datetime import datetime
 from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -79,7 +79,7 @@ class ADTPulseAlarm(
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.id}")
-        self._name = f"ADT {site.name}"
+        self._name = f"ADT Alarm Panel, Site: {site.name}"
         self._site = site
         self._alarm = site.alarm_control_panel
         super().__init__(coordinator, self._name)
@@ -127,7 +127,7 @@ class ADTPulseAlarm(
             manufacturer=self._alarm.manufacturer,
             model=self._alarm.model,
             via_device=(ADTPULSE_DOMAIN, get_gateway_unique_id(self._site)),
-            name="ADT Pulse Alarm",
+            name=self._name,
         )
 
     async def _perform_alarm_action(

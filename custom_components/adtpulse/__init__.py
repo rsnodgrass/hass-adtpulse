@@ -7,19 +7,20 @@ from __future__ import annotations
 from logging import getLogger
 from asyncio import TimeoutError, gather
 from typing import Any
+
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    CONF_DEVICE_ID,
+    CONF_HOST,
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
     EVENT_HOMEASSISTANT_STOP,
-    CONF_HOST,
-    CONF_DEVICE_ID
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
 from pyadtpulse.site import ADTPulseSite

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from typing import Any, Optional
+from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -12,20 +12,13 @@ from homeassistant.config_entries import (
     ConfigFlow,
     OptionsFlow,
 )
-from homeassistant.const import (
-    CONF_DEVICE_ID,
-    CONF_HOST,
-    CONF_PASSWORD,
-    CONF_SCAN_INTERVAL,
-    CONF_USERNAME,
-)
+from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
-    ADT_DEFAULT_POLL_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
     API_HOST_CA,
     DEFAULT_API_HOST,
@@ -87,7 +80,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         return {"title": f"ADT: Site {site_id}"}
 
     @staticmethod
-    def _get_data_schema(previous_input: Optional[dict[str, Any]] = None) -> vol.Schema:
+    def _get_data_schema(previous_input: dict[str, Any] | None = None) -> vol.Schema:
         if previous_input is None:
             new_input = {}
         else:
@@ -126,7 +119,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     _reauth_entry: ConfigEntry | None = None
 
     async def async_step_user(
-        self, user_input: Optional[dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the initial step.
 
@@ -189,7 +182,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
 class PulseOptionsFlowHandler(OptionsFlow):
     @staticmethod
-    def _get_options_schema(previous_input: Optional[dict[str, Any]]) -> vol.Schema:
+    def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
         if previous_input is None:
             new_input = {}
         else:
@@ -223,7 +216,7 @@ class PulseOptionsFlowHandler(OptionsFlow):
         self._config_entry = config_entry
 
     async def async_step_init(
-        self, user_input: Optional[dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:

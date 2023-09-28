@@ -65,9 +65,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     fingerprint = entry.data.get(CONF_FINGERPRINT)
-    poll_interval = float(entry.options.get(CONF_SCAN_INTERVAL))
-    keepalive = int(entry.options.get(CONF_KEEPALIVE_INTERVAL))
-    relogin = int(entry.options.get(CONF_RELOGIN_INTERVAL))
+    poll_interval = entry.options.get(CONF_SCAN_INTERVAL)
+    keepalive = entry.options.get(CONF_KEEPALIVE_INTERVAL)
+    relogin = entry.options.get(CONF_RELOGIN_INTERVAL)
     # share reference to the service with other components/platforms
     # running within HASS
 

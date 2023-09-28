@@ -140,18 +140,6 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
     _reauth_entry: ConfigEntry | None = None
 
-    # FIXME: this isn't being called for some reason
-    async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
-        """Import a config entry from configuration.yaml."""
-        new_config = {**import_config}
-        if self.hass.data[CONF_HOST] is not None:
-            new_config.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
-            new_config.pop(CONF_HOST)
-        if self.hass.data[CONF_DEVICE_ID] is not None:
-            new_config.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
-            new_config.pop(CONF_DEVICE_ID)
-        return await self.async_step_user(new_config)
-
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:

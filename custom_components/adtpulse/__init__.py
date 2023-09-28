@@ -4,8 +4,8 @@ See https://github.com/rsnodgrass/hass-adtpulse
 """
 from __future__ import annotations
 
-from asyncio import TimeoutError, gather
 from logging import getLogger
+from asyncio import TimeoutError, gather
 
 from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
@@ -46,6 +46,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
     return True
+
+
+async def async_step_import(self, import_config: dict[str, Any]) -> FlowResult:
+    """Import a config entry from configuration.yaml."""
+    new_config = {**import_config}
+    if self.hass.data[CONF_HOST] is not None:
+        new_config.update({CONF_HOSTNAME: self.hass.data[CONF_HOST]})
+        new_config.pop(CONF_HOST)
+    if self.hass.data[CONF_DEVICE_ID] is not None:
+        new_config.update({CONF_FINGERPRINT: self.hass.data[CONF_DEVICE_ID]})
+        new_config.pop(CONF_DEVICE_ID)
+    return await self.async_step_user(new_config)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

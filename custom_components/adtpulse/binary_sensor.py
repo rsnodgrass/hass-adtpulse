@@ -312,9 +312,9 @@ class ADTPulseGatewaySensor(
     @property
     def device_info(self) -> DeviceInfo:
         mac_addresses = set()
-        for i in ("broadband_lan_mac", "broadband_wan_mac", "device_lan_mac"):
+        for i in ("broadband_lan_mac", "device_lan_mac"):
             if getattr(self._gateway, i) is not None:
-                mac_addresses.add({CONNECTION_NETWORK_MAC, getattr(self._gateway, i)})
+                mac_addresses.add((CONNECTION_NETWORK_MAC, getattr(self._gateway, i)))
         di = DeviceInfo(
             connections=mac_addresses,
             model=self._gateway.model,

@@ -7,8 +7,8 @@ exposes them into HA.
 """
 from __future__ import annotations
 
-from datetime import datetime
 from logging import getLogger
+from datetime import datetime
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
@@ -283,7 +283,7 @@ class ADTPulseGatewaySensor(
     def unique_id(self) -> str:
         """Return HA unique id."""
         return get_gateway_unique_id(self._site)
-    
+
     @property
     def icon(self) -> str:
         if self.is_on:

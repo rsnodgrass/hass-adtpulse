@@ -1,8 +1,8 @@
 """Support for ADT Pulse alarm control panels."""
 from __future__ import annotations
 
-from logging import getLogger
 from datetime import datetime
+from logging import getLogger
 from typing import Coroutine
 
 import homeassistant.components.alarm_control_panel as alarm

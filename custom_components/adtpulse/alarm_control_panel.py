@@ -79,7 +79,7 @@ class ADTPulseAlarm(
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
-        LOG.debug(f"{ADTPULSE_DOMAIN}: adding alarm control panel for {site.id}")
+        LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
         self._name = f"ADT Alarm Panel, Site: {site.name}"
         self._site = site
         self._alarm = site.alarm_control_panel
@@ -134,11 +134,11 @@ class ADTPulseAlarm(
     async def _perform_alarm_action(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
-        LOG.debug(f"{ADTPULSE_DOMAIN}: Setting Alarm to  {action}")
+        LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
         if await arm_disarm_func:
             self.async_write_ha_state()
         else:
-            LOG.warning(f"Could not {action} ADT Pulse alarm")
+            LOG.warning("Could not %s ADT Pulse alarm", action)
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
@@ -168,7 +168,6 @@ class ADTPulseAlarm(
     def extra_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
-            # FIXME: add timestamp for this state change?
             "site_id": self._site.id,
             "last_update_time": as_local(
                 datetime.fromtimestamp(self._alarm.last_update)
@@ -197,8 +196,8 @@ class ADTPulseAlarm(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Updating Pulse alarm to "
-            f"{ALARM_MAP[self._site.alarm_control_panel.status]} "
-            f"for site {self._site.id}"
+            "Updating Pulse alarm to %s for site %s",
+            ALARM_MAP[self._site.alarm_control_panel.status],
+            self._site.id,
         )
         self.async_write_ha_state()

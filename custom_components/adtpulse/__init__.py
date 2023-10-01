@@ -5,7 +5,7 @@ See https://github.com/rsnodgrass/hass-adtpulse
 from __future__ import annotations
 
 from logging import getLogger
-from asyncio import TimeoutError, gather
+from asyncio import gather
 from typing import Any
 
 from aiohttp.client_exceptions import ClientConnectionError
@@ -88,7 +88,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     host = entry.data[CONF_HOSTNAME]
     if host:
-        LOG.debug(f"Using ADT Pulse API host {host}")
+        LOG.debug("Using ADT Pulse API host %s", host)
     if username is None or password is None or fingerprint is None:
         raise ConfigEntryAuthFailed("Null value for username, password, or fingerprint")
     service = PyADTPulse(
@@ -105,18 +105,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
     try:
         if not await service.async_login():
-            LOG.error(f"{ADTPULSE_DOMAIN} could not log in as user {username}")
+            LOG.error("%s could not log in as user %s", ADTPULSE_DOMAIN, username)
             raise ConfigEntryAuthFailed(
                 f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
             )
     except (ClientConnectionError, TimeoutError) as ex:
-        LOG.error(f"Unable to connect to ADT Pulse: {ex}")
+        LOG.error("Unable to connect to ADT Pulse: %s", ex)
         raise ConfigEntryNotReady(
             f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
-        )
+        ) from ex
 
     if service.sites is None:
-        LOG.error(f"{ADTPULSE_DOMAIN} could not retrieve any sites")
+        LOG.error("%s could not retrieve any sites", ADTPULSE_DOMAIN)
         raise ConfigEntryNotReady(f"{ADTPULSE_DOMAIN} could not retrieve any sites")
 
     coordinator = ADTPulseDataUpdateCoordinator(hass, service)
@@ -144,7 +144,7 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
     old_keepalive = coordinator.keepalive_interval
 
     if new_poll is not None:
-        LOG.debug(f"Setting new poll interval to {new_poll} seconds")
+        LOG.debug("Setting new poll interval to %f seconds", new_poll)
         coordinator.site.gateway.poll_interval = int(new_poll)
 
     new_relogin = new_relogin or old_relogin
@@ -152,14 +152,16 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
 
     if new_keepalive > new_relogin:
         LOG.error(
-            f"Cannot set new keepalive to {new_keepalive}, "
-            f"must be less than {new_relogin}"
+            "Cannot set new keepalive to %d minutes, must be less than %d minutes",
+            new_keepalive,
+            new_relogin,
         )
         return
 
     LOG.debug(
-        f"Setting new keepalive to {new_keepalive} minutes,"
-        f"new relogin interval to {new_relogin} minutes"
+        "Setting new keepalive to %d minutes, new relogin interval to %d minutes",
+        new_keepalive,
+        new_relogin,
     )
     coordinator.keepalive_interval = new_keepalive
     coordinator.relogin_interval = new_relogin

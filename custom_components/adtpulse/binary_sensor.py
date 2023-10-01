@@ -76,7 +76,7 @@ async def async_setup_entry(
     async_add_entities([ADTPulseGatewaySensor(coordinator, site)])
     if not site.zones_as_dict:
         LOG.error(
-            "ADT's Pulse service returned NO zones (sensors) for site: " f"{site.id}"
+            "ADT's Pulse service returned NO zones (sensors) for site %s:", site.id
         )
         return
     entities = [
@@ -120,17 +120,20 @@ class ADTPulseZoneSensor(
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if device_class is None:
-            LOG.warn(
-                "Ignoring unsupported sensor type from ADT Pulse cloud service "
-                f"configured tags: {tags}"
+            LOG.warning(
+                "Ignoring unsupported sensor type from ADT Pulse cloud "
+                "service, configured tags: %s",
+                tags,
             )
             raise ValueError(f"Unknown ADT Pulse device class {device_class}")
         if device_class == BinarySensorDeviceClass.DOOR:
             if "Window" in zone_data.name or "window" in zone_data.name:
                 device_class = BinarySensorDeviceClass.WINDOW
         LOG.info(
-            f"Determined {zone_data.name} device class {device_class} "
-            f"from ADT Pulse service configured tags {tags}"
+            "Determined %s device class %sfrom ADT Pulse service configured tags %s",
+            zone_data.name,
+            device_class,
+            tags,
         )
         return device_class
 
@@ -144,10 +147,10 @@ class ADTPulseZoneSensor(
         """Initialize the binary_sensor."""
         if trouble_indicator:
             LOG.debug(
-                f"{ADTPULSE_DOMAIN}: adding zone trouble sensor " f"for site {site.id}"
+                "%s: adding zone trouble sensor for site %s", ADTPULSE_DOMAIN, site.id
             )
         else:
-            LOG.debug(f"{ADTPULSE_DOMAIN}: adding zone sensor for site {site.id}")
+            LOG.debug("%s: adding zone sensor for site %s", ADTPULSE_DOMAIN, site.id)
         self._site = site
         self._zone_id = zone_id
         self._is_trouble_indicator = trouble_indicator
@@ -159,7 +162,7 @@ class ADTPulseZoneSensor(
             self._device_class = self._determine_device_class(self._my_zone)
             self._name = f"{self._my_zone.name}"
         super().__init__(coordinator, self._name)
-        LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
+        LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
 
     @property
     def name(self) -> str:
@@ -182,7 +185,7 @@ class ADTPulseZoneSensor(
         """
         if self.device_class not in ADT_SENSOR_ICON_MAP:
             LOG.error(
-                f"Unknown ADT Pulse binary sensor device type {self.device_class}"
+                "Unknown ADT Pulse binary sensor device type %s", self.device_class
             )
             return "mdi:alert-octogram"
         if self.is_on:
@@ -238,8 +241,10 @@ class ADTPulseZoneSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Setting ADT Pulse zone {self.name} to on={self.is_on} "
-            f"at timestamp {self._my_zone.last_activity_timestamp}"
+            "Setting ADT Pulse zone %s to on = %s at timestamp %d",
+            self.name,
+            self.is_on,
+            self._my_zone.last_activity_timestamp,
         )
         self.async_write_ha_state()
 
@@ -258,7 +263,7 @@ class ADTPulseGatewaySensor(
             service (PyADTPulse): API Pulse connection object
         """
         LOG.debug(
-            f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site " f"{site.name}"
+            "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
         self._gateway = site.gateway
         self._site = site
@@ -333,5 +338,5 @@ class ADTPulseGatewaySensor(
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        LOG.debug(f"Setting Pulse Gateway status to {self._gateway.is_online}")
+        LOG.debug("Setting Pulse Gateway online status to %s", self._gateway.is_online)
         self.async_write_ha_state()

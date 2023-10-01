@@ -181,6 +181,8 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
 
 class PulseOptionsFlowHandler(OptionsFlow):
+    """Handle options flow for Pulse integration."""
+
     @staticmethod
     def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
         if previous_input is None:

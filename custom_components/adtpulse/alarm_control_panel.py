@@ -22,6 +22,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import as_local
 from pyadtpulse.alarm_panel import (
     ADT_ALARM_ARMING,
     ADT_ALARM_AWAY,
@@ -169,7 +170,9 @@ class ADTPulseAlarm(
         return {
             # FIXME: add timestamp for this state change?
             "site_id": self._site.id,
-            "last_update_time": datetime.fromtimestamp(self._alarm.last_update),
+            "last_update_time": as_local(
+                datetime.fromtimestamp(self._alarm.last_update)
+            ),
             "alarm_state": self._alarm.status,
         }
 

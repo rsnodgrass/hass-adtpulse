@@ -21,6 +21,7 @@ from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import as_local
 from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
@@ -214,8 +215,8 @@ class ADTPulseZoneSensor(
                 return {"trouble_type": None}
         return {
             "status": self._my_zone.status,
-            "last_activity_timestamp": datetime.fromtimestamp(
-                self._my_zone.last_activity_timestamp
+            "last_activity_timestamp": as_local(
+                datetime.fromtimestamp(self._my_zone.last_activity_timestamp)
             ),
         }
 
@@ -306,8 +307,8 @@ class ADTPulseGatewaySensor(
             "router_wan_ip_address": self._gateway.router_wan_ip_address,
             "current_poll_interval": self._gateway.poll_interval,
             "initial_poll_interval": self._gateway._initial_poll_interval,
-            "next_update": datetime.fromtimestamp(self._gateway.next_update),
-            "last_update": datetime.fromtimestamp(self._gateway.last_update),
+            "next_update": as_local(datetime.fromtimestamp(self._gateway.next_update)),
+            "last_update": as_local(datetime.fromtimestamp(self._gateway.last_update)),
         }
 
     @property

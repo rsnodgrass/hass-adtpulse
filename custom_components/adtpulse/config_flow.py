@@ -13,13 +13,15 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
+    ADT_MAX_KEEPALIVE_INTERVAL,
+    ADT_MIN_RELOGIN_INTERVAL,
     API_HOST_CA,
     DEFAULT_API_HOST,
 )
@@ -40,9 +42,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
     """Handle a config flow for ADT Pulse."""
 
     @staticmethod
-    async def validate_input(
-        hass: HomeAssistant, data: dict[str, str]
-    ) -> dict[str, str]:
+    async def validate_input(data: dict[str, str]) -> dict[str, str]:
         """Validate form input.
 
         Args:
@@ -80,26 +80,16 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         return {"title": f"ADT: Site {site_id}"}
 
     @staticmethod
-    def _get_data_schema(previous_input: dict[str, Any] | None = None) -> vol.Schema:
-        if previous_input is None:
-            new_input = {}
-        else:
-            new_input = previous_input
+    def _get_data_schema() -> vol.Schema:
         DATA_SCHEMA = vol.Schema(
             {
-                vol.Required(
-                    CONF_USERNAME, default=new_input.get(CONF_USERNAME, None)
-                ): cv.string,
-                vol.Required(
-                    CONF_PASSWORD, default=new_input.get(CONF_PASSWORD, None)
-                ): cv.string,
+                vol.Required(CONF_USERNAME): cv.string,
+                vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(
                     CONF_FINGERPRINT,
-                    default=new_input.get(CONF_FINGERPRINT, None),
                 ): cv.string,
                 vol.Required(
                     CONF_HOSTNAME,
-                    default=new_input.get(CONF_HOSTNAME, DEFAULT_API_HOST),
                 ): vol.In([DEFAULT_API_HOST, API_HOST_CA]),
             }
         )
@@ -139,7 +129,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         errors = info = {}
         if user_input is not None:
             try:
-                info = await self.validate_input(self.hass, user_input)
+                info = await self.validate_input(user_input)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
             except InvalidAuth:
@@ -161,7 +151,11 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
         return self.async_show_form(
-            step_id="user", data_schema=self._get_data_schema(user_input), errors=errors
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(
+                self._get_data_schema(), user_input
+            ),
+            errors=errors,
         )
 
     async def async_step_reauth(self, user_input=None):
@@ -169,13 +163,16 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         self._reauth_entry = self.hass.config_entries.async_get_entry(
             self.context["entry_id"]
         )
-        return await self.async_step_reauth_confirm()
+        return await self.async_step_reauth_confirm(user_input)
 
     async def async_step_reauth_confirm(self, user_input=None):
         """Dialog that informs the user that reauth is required."""
         if user_input is None:
             return self.async_show_form(
-                step_id="reauth_confirm", data_schema=self._get_data_schema(None)
+                step_id="reauth_confirm",
+                data_schema=self.add_suggested_values_to_schema(
+                    self._get_data_schema(), user_input
+                ),
             )
         return await self.async_step_user(user_input)
 
@@ -183,32 +180,34 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 class PulseOptionsFlowHandler(OptionsFlow):
     """Handle options flow for Pulse integration."""
 
+    def _validate_options(self, options: dict[str, Any]) -> dict[str, Any]:
+        """Validate options."""
+        new_relogin = options.get(CONF_RELOGIN_INTERVAL, ADT_DEFAULT_RELOGIN_INTERVAL)
+        new_keepalive = options.get(
+            CONF_KEEPALIVE_INTERVAL, ADT_DEFAULT_KEEPALIVE_INTERVAL
+        )
+        if new_relogin == "":
+            new_relogin = ADT_DEFAULT_RELOGIN_INTERVAL
+        if new_keepalive == "":
+            new_keepalive = ADT_DEFAULT_KEEPALIVE_INTERVAL
+        if new_relogin != 0:
+            if new_relogin < new_keepalive:
+                return {"error": "intervals"}
+        return {"title": "Pulse Integration Options"}
+
     @staticmethod
-    def _get_options_schema(previous_input: dict[str, Any] | None) -> vol.Schema:
-        if previous_input is None:
-            new_input = {}
-        else:
-            new_input = previous_input
+    def _get_options_schema() -> vol.Schema:
         OPTIONS_SCHEMA = vol.Schema(
             {
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
-                    description={
-                        "suggested_value": new_input.get(CONF_SCAN_INTERVAL, None)
-                    },
-                ): cv.small_float,
+                ): cv.positive_float,
                 vol.Optional(
                     CONF_RELOGIN_INTERVAL,
-                    description={
-                        "suggested_value": new_input.get(CONF_RELOGIN_INTERVAL, None)
-                    },
-                ): cv.positive_int,
+                ): vol.All(cv.positive_int, vol.Clamp(min=ADT_MIN_RELOGIN_INTERVAL)),
                 vol.Optional(
                     CONF_KEEPALIVE_INTERVAL,
-                    description={
-                        "suggested_value": new_input.get(CONF_KEEPALIVE_INTERVAL, None)
-                    },
-                ): cv.positive_int,
+                ): vol.All(cv.positive_int, vol.Clamp(max=ADT_MAX_KEEPALIVE_INTERVAL)),
             }
         )
         return OPTIONS_SCHEMA
@@ -221,27 +220,19 @@ class PulseOptionsFlowHandler(OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
-        if user_input is not None:
-            relog_interval = user_input.get(CONF_RELOGIN_INTERVAL)
-            keepalive_interval = user_input.get(CONF_KEEPALIVE_INTERVAL)
-            if keepalive_interval is None:
-                keepalive_interval = self._config_entry.options.get(
-                    CONF_KEEPALIVE_INTERVAL
-                )
-            if relog_interval is None:
-                relog_interval = self._config_entry.options.get(CONF_RELOGIN_INTERVAL)
-            if keepalive_interval is None:
-                keepalive_interval = ADT_DEFAULT_KEEPALIVE_INTERVAL
-            if relog_interval is None:
-                relog_interval = ADT_DEFAULT_RELOGIN_INTERVAL
 
-            if relog_interval > keepalive_interval:
-                return self.async_create_entry(
-                    title="Pulse Integration Options", data=user_input
-                )
+        result: dict[str, Any] | None = None
+        if user_input is not None:
+            result = self._validate_options(user_input)
+            if result["title"] != "error":
+                return self.async_create_entry(title=result["title"], data=user_input)
 
         return self.async_show_form(
-            step_id="init", data_schema=self._get_options_schema(user_input)
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                self._get_options_schema(), user_input
+            ),
+            errors=result,
         )
 
 

@@ -33,6 +33,9 @@
           "keepalive_interval": "Pulse keepalive Interval (in minutes, must be greater than relogin_interval)"
         }
       }
+    },
+    "error": {
+      "intervals": "Relogin interval must be greater than keepalive interval"
     }
   }
 }

@@ -23,6 +23,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
+from pyadtpulse.const import (
+    ADT_DEFAULT_KEEPALIVE_INTERVAL,
+    ADT_DEFAULT_POLL_INTERVAL,
+    ADT_DEFAULT_RELOGIN_INTERVAL,
+)
 from pyadtpulse.site import ADTPulseSite
 
 from .const import (
@@ -98,7 +103,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         service_host=host,
         do_login=False,
         keepalive_interval=keepalive,
-        poll_interval=poll_interval,
         relogin_interval=relogin,
     )
 
@@ -118,7 +122,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if service.sites is None:
         LOG.error("%s could not retrieve any sites", ADTPULSE_DOMAIN)
         raise ConfigEntryNotReady(f"{ADTPULSE_DOMAIN} could not retrieve any sites")
-
+    try:
+        service.site.gateway.poll_interval = poll_interval
+    except ValueError as ex:
+        LOG.warning(
+            "Could not set poll interval to %f seconds: %s",
+            poll_interval,
+            ex,
+        )
     coordinator = ADTPulseDataUpdateCoordinator(hass, service)
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = coordinator
@@ -139,32 +150,48 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
     new_poll = entry.options.get(CONF_SCAN_INTERVAL)
     new_relogin = entry.options.get(CONF_RELOGIN_INTERVAL)
     new_keepalive = entry.options.get(CONF_KEEPALIVE_INTERVAL)
-    coordinator = entry.data[ADTPULSE_DOMAIN][entry.entry_id].adtpulse
-    old_relogin = coordinator.relogin_interval
-    old_keepalive = coordinator.keepalive_interval
+    coordinator: ADTPulseDataUpdateCoordinator = entry.data[ADTPULSE_DOMAIN][
+        entry.entry_id
+    ]
+    pulse_service = coordinator.adtpulse
 
-    if new_poll is not None:
-        LOG.debug("Setting new poll interval to %f seconds", new_poll)
-        coordinator.site.gateway.poll_interval = int(new_poll)
-
-    new_relogin = new_relogin or old_relogin
-    new_keepalive = new_keepalive or old_keepalive
-
-    if new_keepalive > new_relogin:
-        LOG.error(
-            "Cannot set new keepalive to %d minutes, must be less than %d minutes",
-            new_keepalive,
-            new_relogin,
+    if new_poll is not None and new_poll != "":
+        LOG.info("Setting new poll interval to %f seconds", new_poll)
+    else:
+        new_poll = ADT_DEFAULT_POLL_INTERVAL
+        LOG.info("Re-setting poll interval to default %f seconds", new_poll)
+    try:
+        pulse_service.site.gateway.poll_interval = ADT_DEFAULT_POLL_INTERVAL
+    except ValueError as ex:
+        LOG.warning(
+            "Could not set poll interval to  %f seconds: %s",
+            ADT_DEFAULT_POLL_INTERVAL,
+            ex,
         )
-        return
 
-    LOG.debug(
-        "Setting new keepalive to %d minutes, new relogin interval to %d minutes",
-        new_keepalive,
-        new_relogin,
-    )
-    coordinator.keepalive_interval = new_keepalive
-    coordinator.relogin_interval = new_relogin
+    if new_relogin is None or new_relogin == "":
+        new_relogin = ADT_DEFAULT_RELOGIN_INTERVAL
+        LOG.info("Re-setting relogin interval to default %d seconds", new_relogin)
+    else:
+        LOG.info("Setting new relogin interval to %d seconds", new_relogin)
+
+    if new_keepalive is None or new_keepalive == "":
+        new_keepalive = ADT_DEFAULT_KEEPALIVE_INTERVAL
+        LOG.info("Re-setting keepalive interval to default %d seconds", new_keepalive)
+    else:
+        LOG.info("Setting new keepalive interval to %d seconds", new_keepalive)
+
+    try:
+        pulse_service.keepalive_interval = new_keepalive
+    except ValueError as ex:
+        LOG.warning(
+            "Could not set keepalive interval to %d seconds: %s", new_keepalive, ex
+        )
+
+    try:
+        pulse_service.relogin_interval = new_relogin
+    except ValueError as ex:
+        LOG.warning("Could not set relogin interval to %d seconds: %s", new_relogin, ex)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

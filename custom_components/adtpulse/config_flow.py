@@ -233,7 +233,7 @@ class PulseOptionsFlowHandler(OptionsFlowWithConfigEntry):
         result: dict[str, Any] | None = None
         if user_input is not None:
             result = self._validate_options(user_input)
-            if result["title"] != "error":
+            if result.get("base") is None:
                 return self.async_create_entry(title=result["title"], data=user_input)
         else:
             user_input = self.options

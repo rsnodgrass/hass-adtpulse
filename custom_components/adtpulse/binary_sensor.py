@@ -268,7 +268,7 @@ class ADTPulseGatewaySensor(
         self._gateway = site.gateway
         self._site = site
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"{site.name} Pulse Gateway Status"
+        self._name = f"ADT Pulse Gateway Status - Site: {self._site.name}"
         super().__init__(coordinator, self._name)
 
     @property

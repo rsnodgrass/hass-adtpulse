@@ -82,15 +82,21 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
     @staticmethod
     def _get_data_schema(orig_input: dict[str, Any] | None) -> vol.Schema:
+        if orig_input is None:
+            orig_input = {}
         DATA_SCHEMA = vol.Schema(
             {
-                vol.Required(CONF_USERNAME): cv.string,
-                vol.Required(CONF_PASSWORD): cv.string,
                 vol.Required(
-                    CONF_FINGERPRINT,
+                    CONF_USERNAME, default=orig_input.get(CONF_USERNAME, "")
                 ): cv.string,
                 vol.Required(
-                    CONF_HOSTNAME,
+                    CONF_PASSWORD, default=orig_input.get(CONF_PASSWORD, "")
+                ): cv.string,
+                vol.Required(
+                    CONF_FINGERPRINT, default=orig_input.get(CONF_FINGERPRINT, "")
+                ): cv.string,
+                vol.Required(
+                    CONF_HOSTNAME, default=orig_input.get(CONF_HOSTNAME, "")
                 ): vol.In([DEFAULT_API_HOST, API_HOST_CA]),
             }
         )
@@ -151,6 +157,8 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
 
         # If there is no user input or there were errors, show the form again,
         # including any errors that were found with the input.
+        if user_input is None:
+            user_input = self.init_data
         return self.async_show_form(
             step_id="user", data_schema=self._get_data_schema(user_input), errors=errors
         )

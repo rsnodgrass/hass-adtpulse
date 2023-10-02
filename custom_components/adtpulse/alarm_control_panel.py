@@ -80,7 +80,7 @@ class ADTPulseAlarm(
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
-        self._name = f"ADT Alarm Panel, Site: {site.name}"
+        self._name = f"ADT Alarm Panel, Site: {site.id}"
         self._site = site
         self._alarm = site.alarm_control_panel
         super().__init__(coordinator, self._name)

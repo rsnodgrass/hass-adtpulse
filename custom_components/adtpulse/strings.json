@@ -30,12 +30,13 @@
         "data": {
           "scan_interval": "Background Polling Interval (in seconds)",
           "relogin_interval": "Pulse re-login Interval (in minutes)",
-          "keepalive_interval": "Pulse keepalive Interval (in minutes, must be greater than relogin_interval)"
+          "keepalive_interval": "Pulse keepalive Interval (in minutes, must be greater than relogin interval)"
         }
       }
     },
     "error": {
-      "intervals": "Relogin interval must be greater than keepalive interval"
+        "min_relogin":"Pulse re-login Interval must be greater than 20 minutes",
+        "max_keepalive":"Pulse keepalive Interval must be less than 15 minutes"
     }
   }
 }

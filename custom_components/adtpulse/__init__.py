@@ -150,7 +150,7 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
     new_poll = entry.options.get(CONF_SCAN_INTERVAL)
     new_relogin = entry.options.get(CONF_RELOGIN_INTERVAL)
     new_keepalive = entry.options.get(CONF_KEEPALIVE_INTERVAL)
-    coordinator: ADTPulseDataUpdateCoordinator = entry.data[ADTPULSE_DOMAIN][
+    coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
         entry.entry_id
     ]
     pulse_service = coordinator.adtpulse

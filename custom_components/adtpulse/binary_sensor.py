@@ -339,4 +339,6 @@ class ADTPulseGatewaySensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug("Setting Pulse Gateway online status to %s", self._gateway.is_online)
+        LOG.debug("Gateway attributes: %s", self.extra_state_attributes)
+        LOG.debug("Gateway state: %s", self._gateway)
         self.async_write_ha_state()

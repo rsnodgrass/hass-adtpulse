@@ -68,6 +68,9 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         )
         try:
             result = await adtpulse.async_login()
+            if not result:
+                LOG.error("Could not validate login info for ADT Pulse")
+                raise InvalidAuth("Could not validate ADT Pulse login info")
             site: ADTPulseSite = adtpulse.site
             site_id = site.id
         except Exception as ex:
@@ -75,9 +78,6 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             raise CannotConnect from ex
         finally:
             await adtpulse.async_logout()
-        if not result:
-            LOG.error("Could not validate login info for ADT Pulse")
-            raise InvalidAuth("Could not validate ADT Pulse login info")
         return {"title": f"ADT: Site {site_id}"}
 
     @staticmethod

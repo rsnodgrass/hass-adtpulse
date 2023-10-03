@@ -161,11 +161,12 @@ async def options_listener(hass: HomeAssistant, entry: ConfigEntry):
         new_poll = ADT_DEFAULT_POLL_INTERVAL
         LOG.info("Re-setting poll interval to default %f seconds", new_poll)
     try:
-        pulse_service.site.gateway.poll_interval = ADT_DEFAULT_POLL_INTERVAL
+        pulse_service.site.gateway.poll_interval = new_poll
+        coordinator.async_set_updated_data(None)
     except ValueError as ex:
         LOG.warning(
             "Could not set poll interval to  %f seconds: %s",
-            ADT_DEFAULT_POLL_INTERVAL,
+            new_poll,
             ex,
         )
 

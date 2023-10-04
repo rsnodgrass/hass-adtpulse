@@ -26,7 +26,7 @@ from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from . import get_alarm_unique_id, get_gateway_unique_id
+from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -72,7 +72,7 @@ async def async_setup_entry(
         entry.entry_id
     ]
     site = coordinator.adtpulse.site
-
+    migrate_entity_name(hass, site, "binary_sensor", get_gateway_unique_id(site))
     async_add_entities([ADTPulseGatewaySensor(coordinator, site)])
     if not site.zones_as_dict:
         LOG.error(
@@ -84,6 +84,17 @@ async def async_setup_entry(
         for zone_id in site.zones_as_dict.keys()
         for trouble_indicator in (True, False)
     ]
+
+    _ = (
+        migrate_entity_name(
+            hass,
+            site,
+            "binary_sensor",
+            entity.unique_id,
+        )
+        for entity in entities
+    )
+
     async_add_entities(entities)
 
 
@@ -165,9 +176,15 @@ class ADTPulseZoneSensor(
         LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the zone."""
-        return self._name
+        if self._is_trouble_indicator:
+            return "Trouble"
+        return None
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     @property
     def unique_id(self) -> str:
@@ -277,8 +294,12 @@ class ADTPulseGatewaySensor(
         return self._gateway.is_online
 
     @property
-    def name(self) -> str:
-        return self._name
+    def name(self) -> str | None:
+        return None
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     # FIXME: Gateways only support one site?
     @property

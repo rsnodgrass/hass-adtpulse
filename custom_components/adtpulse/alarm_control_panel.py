@@ -33,7 +33,7 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from . import get_alarm_unique_id, get_gateway_unique_id
+from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -66,8 +66,14 @@ async def async_setup_entry(
     if not coordinator:
         LOG.error("ADT Pulse service not initialized, cannot setup alarm platform")
         return
-
-    alarm_devices = [ADTPulseAlarm(coordinator, coordinator.adtpulse.site)]
+    site = coordinator.adtpulse.site
+    migrate_entity_name(
+        hass,
+        site,
+        "alarm_control_panel",
+        get_alarm_unique_id(site),
+    )
+    alarm_devices = [ADTPulseAlarm(coordinator, site)]
 
     async_add_entities(alarm_devices)
 
@@ -80,7 +86,7 @@ class ADTPulseAlarm(
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
-        self._name = f"ADT Alarm Panel, Site: {site.id}"
+        self._name = f"ADT Alarm Panel - Site {site.id}"
         self._site = site
         self._alarm = site.alarm_control_panel
         super().__init__(coordinator, self._name)
@@ -160,9 +166,13 @@ class ADTPulseAlarm(
         )
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the alarm."""
-        return self._name
+        return None
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     @property
     def extra_state_attributes(self) -> dict:

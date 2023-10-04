@@ -18,10 +18,12 @@ from homeassistant.const import (
     CONF_USERNAME,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import entity_registry
 from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.util import slugify
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
@@ -52,6 +54,31 @@ def get_gateway_unique_id(site: ADTPulseSite) -> str:
 def get_alarm_unique_id(site: ADTPulseSite) -> str:
     """Get unique ID for alarm."""
     return f"adt_pulse_alarm_{site.id}"
+
+
+@callback
+def migrate_entity_name(
+    hass: HomeAssistant, site: ADTPulseSite, platform_name: str, entity_uid: str
+) -> None:
+    """Migrate old entity names."""
+    registry = entity_registry.async_get(hass)
+    if registry is None:
+        return
+    # this seems backwards
+    entity_id = registry.async_get_entity_id(
+        platform_name,
+        ADTPULSE_DOMAIN,
+        entity_uid,
+    )
+    if entity_id is not None:
+        # change has_entity_name to True and set name to None for devices
+        registry.async_update_entity(entity_id, has_entity_name=True, name=None)
+        # rename site name to site id for entities which have site name
+        slugified_site_name = slugify(site.name)
+        if slugified_site_name in entity_id:
+            registry.async_update_entity(
+                entity_id, new_entity_id=entity_id.replace(slugified_site_name, site.id)
+            )
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:

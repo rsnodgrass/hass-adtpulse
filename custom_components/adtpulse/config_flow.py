@@ -175,7 +175,7 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         if user_input is None:
             orig_input = {}
             if self._reauth_entry is not None:
-                orig_input = self._reauth_entry.data
+                orig_input = self._reauth_entry.data.copy()
             return self.async_show_form(
                 step_id="reauth_confirm", data_schema=self._get_data_schema(orig_input)
             )

@@ -3,20 +3,40 @@
     "step": {
       "user": {
         "data": {
-          "username": "username",
-          "password": "password",
-          "fingerprint": "fingerprint",
-          "hostname": "hostname"
+          "username": "Username",
+          "password": "Password",
+          "fingerprint": "Browser Fingerprint",
+          "hostname": "ADT Pulse Hostname"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reauthorization Required",
+        "description": "The ADT Pulse integration needs to re-authenticate your account"
       }
     },
     "error": {
       "cannot_connect": "Cannot connect to ADT Pulse",
-      "invalid_auth": "Invalid username/password/fingerprint",
-      "unknown": "Unkown Error"
+      "invalid_auth": "Cannot authorize with ADT Pulse with the provided credentials",
+      "unknown": "Unknown Error occurred"
     },
     "abort": {
-      "already_configured": "Device Already Configured for User"
+      "already_configured": "Pulse has already been configured",
+      "reauth_successful": "Reauthorization successful!!!"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Background Polling Interval (in seconds)",
+          "relogin_interval": "Pulse re-login Interval (in minutes)",
+          "keepalive_interval": "Pulse keepalive Interval (in minutes, must be greater than relogin interval)"
+        }
+      }
+    },
+    "error": {
+        "min_relogin":"Pulse re-login Interval must be greater than 20 minutes",
+        "max_keepalive":"Pulse keepalive Interval must be less than 15 minutes"
     }
   }
 }

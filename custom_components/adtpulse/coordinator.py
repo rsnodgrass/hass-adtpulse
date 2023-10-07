@@ -1,6 +1,7 @@
 """ADT Pulse Update Coordinator."""
 from __future__ import annotations
 
+from logging import getLogger
 from asyncio import Task
 from typing import Any
 
@@ -8,7 +9,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from . import PyADTPulse
-from .const import ADTPULSE_DOMAIN, LOG
+from .const import ADTPULSE_DOMAIN
+
+LOG = getLogger(__name__)
 
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
@@ -21,16 +24,18 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             hass (HomeAssistant): hass object
             pulse_site (ADTPulseSite): ADT Pulse site
         """
-        LOG.debug(f"{ADTPULSE_DOMAIN}: creating update coordinator")
+        LOG.debug("%s: creating update coordinator", ADTPULSE_DOMAIN)
         self._adt_pulse = pulse_service
         self._push_wait_task: Task[None] | None = None
         super().__init__(hass, LOG, name=ADTPULSE_DOMAIN)
 
     @property
     def adtpulse(self) -> PyADTPulse:
+        """Return the ADT Pulse service object."""
         return self._adt_pulse
 
     async def stop(self, _: Any) -> None:
+        """Stop the update coordinator."""
         if self._push_wait_task:
             self._push_wait_task.cancel()
 
@@ -42,7 +47,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
 
     async def _pulse_push_task(self) -> None:
         while True:
-            LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator waiting for updates")
+            LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
             await self._adt_pulse.wait_for_update()
-            LOG.debug(f"{ADTPULSE_DOMAIN}: coordinator received update notification")
+            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
             self.async_set_updated_data(None)

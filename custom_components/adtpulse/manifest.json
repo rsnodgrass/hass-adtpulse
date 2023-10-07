@@ -1,15 +1,14 @@
 {
     "domain": "adtpulse",
     "name": "ADT Pulse",
-    "codeowners": [],
+    "codeowners": ["@rsnodgrass", "@rlippmann"],
     "config_flow": true,
     "dependencies": [],
-    "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
+    "documentation": "https://github.com/rlippmann/hass-adtpulse/",
     "iot_class": "cloud_push",
-    "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
+    "issue_tracker": "https://github.com/rlippmann/hass-adtpulse/issues",
     "requirements": [
-        "pyadtpulse>=1.0.4",
-        "beautifulsoup4>=4.9.0"
+        "pyadtpulse>=1.1.2",
     ],
-    "version": "0.2.7.1"
+    "version": "0.3.0"
 }

@@ -66,6 +66,28 @@ To enable ADT Pulse, add the following integration like any other integration in
 
 ![ADT Form Data](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_form_data.jpg?raw=true)
 
+
+## Options
+
+This integration supports the following options:
+
+* `poll interval`: How often to poll ADT Pulse for updates (in seconds) - default 0.75
+* `keepalive interval`: How often to keep the connection alive (in minutes) - default 5
+* `relogin interval`: How often to re-authenticate with ADT Pulse (in minutes) - default 120
+
+`poll interval` will determine how quickly Home Assistant will receive updates from ADT Pulse.  The Pulse website does this in the background multiple times per second, so setting the poll interval less than a second should be fine.  Of course, this will generate more network traffic from your Home Assistant instance to the internet.
+
+`keepalive interval` will determine how often a background call to ADT pulse to keep the connection alive will be made.  This is performed by the ADT site to automatically log out after a set time period if the user is inactive.  The default of 5 minutes should be fine, but it can be increased if needed, probably to no more than 10 minutes.  The minimum value is 1 minute, the maximum is 15 minutes.
+
+`relogin interval` will determine how often a background call to ADT pulse will be made to re-authenticate with ADT Pulse.  The ADT servers stop responding automatically after a set time period, even if the user is still active.  This attempts to work around this issue.  The default of 120 minutes should be fine, but it can be changed if needed, probably to no more than 180 minutes. The minimum value is 20 minutes.  Frequently re-authenticating with ADT Pulse more than the default is probably not a good idea, but hasn't been tested.
+
+## Devices
+
+The integration provides the following devices:
+* `Alarm Panel`
+* `Gateway`
+* `Sensors for each zone`:  These include 2 entities, one for the sensor status (i.e. Open, Closed, etc).  This sensor is named binary_sensor.{zone_name}.  The other entity is for a trouble code (i.e. low battery, tamper, etc). Trouble sensors are named binary_sensor.trouble_sensor_{zone name}
+
 ## Lovelace
 
 #### Sensors

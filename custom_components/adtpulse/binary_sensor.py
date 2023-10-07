@@ -7,6 +7,8 @@ exposes them into HA.
 """
 from __future__ import annotations
 
+from logging import getLogger
+from datetime import datetime
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
@@ -15,15 +17,20 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from pyadtpulse import PyADTPulse
-from pyadtpulse.const import STATE_OK
+from homeassistant.util import as_local
+from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN, LOG
+from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
+from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
+
+LOG = getLogger(__name__)
 
 # please keep these alphabetized to make changes easier
 ADT_DEVICE_CLASS_TAG_MAP = {
@@ -47,6 +54,7 @@ ADT_SENSOR_ICON_MAP = {
     BinarySensorDeviceClass.HEAT: ("mdi:fire", "mdi:smoke-detector-variant"),
     BinarySensorDeviceClass.MOISTURE: ("mdi:home-flood", "mdi:heat-wave"),
     BinarySensorDeviceClass.MOTION: ("mdi:run-fast", "mdi:motion-sensor"),
+    BinarySensorDeviceClass.PROBLEM: ("mdi:alert-circle", "mdi:hand-okay"),
     BinarySensorDeviceClass.SMOKE: ("mdi:fire", "mdi:smoke-detector-variant"),
     BinarySensorDeviceClass.TAMPER: ("mdi:window-open", "mdi:window-closed"),
     BinarySensorDeviceClass.WINDOW: (
@@ -63,30 +71,31 @@ async def async_setup_entry(
     coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
         entry.entry_id
     ]
-    adt_service = coordinator.adtpulse
-    if not adt_service:
-        LOG.error("ADT Pulse service not initialized, cannot create sensors")
+    site = coordinator.adtpulse.site
+    migrate_entity_name(hass, site, "binary_sensor", get_gateway_unique_id(site))
+    async_add_entities([ADTPulseGatewaySensor(coordinator, site)])
+    if not site.zones_as_dict:
+        LOG.error(
+            "ADT's Pulse service returned NO zones (sensors) for site %s:", site.id
+        )
         return
+    entities = [
+        ADTPulseZoneSensor(coordinator, site, zone_id, trouble_indicator)
+        for zone_id in site.zones_as_dict.keys()
+        for trouble_indicator in (True, False)
+    ]
 
-    if not adt_service.sites:
-        LOG.error(f"ADT's Pulse service returned NO sites: {adt_service}")
-        return
+    _ = (
+        migrate_entity_name(
+            hass,
+            site,
+            "binary_sensor",
+            entity.unique_id,
+        )
+        for entity in entities
+    )
 
-    for site in adt_service.sites:
-        if not isinstance(site, ADTPulseSite):
-            raise RuntimeError("pyadtpulse returned invalid site object type")
-        if not site.zones_as_dict:
-            LOG.error(
-                "ADT's Pulse service returned NO zones (sensors) for site: "
-                f"{adt_service.sites} ... {adt_service}"
-            )
-            continue
-        entities = [
-            ADTPulseZoneSensor(coordinator, site, zone_id)
-            for zone_id in site.zones_as_dict.keys()
-        ]
-        async_add_entities(entities)
-        async_add_entities([ADTPulseGatewaySensor(coordinator, adt_service)])
+    async_add_entities(entities)
 
 
 class ADTPulseZoneSensor(
@@ -122,17 +131,20 @@ class ADTPulseZoneSensor(
         # since ADT Pulse does not separate the concept of a door or window sensor,
         # we try to autodetect window type sensors so the appropriate icon is displayed
         if device_class is None:
-            LOG.warn(
-                "Ignoring unsupported sensor type from ADT Pulse cloud service "
-                f"configured tags: {tags}"
+            LOG.warning(
+                "Ignoring unsupported sensor type from ADT Pulse cloud "
+                "service, configured tags: %s",
+                tags,
             )
             raise ValueError(f"Unknown ADT Pulse device class {device_class}")
         if device_class == BinarySensorDeviceClass.DOOR:
             if "Window" in zone_data.name or "window" in zone_data.name:
                 device_class = BinarySensorDeviceClass.WINDOW
         LOG.info(
-            f"Determined {zone_data.name} device class {device_class} "
-            f"from ADT Pulse service configured tags {tags}"
+            "Determined %s device class %sfrom ADT Pulse service configured tags %s",
+            zone_data.name,
+            device_class,
+            tags,
         )
         return device_class
 
@@ -141,24 +153,44 @@ class ADTPulseZoneSensor(
         coordinator: ADTPulseDataUpdateCoordinator,
         site: ADTPulseSite,
         zone_id: int,
+        trouble_indicator: bool,
     ):
         """Initialize the binary_sensor."""
-        LOG.debug(f"{ADTPULSE_DOMAIN}: adding zone sensor for site {site.id}")
+        if trouble_indicator:
+            LOG.debug(
+                "%s: adding zone trouble sensor for site %s", ADTPULSE_DOMAIN, site.id
+            )
+        else:
+            LOG.debug("%s: adding zone sensor for site %s", ADTPULSE_DOMAIN, site.id)
         self._site = site
         self._zone_id = zone_id
+        self._is_trouble_indicator = trouble_indicator
         self._my_zone = self._get_my_zone(site, zone_id)
-        self._device_class = self._determine_device_class(self._my_zone)
-        super().__init__(coordinator, self._my_zone.name)
-        LOG.debug(f"Created ADT Pulse '{self._device_class}' sensor '{self.name}'")
+        if trouble_indicator:
+            self._device_class = BinarySensorDeviceClass.PROBLEM
+            self._name = f"Trouble Sensor - {self._my_zone.name}"
+        else:
+            self._device_class = self._determine_device_class(self._my_zone)
+            self._name = f"{self._my_zone.name}"
+        super().__init__(coordinator, self._name)
+        LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the zone."""
-        return self._my_zone.name
+        if self._is_trouble_indicator:
+            return "Trouble"
+        return None
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""
+        if self._is_trouble_indicator:
+            return f"adt_pulse_trouble_sensor_{self._site.id}_{self._my_zone.id_}"
         return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
 
     @property
@@ -170,7 +202,7 @@ class ADTPulseZoneSensor(
         """
         if self.device_class not in ADT_SENSOR_ICON_MAP:
             LOG.error(
-                f"Unknown ADT Pulse binary sensor device type {self.device_class}"
+                "Unknown ADT Pulse binary sensor device type %s", self.device_class
             )
             return "mdi:alert-octogram"
         if self.is_on:
@@ -181,6 +213,8 @@ class ADTPulseZoneSensor(
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
+        if self._is_trouble_indicator:
+            return not self._my_zone.status == STATE_ONLINE
         return not self._my_zone.state == STATE_OK
 
     @property
@@ -194,10 +228,27 @@ class ADTPulseZoneSensor(
 
         currently status and last_activity_timestamp
         """
+        if self._is_trouble_indicator:
+            if self.is_on:
+                return {"trouble_type": self._my_zone.state}
+            else:
+                return {"trouble_type": None}
         return {
             "status": self._my_zone.status,
-            "last_activity_timestamp": self._my_zone.last_activity_timestamp,
+            "last_activity_timestamp": as_local(
+                datetime.fromtimestamp(self._my_zone.last_activity_timestamp)
+            ),
         }
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        return DeviceInfo(
+            identifiers={(ADTPULSE_DOMAIN, f"{self._site.id}-{self._my_zone.name}")},
+            via_device=(ADTPULSE_DOMAIN, get_alarm_unique_id(self._site)),
+            name=self._my_zone.name,
+            manufacturer="ADT",
+        )
 
     @property
     def attribution(self) -> str:
@@ -207,8 +258,10 @@ class ADTPulseZoneSensor(
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            f"Setting ADT Pulse zone {self.name} to on={self.is_on} "
-            f"at timestamp {self._my_zone.last_activity_timestamp}"
+            "Setting ADT Pulse zone %s to on = %s at timestamp %d",
+            self.name,
+            self.is_on,
+            self._my_zone.last_activity_timestamp,
         )
         self.async_write_ha_state()
 
@@ -218,7 +271,7 @@ class ADTPulseGatewaySensor(
 ):
     """HASS Gateway Online Binary Sensor."""
 
-    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, service: PyADTPulse):
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize gateway sensor.
 
         Args:
@@ -227,28 +280,32 @@ class ADTPulseGatewaySensor(
             service (PyADTPulse): API Pulse connection object
         """
         LOG.debug(
-            f"{ADTPULSE_DOMAIN}: adding gateway status sensor for site "
-            f"{service.sites[0].name}"
+            "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
-        self._service = service
+        self._gateway = site.gateway
+        self._site = site
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"{self._service.sites[0].name} Pulse Gateway Status"
+        self._name = f"ADT Pulse Gateway Status - Site: {self._site.name}"
         super().__init__(coordinator, self._name)
 
     @property
     def is_on(self) -> bool:
         """Return if gateway is online."""
-        return self._service.gateway_online
+        return self._gateway.is_online
 
     @property
-    def name(self) -> str:
-        return self._name
+    def name(self) -> str | None:
+        return None
+
+    @property
+    def has_entity_name(self) -> bool:
+        return True
 
     # FIXME: Gateways only support one site?
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""
-        return f"adt_pulse_gateway_{self._service.sites[0].id}"
+        return get_gateway_unique_id(self._site)
 
     @property
     def icon(self) -> str:
@@ -261,7 +318,48 @@ class ADTPulseGatewaySensor(
         """Return API data attribution."""
         return ADTPULSE_DATA_ATTRIBUTION
 
+    @property
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return the device state attributes."""
+        return {
+            "primary_connection_type": self._gateway.primary_connection_type,
+            "broadband_connection_status": self._gateway.broadband_connection_status,
+            "cellular_connection_status": self._gateway.cellular_connection_status,
+            "cellular_connection"
+            "_signal_strength": self._gateway.cellular_connection_signal_strength,
+            "broadband_lan_ip_address": str(self._gateway.broadband_lan_ip_address),
+            "device_lan_ip_address": str(self._gateway.device_lan_ip_address),
+            "router_lan_ip_address": str(self._gateway.router_lan_ip_address),
+            "router_wan_ip_address": str(self._gateway.router_wan_ip_address),
+            "current_poll_interval": self._gateway.poll_interval,
+            "initial_poll_interval": self._gateway._initial_poll_interval,
+            "next_update": as_local(datetime.fromtimestamp(self._gateway.next_update)),
+            "last_update": as_local(datetime.fromtimestamp(self._gateway.last_update)),
+        }
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        mac_addresses = set()
+        for i in ("broadband_lan_mac", "device_lan_mac"):
+            if getattr(self._gateway, i) is not None:
+                mac_addresses.add((CONNECTION_NETWORK_MAC, getattr(self._gateway, i)))
+        di = DeviceInfo(
+            connections=mac_addresses,
+            model=self._gateway.model,
+            manufacturer=self._gateway.manufacturer,
+            hw_version=self._gateway.hardware_version,
+            sw_version=self._gateway.firmware_version,
+        )
+        if self._gateway.serial_number is not None:
+            di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}
+            di["name"] = f"ADT Pulse Gateway {self._gateway.serial_number}"
+        else:
+            di["name"] = f"ADT Pulse Gateway {self._site.id}"
+        return di
+
     @callback
     def _handle_coordinator_update(self) -> None:
-        LOG.debug(f"Setting Pulse Gateway status to {self._service.gateway_online}")
+        LOG.debug("Setting Pulse Gateway online status to %s", self._gateway.is_online)
+        LOG.debug("Gateway attributes: %s", self.extra_state_attributes)
+        LOG.debug("Gateway state: %s", self._gateway)
         self.async_write_ha_state()

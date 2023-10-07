@@ -1,6 +1,6 @@
 {
   "name": "ADT Pulse",
-  "topics": ["homeassistant", "integration", "adt", "adt-pulse"],
+  "topics": ["homeassistant", "integration", "adt", "adt-pulse",],
   "homeassistant": "2023.1.0",
   "render_readme": true
 }

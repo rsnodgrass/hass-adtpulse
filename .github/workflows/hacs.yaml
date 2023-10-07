@@ -1,32 +1,17 @@
-# see https://github.com/KTibow/ha-blueprint
-name: "HACS Validation And Formatting"
+name: HACS Action
+
 on:
   push:
   pull_request:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
+
 jobs:
-  ci:
-    runs-on: ubuntu-latest
+  hacs:
+    name: HACS Action
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
-        name: Download repo
+      - name: HACS Action
+        uses: "hacs/action@main"
         with:
-          fetch-depth: 0
-      - uses: actions/setup-python@v3
-        name: Setup Python
-      - uses: actions/cache@v3
-        name: Cache
-        with:
-          path: |
-            ~/.cache/pip
-          key: custom-component-ci
-      - uses: hacs/action@main
-        with:
-          CATEGORY: integration
-          ignore: brands wheels
-      - uses: KTibow/ha-blueprint@stable
-        name: CI
-        with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ignore: brands wheels
+          category: "CHANGE_ME!"

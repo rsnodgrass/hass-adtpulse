@@ -97,6 +97,7 @@ class ADTPulseAlarm(
         self._name = f"ADT Alarm Panel - Site {site.id}"
         self._site = site
         self._alarm = site.alarm_control_panel
+        self._assumed_state: str | None = None
         super().__init__(coordinator, self._name)
 
     @property
@@ -106,9 +107,15 @@ class ADTPulseAlarm(
         Returns:
             str: the status
         """
+        if self._assumed_state is not None:
+            return self._assumed_state
         if self._alarm.status in ALARM_MAP:
             return ALARM_MAP[self._alarm.status]
         return STATE_UNAVAILABLE
+
+    @property
+    def assumed_state(self) -> bool:
+        return self._assumed_state is None
 
     @property
     def attribution(self) -> str | None:
@@ -155,21 +162,33 @@ class ADTPulseAlarm(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
+        if action == STATE_ALARM_DISARMED:
+            self._assumed_state = STATE_ALARM_DISARMING
+        else:
+            self._assumed_state = STATE_ALARM_ARMING
+        self.async_write_ha_state()
         if not await arm_disarm_func:
             LOG.warning("Could not %s ADT Pulse alarm", action)
+        self._assumed_state = None
         self.async_write_ha_state()
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        await self._perform_alarm_action(self._site.async_disarm(), "disarm")
+        await self._perform_alarm_action(
+            self._site.async_disarm(), STATE_ALARM_DISARMED
+        )
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
-        await self._perform_alarm_action(self._site.async_arm_home(), "arm home")
+        await self._perform_alarm_action(
+            self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
+        )
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
-        await self._perform_alarm_action(self._site.async_arm_away(), "arm away")
+        await self._perform_alarm_action(
+            self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
+        )
 
     # Pulse can arm away or home with bypass
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:

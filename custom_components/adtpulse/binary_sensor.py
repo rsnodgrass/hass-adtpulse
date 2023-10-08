@@ -22,11 +22,16 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import as_local
-from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
+from . import (
+    get_alarm_unique_id,
+    get_gateway_unique_id,
+    migrate_entity_name,
+    zone_open,
+    zone_trouble,
+)
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -214,8 +219,8 @@ class ADTPulseZoneSensor(
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
         if self._is_trouble_indicator:
-            return not self._my_zone.status == STATE_ONLINE
-        return not self._my_zone.state == STATE_OK
+            return zone_trouble(self._my_zone)
+        return zone_open(self._my_zone)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:

@@ -33,7 +33,13 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
+from . import (
+    get_alarm_unique_id,
+    get_gateway_unique_id,
+    migrate_entity_name,
+    zone_open,
+    zone_trouble,
+)
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -117,6 +123,12 @@ class ADTPulseAlarm(
     @property
     def supported_features(self) -> AlarmControlPanelEntityFeature:
         """Return the list of supported features."""
+        retval = AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+        if self._site.zones_as_dict is None:
+            return retval
+        for zone in self._site.zones_as_dict.values():
+            if zone_open(zone) or zone_trouble(zone):
+                return retval
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS

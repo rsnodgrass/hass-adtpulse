@@ -213,7 +213,6 @@ class ADTPulseAlarm(
     def extra_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
-            "site_id": self._site.id,
             "last_update_time": as_local(
                 datetime.fromtimestamp(self._alarm.last_update)
             ),

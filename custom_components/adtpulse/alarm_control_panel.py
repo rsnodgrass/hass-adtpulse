@@ -131,8 +131,10 @@ class ADTPulseAlarm(
         return ALARM_ICON_MAP[self._alarm.status]
 
     @property
-    def supported_features(self) -> AlarmControlPanelEntityFeature:
+    def supported_features(self) -> AlarmControlPanelEntityFeature | None:
         """Return the list of supported features."""
+        if self.state != STATE_ALARM_DISARMED:
+            return None
         retval = AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
         if self._site.zones_as_dict is None:
             return retval

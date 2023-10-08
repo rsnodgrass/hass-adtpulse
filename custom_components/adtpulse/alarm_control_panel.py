@@ -153,10 +153,9 @@ class ADTPulseAlarm(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
-        if await arm_disarm_func:
-            self.async_write_ha_state()
-        else:
+        if not await arm_disarm_func:
             LOG.warning("Could not %s ADT Pulse alarm", action)
+        self.async_write_ha_state()
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""

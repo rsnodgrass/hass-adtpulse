@@ -162,6 +162,9 @@ class ADTPulseAlarm(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
+        if self.state == action:
+            LOG.warning("Attempting to set alarm to same state, ignoring")
+            return
         if action == STATE_ALARM_DISARMED:
             self._assumed_state = STATE_ALARM_DISARMING
         else:

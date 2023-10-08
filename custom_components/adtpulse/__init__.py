@@ -29,8 +29,11 @@ from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_POLL_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
+    STATE_OK,
+    STATE_ONLINE,
 )
 from pyadtpulse.site import ADTPulseSite
+from pyadtpulse.zones import ADTPulseZoneData
 
 from .const import (
     ADTPULSE_DOMAIN,
@@ -54,6 +57,16 @@ def get_gateway_unique_id(site: ADTPulseSite) -> str:
 def get_alarm_unique_id(site: ADTPulseSite) -> str:
     """Get unique ID for alarm."""
     return f"adt_pulse_alarm_{site.id}"
+
+
+def zone_open(zone: ADTPulseZoneData) -> bool:
+    """Determine if a zone is opened."""
+    return not zone.state == STATE_OK
+
+
+def zone_trouble(zone: ADTPulseZoneData) -> bool:
+    """Determine if a zone is in trouble state."""
+    return not zone.status == STATE_ONLINE
 
 
 @callback

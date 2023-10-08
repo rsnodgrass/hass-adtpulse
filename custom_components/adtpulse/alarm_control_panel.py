@@ -19,6 +19,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -33,7 +34,13 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from . import get_alarm_unique_id, get_gateway_unique_id, migrate_entity_name
+from . import (
+    get_alarm_unique_id,
+    get_gateway_unique_id,
+    migrate_entity_name,
+    zone_open,
+    zone_trouble,
+)
 from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 
@@ -45,11 +52,13 @@ ALARM_MAP = {
     ADT_ALARM_DISARMING: STATE_ALARM_DISARMING,
     ADT_ALARM_HOME: STATE_ALARM_ARMED_HOME,
     ADT_ALARM_OFF: STATE_ALARM_DISARMED,
-    ADT_ALARM_UNKNOWN: None,
+    ADT_ALARM_UNKNOWN: STATE_UNAVAILABLE,
 }
 
 ALARM_ICON_MAP = {
+    ADT_ALARM_ARMING: "mdi:shield-refresh",
     ADT_ALARM_AWAY: "mdi:shield-lock",
+    ADT_ALARM_DISARMING: "mdi-shield-sync",
     ADT_ALARM_HOME: "mdi:shield-home",
     ADT_ALARM_OFF: "mdi:shield-off",
     ADT_ALARM_UNKNOWN: "mdi:shield-bug",
@@ -89,6 +98,7 @@ class ADTPulseAlarm(
         self._name = f"ADT Alarm Panel - Site {site.id}"
         self._site = site
         self._alarm = site.alarm_control_panel
+        self._assumed_state: str | None = None
         super().__init__(coordinator, self._name)
 
     @property
@@ -98,9 +108,15 @@ class ADTPulseAlarm(
         Returns:
             str: the status
         """
+        if self._assumed_state is not None:
+            return self._assumed_state
         if self._alarm.status in ALARM_MAP:
             return ALARM_MAP[self._alarm.status]
         return STATE_UNAVAILABLE
+
+    @property
+    def assumed_state(self) -> bool:
+        return self._assumed_state is None
 
     @property
     def attribution(self) -> str | None:
@@ -115,8 +131,16 @@ class ADTPulseAlarm(
         return ALARM_ICON_MAP[self._alarm.status]
 
     @property
-    def supported_features(self) -> AlarmControlPanelEntityFeature:
+    def supported_features(self) -> AlarmControlPanelEntityFeature | None:
         """Return the list of supported features."""
+        if self.state != STATE_ALARM_DISARMED:
+            return None
+        retval = AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
+        if self._site.zones_as_dict is None:
+            return retval
+        for zone in self._site.zones_as_dict.values():
+            if zone_open(zone) or zone_trouble(zone):
+                return retval
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
@@ -140,23 +164,41 @@ class ADTPulseAlarm(
     async def _perform_alarm_action(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
+        result = True
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
-        if await arm_disarm_func:
-            self.async_write_ha_state()
+        if self.state == action:
+            LOG.warning("Attempting to set alarm to same state, ignoring")
+            return
+        if action == STATE_ALARM_DISARMED:
+            self._assumed_state = STATE_ALARM_DISARMING
         else:
+            self._assumed_state = STATE_ALARM_ARMING
+        self.async_write_ha_state()
+        result = await arm_disarm_func
+        if not result:
             LOG.warning("Could not %s ADT Pulse alarm", action)
+        self._assumed_state = None
+        self.async_write_ha_state()
+        if not result:
+            raise HomeAssistantError(f"Could not set alarm status to {action}")
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""
-        await self._perform_alarm_action(self._site.async_disarm(), "disarm")
+        await self._perform_alarm_action(
+            self._site.async_disarm(), STATE_ALARM_DISARMED
+        )
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
-        await self._perform_alarm_action(self._site.async_arm_home(), "arm home")
+        await self._perform_alarm_action(
+            self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
+        )
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
-        await self._perform_alarm_action(self._site.async_arm_away(), "arm away")
+        await self._perform_alarm_action(
+            self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
+        )
 
     # Pulse can arm away or home with bypass
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
@@ -178,7 +220,6 @@ class ADTPulseAlarm(
     def extra_state_attributes(self) -> dict:
         """Return the state attributes."""
         return {
-            "site_id": self._site.id,
             "last_update_time": as_local(
                 datetime.fromtimestamp(self._alarm.last_update)
             ),

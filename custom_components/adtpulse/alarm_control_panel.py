@@ -19,6 +19,7 @@ from homeassistant.const import (
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -161,6 +162,7 @@ class ADTPulseAlarm(
     async def _perform_alarm_action(
         self, arm_disarm_func: Coroutine[bool | None, None, bool], action: str
     ) -> None:
+        result = True
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
         if self.state == action:
             LOG.warning("Attempting to set alarm to same state, ignoring")
@@ -170,10 +172,13 @@ class ADTPulseAlarm(
         else:
             self._assumed_state = STATE_ALARM_ARMING
         self.async_write_ha_state()
-        if not await arm_disarm_func:
+        result = await arm_disarm_func
+        if not result:
             LOG.warning("Could not %s ADT Pulse alarm", action)
         self._assumed_state = None
         self.async_write_ha_state()
+        if not result:
+            raise HomeAssistantError(f"Could not set alarm status to {action}")
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Send disarm command."""

@@ -55,7 +55,9 @@ ALARM_MAP = {
 }
 
 ALARM_ICON_MAP = {
+    ADT_ALARM_ARMING: "mdi:shield-refresh",
     ADT_ALARM_AWAY: "mdi:shield-lock",
+    ADT_ALARM_DISARMING: "mdi-shield-sync",
     ADT_ALARM_HOME: "mdi:shield-home",
     ADT_ALARM_OFF: "mdi:shield-off",
     ADT_ALARM_UNKNOWN: "mdi:shield-bug",

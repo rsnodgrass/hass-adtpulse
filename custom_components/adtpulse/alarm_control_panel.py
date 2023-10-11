@@ -49,7 +49,8 @@ from .utils import (
 
 LOG = getLogger(__name__)
 
-PLATFORM_SCHEMA = config_entry_only_config_schema
+PLATFORM_SCHEMA = alarm.PLATFORM_SCHEMA.extend(config_entry_only_config_schema)
+
 ALARM_MAP = {
     ADT_ALARM_ARMING: STATE_ALARM_ARMING,
     ADT_ALARM_AWAY: STATE_ALARM_ARMED_AWAY,

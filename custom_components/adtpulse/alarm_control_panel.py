@@ -25,7 +25,6 @@ from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
     async_get_current_platform,
 )
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import as_local
 from pyadtpulse.alarm_panel import (
     ADT_ALARM_ARMING,
@@ -37,7 +36,8 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
+from .base_entity import ADTPulseEntity
+from .const import ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 from .utils import (
     get_alarm_unique_id,
@@ -96,17 +96,13 @@ async def async_setup_entry(
     )
 
 
-class ADTPulseAlarm(
-    CoordinatorEntity[ADTPulseDataUpdateCoordinator], alarm.AlarmControlPanelEntity
-):
+class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
         self._name = f"ADT Alarm Panel - Site {site.id}"
-        self._site = site
-        self._alarm = site.alarm_control_panel
         self._assumed_state: str | None = None
         super().__init__(coordinator, self._name)
 
@@ -126,11 +122,6 @@ class ADTPulseAlarm(
     @property
     def assumed_state(self) -> bool:
         return self._assumed_state is None
-
-    @property
-    def attribution(self) -> str | None:
-        """Return API data attribution."""
-        return ADTPULSE_DATA_ATTRIBUTION
 
     @property
     def icon(self) -> str:
@@ -231,15 +222,6 @@ class ADTPulseAlarm(
         await self._perform_alarm_action(
             self._site.async_arm_home(force_arm=True), STATE_ALARM_ARMED_HOME
         )
-
-    @property
-    def name(self) -> str | None:
-        """Return the name of the alarm."""
-        return None
-
-    @property
-    def has_entity_name(self) -> bool:
-        return True
 
     @property
     def extra_state_attributes(self) -> dict:

@@ -273,7 +273,6 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         LOG.debug(
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
-        self._gateway = site.gateway
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
         self._name = f"ADT Pulse Gateway Status - Site: {site.name}"
         super().__init__(coordinator, self._name)

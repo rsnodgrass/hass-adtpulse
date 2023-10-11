@@ -21,7 +21,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import as_local
 from pyadtpulse.alarm_panel import (
@@ -84,6 +87,13 @@ async def async_setup_entry(
     alarm_devices = [ADTPulseAlarm(coordinator, site)]
 
     async_add_entities(alarm_devices)
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        "force_stay", {}, "async_alarm_arm_force_stay"
+    )
+    platform.async_register_entity_service(
+        "force_away", {}, "async_alarm_arm_custom_bypass"
+    )
 
 
 class ADTPulseAlarm(
@@ -190,7 +200,7 @@ class ADTPulseAlarm(
         """Send arm home command."""
         if not system_can_be_armed(self._site):
             raise HomeAssistantError(
-                "Pulse system cannot be armed due to tripped zone" " - use force arm"
+                "Pulse system cannot be armed due to tripped zone - use force arm"
             )
         await self._perform_alarm_action(
             self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
@@ -200,7 +210,7 @@ class ADTPulseAlarm(
         """Send arm away command."""
         if not system_can_be_armed(self._site):
             raise HomeAssistantError(
-                "Pulse system cannot be armed due to tripped zone" " - use force arm"
+                "Pulse system cannot be armed due to tripped zone - use force arm"
             )
         await self._perform_alarm_action(
             self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
@@ -211,6 +221,15 @@ class ADTPulseAlarm(
         """Send force arm command."""
         await self._perform_alarm_action(
             self._site.async_arm_away(force_arm=True), "force arm"
+        )
+
+    async def async_alarm_arm_force_stay(self) -> None:
+        """Send force arm stay command.
+
+        This type of arming isn't implemented in HA, but we put it in anyway for
+        use as a service call."""
+        await self._perform_alarm_action(
+            self._site.async_arm_home(force_arm=True), STATE_ALARM_ARMED_HOME
         )
 
     @property

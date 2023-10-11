@@ -38,5 +38,15 @@
         "min_relogin":"Pulse re-login Interval must be greater than 20 minutes",
         "max_keepalive":"Pulse keepalive Interval must be less than 15 minutes"
     }
+  },
+  "services": {
+    "force_stay": {
+      "name": "Alarm Force Stay",
+      "description": "Force arm Pulse in stay/home mode"
+    },
+    "force_away": {
+      "name": "Alarm Force Stay",
+      "description": "Force arm Pulse in away mode.  This is the same as arming custom bypass"
+    }
   }
 }

@@ -21,6 +21,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.config_entry_flow import FlowResult
+from homeassistant.helpers.config_validation import config_entry_only_config_schema
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
@@ -41,6 +42,8 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 LOG = getLogger(__name__)
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
+
+CONFIG_SCHEMA = config_entry_only_config_schema
 
 
 async def async_setup(

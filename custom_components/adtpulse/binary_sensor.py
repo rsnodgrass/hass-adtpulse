@@ -12,13 +12,11 @@ from datetime import datetime
 from typing import Any, Mapping
 
 from homeassistant.components.binary_sensor import (
-    PLATFORM_SCHEMA,
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.config_validation import config_entry_only_config_schema
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -38,8 +36,6 @@ from .utils import (
 )
 
 LOG = getLogger(__name__)
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(config_entry_only_config_schema)
 
 # please keep these alphabetized to make changes easier
 ADT_DEVICE_CLASS_TAG_MAP = {

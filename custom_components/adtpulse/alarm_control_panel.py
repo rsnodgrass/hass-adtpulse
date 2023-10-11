@@ -20,6 +20,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.config_validation import config_entry_only_config_schema
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import (
     AddEntitiesCallback,
@@ -48,6 +49,7 @@ from .utils import (
 
 LOG = getLogger(__name__)
 
+PLATFORM_SCHEMA = config_entry_only_config_schema
 ALARM_MAP = {
     ADT_ALARM_ARMING: STATE_ALARM_ARMING,
     ADT_ALARM_AWAY: STATE_ALARM_ARMED_AWAY,

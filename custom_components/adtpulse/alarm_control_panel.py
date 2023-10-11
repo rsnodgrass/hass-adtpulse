@@ -40,8 +40,7 @@ from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
     migrate_entity_name,
-    zone_open,
-    zone_trouble,
+    system_can_be_armed,
 )
 
 LOG = getLogger(__name__)
@@ -138,9 +137,8 @@ class ADTPulseAlarm(
         retval = AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
         if self._site.zones_as_dict is None:
             return retval
-        for zone in self._site.zones_as_dict.values():
-            if zone_open(zone) or zone_trouble(zone):
-                return retval
+        if not system_can_be_armed(self._site):
+            return retval
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
@@ -190,12 +188,20 @@ class ADTPulseAlarm(
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
+        if not system_can_be_armed(self._site):
+            raise HomeAssistantError(
+                "Pulse system cannot be armed due to tripped zone" " - use force arm"
+            )
         await self._perform_alarm_action(
             self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
         )
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
+        if not system_can_be_armed(self._site):
+            raise HomeAssistantError(
+                "Pulse system cannot be armed due to tripped zone" " - use force arm"
+            )
         await self._perform_alarm_action(
             self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
         )

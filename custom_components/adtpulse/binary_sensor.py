@@ -25,15 +25,15 @@ from homeassistant.util import as_local
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from . import (
+from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
+from .coordinator import ADTPulseDataUpdateCoordinator
+from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
     migrate_entity_name,
     zone_open,
     zone_trouble,
 )
-from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = getLogger(__name__)
 

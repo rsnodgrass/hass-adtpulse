@@ -18,22 +18,16 @@ from homeassistant.const import (
     CONF_USERNAME,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import entity_registry
 from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.util import slugify
 from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_POLL_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
-    STATE_OK,
-    STATE_ONLINE,
 )
-from pyadtpulse.site import ADTPulseSite
-from pyadtpulse.zones import ADTPulseZoneData
 
 from .const import (
     ADTPULSE_DOMAIN,
@@ -49,52 +43,9 @@ LOG = getLogger(__name__)
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
 
-def get_gateway_unique_id(site: ADTPulseSite) -> str:
-    """Get unique ID for gateway."""
-    return f"adt_pulse_gateway_{site.id}"
-
-
-def get_alarm_unique_id(site: ADTPulseSite) -> str:
-    """Get unique ID for alarm."""
-    return f"adt_pulse_alarm_{site.id}"
-
-
-def zone_open(zone: ADTPulseZoneData) -> bool:
-    """Determine if a zone is opened."""
-    return not zone.state == STATE_OK
-
-
-def zone_trouble(zone: ADTPulseZoneData) -> bool:
-    """Determine if a zone is in trouble state."""
-    return not zone.status == STATE_ONLINE
-
-
-@callback
-def migrate_entity_name(
-    hass: HomeAssistant, site: ADTPulseSite, platform_name: str, entity_uid: str
-) -> None:
-    """Migrate old entity names."""
-    registry = entity_registry.async_get(hass)
-    if registry is None:
-        return
-    # this seems backwards
-    entity_id = registry.async_get_entity_id(
-        platform_name,
-        ADTPULSE_DOMAIN,
-        entity_uid,
-    )
-    if entity_id is not None:
-        # change has_entity_name to True and set name to None for devices
-        registry.async_update_entity(entity_id, has_entity_name=True, name=None)
-        # rename site name to site id for entities which have site name
-        slugified_site_name = slugify(site.name)
-        if slugified_site_name in entity_id:
-            registry.async_update_entity(
-                entity_id, new_entity_id=entity_id.replace(slugified_site_name, site.id)
-            )
-
-
-async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+async def async_setup(
+    hass: HomeAssistant, config: ConfigType  # pylint: disable=unused-argument
+) -> bool:
     """Start up the ADT Pulse HA integration.
 
     Args:

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
 from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
@@ -15,7 +15,7 @@ def migrate_entity_name(
     hass: HomeAssistant, site: ADTPulseSite, platform_name: str, entity_uid: str
 ) -> None:
     """Migrate old entity names."""
-    registry = entity_registry.async_get(hass)
+    registry = er.async_get(hass)
     if registry is None:
         return
     # this seems backwards
@@ -47,12 +47,12 @@ def get_alarm_unique_id(site: ADTPulseSite) -> str:
 
 def zone_open(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is opened."""
-    return not zone.state == STATE_OK
+    return zone.state != STATE_OK
 
 
 def zone_trouble(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is in trouble state."""
-    return not zone.status == STATE_ONLINE
+    return zone.status != STATE_ONLINE
 
 
 def system_can_be_armed(site: ADTPulseSite) -> bool:

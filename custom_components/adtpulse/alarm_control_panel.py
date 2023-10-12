@@ -21,8 +21,10 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity_platform import (
+    AddEntitiesCallback,
+    async_get_current_platform,
+)
 from homeassistant.util import as_local
 from pyadtpulse.alarm_panel import (
     ADT_ALARM_ARMING,
@@ -34,14 +36,14 @@ from pyadtpulse.alarm_panel import (
 )
 from pyadtpulse.site import ADTPulseSite
 
-from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
+from .base_entity import ADTPulseEntity
+from .const import ADTPULSE_DOMAIN
 from .coordinator import ADTPulseDataUpdateCoordinator
 from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
     migrate_entity_name,
-    zone_open,
-    zone_trouble,
+    system_can_be_armed,
 )
 
 LOG = getLogger(__name__)
@@ -64,6 +66,11 @@ ALARM_ICON_MAP = {
     ADT_ALARM_UNKNOWN: "mdi:shield-bug",
 }
 
+FORCE_ARM = "force arm"
+ARM_ERROR_MESSAGE = (
+    f"Pulse system cannot be armed due to opened/tripped zone - use {FORCE_ARM}"
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -85,19 +92,22 @@ async def async_setup_entry(
     alarm_devices = [ADTPulseAlarm(coordinator, site)]
 
     async_add_entities(alarm_devices)
+    platform = async_get_current_platform()
+    platform.async_register_entity_service(
+        "force_stay", {}, "async_alarm_arm_force_stay"
+    )
+    platform.async_register_entity_service(
+        "force_away", {}, "async_alarm_arm_custom_bypass"
+    )
 
 
-class ADTPulseAlarm(
-    CoordinatorEntity[ADTPulseDataUpdateCoordinator], alarm.AlarmControlPanelEntity
-):
+class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     """An alarm_control_panel implementation for ADT Pulse."""
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
         """Initialize the alarm control panel."""
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
         self._name = f"ADT Alarm Panel - Site {site.id}"
-        self._site = site
-        self._alarm = site.alarm_control_panel
         self._assumed_state: str | None = None
         super().__init__(coordinator, self._name)
 
@@ -119,11 +129,6 @@ class ADTPulseAlarm(
         return self._assumed_state is None
 
     @property
-    def attribution(self) -> str | None:
-        """Return API data attribution."""
-        return ADTPULSE_DATA_ATTRIBUTION
-
-    @property
     def icon(self) -> str:
         """Return the icon."""
         if self._alarm.status not in ALARM_ICON_MAP:
@@ -131,16 +136,8 @@ class ADTPulseAlarm(
         return ALARM_ICON_MAP[self._alarm.status]
 
     @property
-    def supported_features(self) -> AlarmControlPanelEntityFeature | None:
+    def supported_features(self) -> AlarmControlPanelEntityFeature:
         """Return the list of supported features."""
-        if self.state != STATE_ALARM_DISARMED:
-            return None
-        retval = AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
-        if self._site.zones_as_dict is None:
-            return retval
-        for zone in self._site.zones_as_dict.values():
-            if zone_open(zone) or zone_trouble(zone):
-                return retval
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
@@ -166,10 +163,14 @@ class ADTPulseAlarm(
     ) -> None:
         result = True
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
+        if action != STATE_ALARM_DISARMED:
+            await self._check_if_system_armable(action)
         if self.state == action:
             LOG.warning("Attempting to set alarm to same state, ignoring")
             return
-        if action == STATE_ALARM_DISARMED:
+        if not self._gateway.is_online:
+            self._assumed_state = action
+        elif action == STATE_ALARM_DISARMED:
             self._assumed_state = STATE_ALARM_DISARMING
         else:
             self._assumed_state = STATE_ALARM_ARMING
@@ -188,6 +189,16 @@ class ADTPulseAlarm(
             self._site.async_disarm(), STATE_ALARM_DISARMED
         )
 
+    async def _check_if_system_armable(self, new_state: str) -> None:
+        """Checks if we can arm the system, raises exceptions if not."""
+        if self.state != STATE_ALARM_DISARMED:
+            raise HomeAssistantError(
+                f"Cannot set alarm to {new_state} "
+                f"because currently set to {self.state}"
+            )
+        if not new_state == FORCE_ARM and not system_can_be_armed(self._site):
+            raise HomeAssistantError(ARM_ERROR_MESSAGE)
+
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
         await self._perform_alarm_action(
@@ -204,17 +215,17 @@ class ADTPulseAlarm(
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
         """Send force arm command."""
         await self._perform_alarm_action(
-            self._site.async_arm_away(force_arm=True), "force arm"
+            self._site.async_arm_away(force_arm=True), FORCE_ARM
         )
 
-    @property
-    def name(self) -> str | None:
-        """Return the name of the alarm."""
-        return None
+    async def async_alarm_arm_force_stay(self) -> None:
+        """Send force arm stay command.
 
-    @property
-    def has_entity_name(self) -> bool:
-        return True
+        This type of arming isn't implemented in HA, but we put it in anyway for
+        use as a service call."""
+        await self._perform_alarm_action(
+            self._site.async_arm_home(force_arm=True), STATE_ALARM_ARMED_HOME
+        )
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -243,6 +254,11 @@ class ADTPulseAlarm(
             None (not implmented)
         """
         return None
+
+    @property
+    def available(self) -> bool:
+        """Alarm panel is always available even if gateway isn't."""
+        return True
 
     @callback
     def _handle_coordinator_update(self) -> None:

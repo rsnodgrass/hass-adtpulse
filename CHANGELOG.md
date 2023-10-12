@@ -1,3 +1,12 @@
+## 0.3.3 (2023-10-12)
+
+* bump pyadtpulse to 1.1.3.  This should fix alarm not updating issue
+* add force stay and force away services
+* add relogin service
+* refactor code to use base entity.  This should cause most entities to become unavailable if the gateway goes offline
+* disallow invalid alarm state changes
+* revert alarm card functionality.  All states will be available, but exceptions will be thrown if an invalid state is requested.
+
 ## 0.3.2 (2023-10-08)
 
 Alarm control panel updates:

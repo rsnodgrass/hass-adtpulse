@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry
+from homeassistant.helpers import entity_registry as er
+from homeassistant.util import slugify
 from pyadtpulse.const import STATE_OK, STATE_ONLINE
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
@@ -14,7 +15,7 @@ def migrate_entity_name(
     hass: HomeAssistant, site: ADTPulseSite, platform_name: str, entity_uid: str
 ) -> None:
     """Migrate old entity names."""
-    registry = entity_registry.async_get(hass)
+    registry = er.async_get(hass)
     if registry is None:
         return
     # this seems backwards
@@ -44,14 +45,14 @@ def get_alarm_unique_id(site: ADTPulseSite) -> str:
     return f"adt_pulse_alarm_{site.id}"
 
 
-def zone_open(zone: ADTPulseZoneData) -> bool:
+def zone_is_open(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is opened."""
-    return not zone.state == STATE_OK
+    return zone.state != STATE_OK
 
 
-def zone_trouble(zone: ADTPulseZoneData) -> bool:
+def zone_is_in_trouble(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is in trouble state."""
-    return not zone.status == STATE_ONLINE
+    return zone.status != STATE_ONLINE
 
 
 def system_can_be_armed(site: ADTPulseSite) -> bool:
@@ -59,7 +60,7 @@ def system_can_be_armed(site: ADTPulseSite) -> bool:
     zones = site.zones_as_dict
     if zones is None:
         return False
-    for zone in zones:
-        if zone_open(zone) or zone_trouble(zone):
+    for zone in zones.values():
+        if zone_is_open(zone) or zone_is_in_trouble(zone):
             return False
     return True

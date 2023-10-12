@@ -60,7 +60,7 @@ def system_can_be_armed(site: ADTPulseSite) -> bool:
     zones = site.zones_as_dict
     if zones is None:
         return False
-    for zone in zones:
+    for zone in zones.values():
         if zone_open(zone) or zone_trouble(zone):
             return False
     return True

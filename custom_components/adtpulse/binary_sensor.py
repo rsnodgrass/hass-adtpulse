@@ -20,20 +20,20 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import as_local
 from pyadtpulse.site import ADTPulseSite
 from pyadtpulse.zones import ADTPulseZoneData
 
-from . import (
+from .base_entity import ADTPulseEntity
+from .const import ADTPULSE_DOMAIN
+from .coordinator import ADTPulseDataUpdateCoordinator
+from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
     migrate_entity_name,
-    zone_open,
-    zone_trouble,
+    zone_is_in_trouble,
+    zone_is_open,
 )
-from .const import ADTPULSE_DATA_ATTRIBUTION, ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = getLogger(__name__)
 
@@ -103,9 +103,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ADTPulseZoneSensor(
-    CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
-):
+class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     """HASS zone binary sensor implementation for ADT Pulse."""
 
     # zone = {'id': 'sensor-12', 'name': 'South Office Motion',
@@ -167,7 +165,6 @@ class ADTPulseZoneSensor(
             )
         else:
             LOG.debug("%s: adding zone sensor for site %s", ADTPULSE_DOMAIN, site.id)
-        self._site = site
         self._zone_id = zone_id
         self._is_trouble_indicator = trouble_indicator
         self._my_zone = self._get_my_zone(site, zone_id)
@@ -186,10 +183,6 @@ class ADTPulseZoneSensor(
         if self._is_trouble_indicator:
             return "Trouble"
         return None
-
-    @property
-    def has_entity_name(self) -> bool:
-        return True
 
     @property
     def unique_id(self) -> str:
@@ -219,8 +212,8 @@ class ADTPulseZoneSensor(
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
         if self._is_trouble_indicator:
-            return zone_trouble(self._my_zone)
-        return zone_open(self._my_zone)
+            return zone_is_in_trouble(self._my_zone)
+        return zone_is_open(self._my_zone)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:
@@ -255,11 +248,6 @@ class ADTPulseZoneSensor(
             manufacturer="ADT",
         )
 
-    @property
-    def attribution(self) -> str:
-        """Return API data attribution."""
-        return ADTPULSE_DATA_ATTRIBUTION
-
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
@@ -271,9 +259,7 @@ class ADTPulseZoneSensor(
         self.async_write_ha_state()
 
 
-class ADTPulseGatewaySensor(
-    CoordinatorEntity[ADTPulseDataUpdateCoordinator], BinarySensorEntity
-):
+class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
     """HASS Gateway Online Binary Sensor."""
 
     def __init__(self, coordinator: ADTPulseDataUpdateCoordinator, site: ADTPulseSite):
@@ -287,24 +273,14 @@ class ADTPulseGatewaySensor(
         LOG.debug(
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
-        self._gateway = site.gateway
-        self._site = site
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"ADT Pulse Gateway Status - Site: {self._site.name}"
+        self._name = f"ADT Pulse Gateway Status - Site: {site.name}"
         super().__init__(coordinator, self._name)
 
     @property
     def is_on(self) -> bool:
         """Return if gateway is online."""
         return self._gateway.is_online
-
-    @property
-    def name(self) -> str | None:
-        return None
-
-    @property
-    def has_entity_name(self) -> bool:
-        return True
 
     # FIXME: Gateways only support one site?
     @property
@@ -317,11 +293,6 @@ class ADTPulseGatewaySensor(
         if self.is_on:
             return "mdi:lan-connect"
         return "mdi:lan-disconnect"
-
-    @property
-    def attribution(self) -> str | None:
-        """Return API data attribution."""
-        return ADTPULSE_DATA_ATTRIBUTION
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:

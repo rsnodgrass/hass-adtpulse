@@ -166,7 +166,9 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         if self.state == action:
             LOG.warning("Attempting to set alarm to same state, ignoring")
             return
-        if action == STATE_ALARM_DISARMED:
+        if not self._gateway.is_online:
+            self._assumed_state = action
+        elif action == STATE_ALARM_DISARMED:
             self._assumed_state = STATE_ALARM_DISARMING
         else:
             self._assumed_state = STATE_ALARM_ARMING

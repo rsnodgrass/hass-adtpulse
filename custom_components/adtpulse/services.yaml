@@ -7,3 +7,7 @@ force_away:
   target:
     entity:
       domain: alarm_control_panel
+
+quick_relogin:
+  name: "Relogin to Pulse"
+  description: "Performs a re-login to Pulse"

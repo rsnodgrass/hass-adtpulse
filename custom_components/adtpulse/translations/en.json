@@ -47,6 +47,10 @@
     "force_away": {
       "name": "Alarm Force Away",
       "description": "Force arm Pulse in away mode.  This is the same as arming custom bypass"
+    },
+    "quick_relogin": {
+      "name": "Relogin to Pulse",
+      "description": "Performs a re-login to Pulse"
     }
   }
 }

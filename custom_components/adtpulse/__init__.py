@@ -18,7 +18,7 @@ from homeassistant.const import (
     CONF_USERNAME,
     EVENT_HOMEASSISTANT_STOP,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceRegistry
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.config_validation import config_entry_only_config_schema
@@ -136,6 +136,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
     )
     entry.async_on_unload(entry.add_update_listener(options_listener))
+
+    async def handle_relogin(dummy: str) -> None:  # pylint: disable=unused-argument
+        await service.async_quick_relogin()
+
+    hass.services.async_register(ADTPULSE_DOMAIN, "quick_relogin", handle_relogin)
     return True
 
 

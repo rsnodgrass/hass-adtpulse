@@ -31,8 +31,8 @@ from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
     migrate_entity_name,
-    zone_open,
-    zone_trouble,
+    zone_is_in_trouble,
+    zone_is_open,
 )
 
 LOG = getLogger(__name__)
@@ -212,8 +212,8 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
         if self._is_trouble_indicator:
-            return zone_trouble(self._my_zone)
-        return zone_open(self._my_zone)
+            return zone_is_in_trouble(self._my_zone)
+        return zone_is_open(self._my_zone)
 
     @property
     def device_class(self) -> BinarySensorDeviceClass:

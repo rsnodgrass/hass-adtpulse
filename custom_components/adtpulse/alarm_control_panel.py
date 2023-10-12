@@ -66,6 +66,11 @@ ALARM_ICON_MAP = {
     ADT_ALARM_UNKNOWN: "mdi:shield-bug",
 }
 
+FORCE_ARM = "force arm"
+ARM_ERROR_MESSAGE = (
+    f"Pulse system cannot be armed due to opened/tripped zone - use {FORCE_ARM}"
+)
+
 
 async def async_setup_entry(
     hass: HomeAssistant, config: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -183,9 +188,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
         if not system_can_be_armed(self._site):
-            raise HomeAssistantError(
-                "Pulse system cannot be armed due to tripped zone - use force arm"
-            )
+            raise HomeAssistantError(ARM_ERROR_MESSAGE)
         await self._perform_alarm_action(
             self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
         )
@@ -193,9 +196,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
         if not system_can_be_armed(self._site):
-            raise HomeAssistantError(
-                "Pulse system cannot be armed due to tripped zone - use force arm"
-            )
+            raise HomeAssistantError(ARM_ERROR_MESSAGE)
         await self._perform_alarm_action(
             self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
         )
@@ -204,7 +205,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     async def async_alarm_arm_custom_bypass(self, code: str | None = None) -> None:
         """Send force arm command."""
         await self._perform_alarm_action(
-            self._site.async_arm_away(force_arm=True), "force arm"
+            self._site.async_arm_away(force_arm=True), FORCE_ARM
         )
 
     async def async_alarm_arm_force_stay(self) -> None:

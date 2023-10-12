@@ -45,12 +45,12 @@ def get_alarm_unique_id(site: ADTPulseSite) -> str:
     return f"adt_pulse_alarm_{site.id}"
 
 
-def zone_open(zone: ADTPulseZoneData) -> bool:
+def zone_is_open(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is opened."""
     return zone.state != STATE_OK
 
 
-def zone_trouble(zone: ADTPulseZoneData) -> bool:
+def zone_is_in_trouble(zone: ADTPulseZoneData) -> bool:
     """Determine if a zone is in trouble state."""
     return zone.status != STATE_ONLINE
 
@@ -61,6 +61,6 @@ def system_can_be_armed(site: ADTPulseSite) -> bool:
     if zones is None:
         return False
     for zone in zones.values():
-        if zone_open(zone) or zone_trouble(zone):
+        if zone_is_open(zone) or zone_is_in_trouble(zone):
             return False
     return True

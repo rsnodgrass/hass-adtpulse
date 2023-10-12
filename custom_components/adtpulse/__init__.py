@@ -43,7 +43,7 @@ LOG = getLogger(__name__)
 
 SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
 
-CONFIG_SCHEMA = config_entry_only_config_schema
+# CONFIG_SCHEMA = config_entry_only_config_schema
 
 
 async def async_setup(

@@ -163,6 +163,8 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     ) -> None:
         result = True
         LOG.debug("%s: Setting Alarm to %s", ADTPULSE_DOMAIN, action)
+        if action != STATE_ALARM_DISARMED:
+            await self._check_if_system_armable(action)
         if self.state == action:
             LOG.warning("Attempting to set alarm to same state, ignoring")
             return
@@ -187,18 +189,24 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
             self._site.async_disarm(), STATE_ALARM_DISARMED
         )
 
+    async def _check_if_system_armable(self, new_state: str) -> None:
+        """Checks if we can arm the system, raises exceptions if not."""
+        if self.state != STATE_ALARM_DISARMED:
+            raise HomeAssistantError(
+                f"Cannot set alarm to {new_state} "
+                f"because currently set to {self.state}"
+            )
+        if not new_state == FORCE_ARM and not system_can_be_armed(self._site):
+            raise HomeAssistantError(ARM_ERROR_MESSAGE)
+
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send arm home command."""
-        if not system_can_be_armed(self._site):
-            raise HomeAssistantError(ARM_ERROR_MESSAGE)
         await self._perform_alarm_action(
             self._site.async_arm_home(), STATE_ALARM_ARMED_HOME
         )
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send arm away command."""
-        if not system_can_be_armed(self._site):
-            raise HomeAssistantError(ARM_ERROR_MESSAGE)
         await self._perform_alarm_action(
             self._site.async_arm_away(), STATE_ALARM_ARMED_AWAY
         )

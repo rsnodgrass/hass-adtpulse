@@ -1,3 +1,9 @@
 force_stay:
+  target:
+    entity:
+      domain: alarm_control_panel
 
 force_away:
+  target:
+    entity:
+      domain: alarm_control_panel

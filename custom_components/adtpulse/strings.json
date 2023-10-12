@@ -45,7 +45,7 @@
       "description": "Force arm Pulse in stay/home mode"
     },
     "force_away": {
-      "name": "Alarm Force Stay",
+      "name": "Alarm Force Away",
       "description": "Force arm Pulse in away mode.  This is the same as arming custom bypass"
     }
   }

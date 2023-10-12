@@ -60,7 +60,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return self._attrs
 
     @property
-    def is_available(self) -> bool:
+    def available(self) -> bool:
         """Returns whether an entity is available.
 
         Generally false if gateway is offline."""

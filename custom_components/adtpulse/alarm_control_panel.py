@@ -251,6 +251,11 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """
         return None
 
+    @property
+    def available(self) -> bool:
+        """Alarm panel is always available even if gateway isn't."""
+        return True
+
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(

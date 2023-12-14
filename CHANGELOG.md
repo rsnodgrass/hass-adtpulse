@@ -1,3 +1,7 @@
+## 0.3.4 (2023-12-13)
+
+* bump pyadtpulse to 1.1.4 to fix changes in Pulse V27
+
 ## 0.3.3 (2023-10-12)
 
 * bump pyadtpulse to 1.1.3.  This should fix alarm not updating issue

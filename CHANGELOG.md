@@ -1,3 +1,7 @@
+## 0.3.5 (2023-12-22)
+
+* bump pyadtpulse to 1.1.5 to fix more changes in Pulse v27
+
 ## 0.3.4 (2023-12-13)
 
 * bump pyadtpulse to 1.1.4 to fix changes in Pulse V27

@@ -1,0 +1,213 @@
+"""ADT Pulse sensors."""
+from __future__ import annotations
+
+from logging import getLogger
+from datetime import datetime
+from time import time
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from pyadtpulse.exceptions import (
+    PulseAccountLockedError,
+    PulseClientConnectionError,
+    PulseExceptionWithBackoff,
+    PulseExceptionWithRetry,
+    PulseGatewayOfflineError,
+    PulseServerConnectionError,
+    PulseServiceTemporarilyUnavailableError,
+)
+
+from .base_entity import ADTPulseEntity
+from .const import ADTPULSE_DOMAIN
+from .coordinator import ADTPulseDataUpdateCoordinator
+from .utils import get_gateway_unique_id
+
+LOG = getLogger(__name__)
+
+COORDINATOR_EXCEPTION_MAP = {
+    PulseAccountLockedError: ("Account Locked", "mdi:lock"),
+    PulseClientConnectionError: ("Client Connection Error", "mdi:lock"),
+    PulseServerConnectionError: ("Server Connection Error", "mdi:lock"),
+    PulseGatewayOfflineError: ("Gateway Offline", "mdi:lock"),
+    PulseServiceTemporarilyUnavailableError: (
+        "Service Temporarily Unavailable",
+        "mdi:lock",
+    ),
+}
+CONNECTION_STATUS_OK = ("Connection OK", "mdi:lock-open")
+CONNECTION_STATUSES = [value for value in COORDINATOR_EXCEPTION_MAP.values()]
+CONNECTION_STATUSES.append(CONNECTION_STATUS_OK)
+CONNECTION_STATUS_STRINGS = [value[0] for value in CONNECTION_STATUSES]
+
+
+async def async_setup_entry(
+    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+) -> None:
+    """Set up sensors for an ADT Pulse installation."""
+    coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
+        entry.entry_id
+    ]
+
+    async_add_entities(
+        [
+            ADTPulseConnectionStatus(coordinator),
+            ADTPulseNextRefresh(coordinator),
+        ]
+    )
+
+
+class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
+    """ADT Pulse connection status sensor."""
+
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator):
+        """Initialize connection status sensor.
+
+        Args:
+            coordinator (ADTPulseDataUpdateCoordinator):
+                HASS data update coordinator
+        """
+        site_name = coordinator.adtpulse.site.id
+        LOG.debug(
+            "%s: adding connection status sensor for site %s",
+            ADTPULSE_DOMAIN,
+            site_name,
+        )
+
+        self._name = f"ADT Pulse Connection Status - Site: {site_name}"
+        super().__init__(coordinator, self._name)
+
+    @property
+    def name(self) -> str:
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID of the sensor."""
+        return f"{self.coordinator.adtpulse.site.id}-connection-status"
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return True
+
+    @property
+    def device_class(self) -> str | None:
+        """Return the class of this sensor."""
+        return SensorDeviceClass.ENUM
+
+    @property
+    def options(self) -> list[str]:
+        """Return the list of available options."""
+        return CONNECTION_STATUS_STRINGS
+
+    @property
+    def native_value(self) -> str:
+        """Return the state of the sensor."""
+        if not self.coordinator.last_exception:
+            return CONNECTION_STATUS_OK[0]
+        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
+            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][0]
+        return "Unknown"
+
+    @property
+    def icon(self) -> str:
+        """Return the icon of this sensor."""
+        if self.native_value == CONNECTION_STATUS_OK[0]:
+            return CONNECTION_STATUS_OK[1]
+        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
+            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][1]
+        return "mdi:alert-octogram"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        if self._gateway.serial_number:
+            return DeviceInfo(
+                identifiers={(ADTPULSE_DOMAIN, self._gateway.serial_number)},
+            )
+        return DeviceInfo(
+            identifiers={(ADTPULSE_DOMAIN, get_gateway_unique_id(self._site))},
+        )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        LOG.debug("Setting %s status to %s", self.name, self.native_value)
+        self.async_write_ha_state()
+
+
+class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
+    """ADT Pulse next refresh sensor."""
+
+    def __init__(self, coordinator: ADTPulseDataUpdateCoordinator):
+        """Initialize next refresh sensor.
+
+        Args:
+            coordinator (ADTPulseDataUpdateCoordinator):
+                HASS data update coordinator
+        """
+        site_name = coordinator.adtpulse.site.id
+        LOG.debug(
+            "%s: adding next refresh sensor for site %s",
+            ADTPULSE_DOMAIN,
+            site_name,
+        )
+
+        self._name = f"ADT Pulse Next Refresh - Site: {site_name}"
+        super().__init__(coordinator, self._name)
+
+    @property
+    def device_class(self) -> str | None:
+        """Return the class of this sensor."""
+        return SensorDeviceClass.TIMESTAMP
+
+    @property
+    def native_value(self) -> datetime | None:
+        """Return the state of the sensor."""
+        last_ex = self.coordinator.last_exception
+        if not last_ex:
+            return None
+        if isinstance(last_ex, PulseExceptionWithRetry):
+            if last_ex.retry_time is None:
+                return None
+            return datetime.fromtimestamp(last_ex.retry_time)
+        if isinstance(last_ex, PulseExceptionWithBackoff):
+            return datetime.fromtimestamp(
+                last_ex.backoff.get_current_backoff_interval() + time()
+            )
+        return None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return device info."""
+        if self._gateway.serial_number:
+            return DeviceInfo(
+                identifiers={(ADTPULSE_DOMAIN, self._gateway.serial_number)},
+            )
+
+        return DeviceInfo(
+            identifiers={(ADTPULSE_DOMAIN, get_gateway_unique_id(self._site))},
+        )
+
+    @property
+    def unique_id(self) -> str:
+        """Return the unique ID of the sensor."""
+        return f"{self.coordinator.adtpulse.site.id}-next-refresh"
+
+    @property
+    def name(self) -> str:
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self.coordinator.last_exception is not None
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        LOG.debug("Setting %s status to %s", self.name, self.native_value)
+        self.async_write_ha_state()

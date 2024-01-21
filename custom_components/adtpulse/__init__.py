@@ -46,7 +46,7 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = getLogger(__name__)
 
-SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
+SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor", "sensors"]
 
 CONFIG_SCHEMA = config_entry_only_config_schema(ADTPULSE_DOMAIN)
 

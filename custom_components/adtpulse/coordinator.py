@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from logging import getLogger
-from asyncio import Task
-from time import time
+from asyncio import Task, sleep
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util.dt import now
 from pyadtpulse.exceptions import (
     PulseExceptionWithBackoff,
     PulseExceptionWithRetry,
@@ -43,7 +43,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         return self._adt_pulse
 
     @property
-    def last_exception(self) -> Exception | None:
+    def last_update_exception(self) -> Exception | None:
         """Return the last exception."""
         return self._exception
 
@@ -60,28 +60,32 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         self._push_wait_task = ce.async_create_background_task(
             self.hass, self._pulse_push_task(), "ADT Pulse push wait task"
         )
-        if not self._push_wait_task:
-            raise ConfigEntryNotReady
-        next_refresh = 0
-        try:
-            await self._push_wait_task
-        except PulseLoginException as ex:
-            raise ConfigEntryAuthFailed from ex
-        except PulseExceptionWithRetry as ex:
-            self._exception = ex
-            if ex.retry_time:
-                next_refresh = ex.retry_time - time()
-        except PulseExceptionWithBackoff as ex:
-            self._exception = ex
-            next_refresh = ex.backoff.get_current_backoff_interval()
-        else:
-            self._exception = None
-        self.update_interval = next_refresh
-        self._schedule_refresh()
 
     async def _pulse_push_task(self) -> None:
         while True:
             LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
-            await self._adt_pulse.wait_for_update()
+            next_check = 0
+            try:
+                await self._adt_pulse.wait_for_update()
+            except PulseLoginException as ex:
+                raise ConfigEntryAuthFailed from ex
+            except PulseExceptionWithRetry as ex:
+                self._exception = ex
+                if ex.retry_time:
+                    next_check = max(ex.retry_time - now().timestamp(), 0)
+            except PulseExceptionWithBackoff as ex:
+                self._exception = ex
+                next_check = ex.backoff.get_current_backoff_interval()
+            except Exception as ex:
+                LOG.error("%s: coordinator received exception: %s", ADTPULSE_DOMAIN, ex)
+            else:
+                self._exception = None
             LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
             self.async_set_updated_data(None)
+            if next_check != 0:
+                LOG.debug(
+                    "%s: coordinator scheduling next update in %f seconds",
+                    ADTPULSE_DOMAIN,
+                    next_check,
+                )
+            await sleep(next_check)

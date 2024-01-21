@@ -274,7 +274,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"ADT Pulse Gateway Status - Site: {site.name}"
+        self._name = "Connection"
         super().__init__(coordinator, self._name)
 
     @property
@@ -282,7 +282,11 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         """Return if gateway is online."""
         return self._gateway.is_online
 
-    # FIXME: Gateways only support one site?
+    @property
+    def name(self) -> str:
+        """Return the name of the sensor."""
+        return self._name
+
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""

@@ -37,7 +37,7 @@ COORDINATOR_EXCEPTION_MAP = {
         "mdi:lan-pending",
     ),
 }
-CONNECTION_STATUS_OK = ("Connection OK", "mdi:hand-ok")
+CONNECTION_STATUS_OK = ("Connection OK", "mdi:hand-okay")
 CONNECTION_STATUSES = [value for value in COORDINATOR_EXCEPTION_MAP.values()]
 CONNECTION_STATUSES.append(CONNECTION_STATUS_OK)
 CONNECTION_STATUS_STRINGS = [value[0] for value in CONNECTION_STATUSES]
@@ -80,9 +80,9 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         super().__init__(coordinator, self._name)
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the sensor."""
-        return self._name
+        return "Connection_Status"
 
     @property
     def unique_id(self) -> str:
@@ -107,7 +107,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
     @property
     def native_value(self) -> str:
         """Return the state of the sensor."""
-        if not self.coordinator.last_exception:
+        if not self.coordinator.last_update_exception:
             return CONNECTION_STATUS_OK[0]
         if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
             return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][0]
@@ -118,8 +118,8 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         """Return the icon of this sensor."""
         if self.native_value == CONNECTION_STATUS_OK[0]:
             return CONNECTION_STATUS_OK[1]
-        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
-            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][1]
+        if self.coordinator.last_update_exception in COORDINATOR_EXCEPTION_MAP:
+            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_update_exception][1]
         return "mdi:alert-octogram"
 
     @property
@@ -165,9 +165,14 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
         return SensorDeviceClass.TIMESTAMP
 
     @property
+    def icon(self) -> str:
+        """Return the icon of this sensor."""
+        return "mdi:timer-pause"
+
+    @property
     def native_value(self) -> datetime | None:
         """Return the state of the sensor."""
-        last_ex = self.coordinator.last_exception
+        last_ex = self.coordinator.last_update_exception
         if not last_ex:
             return None
         if isinstance(last_ex, PulseExceptionWithRetry):
@@ -198,9 +203,9 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
         return f"{self.coordinator.adtpulse.site.id}-next-refresh"
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the sensor."""
-        return self._name
+        return "Next_Refresh"
 
     @property
     def available(self) -> bool:

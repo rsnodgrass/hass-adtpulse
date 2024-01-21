@@ -307,8 +307,8 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "device_lan_ip_address": str(self._gateway.device_lan_ip_address),
             "router_lan_ip_address": str(self._gateway.router_lan_ip_address),
             "router_wan_ip_address": str(self._gateway.router_wan_ip_address),
-            "current_poll_interval": self._gateway.poll_interval,
-            "initial_poll_interval": self._gateway._initial_poll_interval,
+            "current_poll_interval": self._gateway.backoff.get_current_backoff_interval(),
+            "initial_poll_interval": self._gateway.backoff.initial_backoff_interval,
             "next_update": as_local(datetime.fromtimestamp(self._gateway.next_update)),
             "last_update": as_local(datetime.fromtimestamp(self._gateway.last_update)),
         }

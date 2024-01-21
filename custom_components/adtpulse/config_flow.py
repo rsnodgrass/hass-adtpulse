@@ -9,14 +9,13 @@ import voluptuous as vol
 from homeassistant.config_entries import (
     CONN_CLASS_CLOUD_PUSH,
     ConfigEntry,
+    ConfigEntryNotReady,
     ConfigFlow,
     OptionsFlowWithConfigEntry,
 )
 from homeassistant.const import CONF_PASSWORD, CONF_SCAN_INTERVAL, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
-from homeassistant.exceptions import HomeAssistantError
-from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_POLL_INTERVAL,
@@ -26,6 +25,15 @@ from pyadtpulse.const import (
     API_HOST_CA,
     DEFAULT_API_HOST,
 )
+from pyadtpulse.exceptions import (
+    PulseAccountLockedError,
+    PulseAuthenticationError,
+    PulseConnectionError,
+    PulseGatewayOfflineError,
+    PulseMFARequiredError,
+    PulseServiceTemporarilyUnavailableError,
+)
+from pyadtpulse.pyadtpulse_async import PyADTPulseAsync
 from pyadtpulse.site import ADTPulseSite
 
 from .const import (
@@ -58,24 +66,19 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             Dict[str, str | bool]: "title" : username used to validate
                                 "login result": True if login succeeded
         """
-        result = False
-        adtpulse = PyADTPulse(
+        adtpulse = PyADTPulseAsync(
             data[CONF_USERNAME],
             data[CONF_PASSWORD],
             data[CONF_FINGERPRINT],
             service_host=data[CONF_HOSTNAME],
-            do_login=False,
         )
         try:
-            result = await adtpulse.async_login()
-            if not result:
-                LOG.error("Could not validate login info for ADT Pulse")
-                raise InvalidAuth("Could not validate ADT Pulse login info")
+            await adtpulse.async_login()
             site: ADTPulseSite = adtpulse.site
             site_id = site.id
         except Exception as ex:
             LOG.error("ERROR VALIDATING INPUT")
-            raise CannotConnect from ex
+            raise ex
         finally:
             await adtpulse.async_logout()
         return {"title": f"ADT: Site {site_id}"}
@@ -137,10 +140,19 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
         if user_input is not None:
             try:
                 info = await self.validate_input(user_input)
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except InvalidAuth:
+            except PulseAuthenticationError:
                 errors["base"] = "invalid_auth"
+            except PulseMFARequiredError:
+                errors["base"] = "mfa_required"
+            except (
+                PulseAccountLockedError,
+                PulseGatewayOfflineError,
+                PulseServiceTemporarilyUnavailableError,
+            ) as ex:
+                errors["base"] = "service_unavailable"
+                raise ConfigEntryNotReady from ex
+            except PulseConnectionError:
+                errors["base"] = "cannot_connect"
             except Exception:  # pylint: disable=broad-except
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"
@@ -243,11 +255,3 @@ class PulseOptionsFlowHandler(OptionsFlowWithConfigEntry):
             data_schema=self._get_options_schema(user_input),
             errors=result,
         )
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""

@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pyadtpulse.pyadtpulse_async import PyADTPulseAsync
 
 from .const import ADTPULSE_DATA_ATTRIBUTION
 from .coordinator import ADTPulseDataUpdateCoordinator
@@ -25,7 +26,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         """
         self._name = name
         # save references to commonly used objects
-        self._pulse_connection = coordinator.adtpulse
+        self._pulse_connection: PyADTPulseAsync = coordinator.adtpulse
         self._site = self._pulse_connection.site
         self._gateway = self._site.gateway
         self._alarm = self._site.alarm_control_panel
@@ -64,7 +65,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         """Returns whether an entity is available.
 
         Generally false if gateway is offline."""
-        return self._gateway.is_online
+        return self._gateway.is_online and self.coordinator.last_exception is None
 
     @property
     def attribution(self) -> str:

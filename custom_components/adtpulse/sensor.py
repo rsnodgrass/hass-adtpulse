@@ -28,16 +28,16 @@ from .utils import get_gateway_unique_id
 LOG = getLogger(__name__)
 
 COORDINATOR_EXCEPTION_MAP = {
-    PulseAccountLockedError: ("Account Locked", "mdi:lock"),
-    PulseClientConnectionError: ("Client Connection Error", "mdi:lock"),
-    PulseServerConnectionError: ("Server Connection Error", "mdi:lock"),
-    PulseGatewayOfflineError: ("Gateway Offline", "mdi:lock"),
+    PulseAccountLockedError: ("Account Locked", "mdi:account-network-off"),
+    PulseClientConnectionError: ("Client Connection Error", "mdi:network-off"),
+    PulseServerConnectionError: ("Server Connection Error", "mdi:server-network-off"),
+    PulseGatewayOfflineError: ("Gateway Offline", "mdi:cloud-lock"),
     PulseServiceTemporarilyUnavailableError: (
         "Service Temporarily Unavailable",
-        "mdi:lock",
+        "mdi:lan-pending",
     ),
 }
-CONNECTION_STATUS_OK = ("Connection OK", "mdi:lock-open")
+CONNECTION_STATUS_OK = ("Connection OK", "mdi:hand-ok")
 CONNECTION_STATUSES = [value for value in COORDINATOR_EXCEPTION_MAP.values()]
 CONNECTION_STATUSES.append(CONNECTION_STATUS_OK)
 CONNECTION_STATUS_STRINGS = [value[0] for value in CONNECTION_STATUSES]

@@ -47,7 +47,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return True
 
     @property
-    def icon(self) -> str:
+    def icon(self) -> str | None:
         """Return the mdi icon.
 
         Returns:

@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 from logging import getLogger
-from datetime import datetime
-from time import time
+from datetime import datetime, timedelta
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util.dt import as_timestamp, now
 from pyadtpulse.exceptions import (
     PulseAccountLockedError,
     PulseClientConnectionError,
@@ -165,25 +165,29 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
         return SensorDeviceClass.TIMESTAMP
 
     @property
-    def icon(self) -> str:
+    def icon(self) -> str | None:
         """Return the icon of this sensor."""
-        return "mdi:timer-pause"
+        if self.native_value:
+            return "mdi:timer-pause"
+        return None
 
     @property
     def native_value(self) -> datetime | None:
         """Return the state of the sensor."""
+        timediff = 0
+        curr_time = now()
         last_ex = self.coordinator.last_update_exception
         if not last_ex:
             return None
         if isinstance(last_ex, PulseExceptionWithRetry):
             if last_ex.retry_time is None:
                 return None
-            return datetime.fromtimestamp(last_ex.retry_time)
-        if isinstance(last_ex, PulseExceptionWithBackoff):
-            return datetime.fromtimestamp(
-                last_ex.backoff.get_current_backoff_interval() + time()
-            )
-        return None
+            timediff = last_ex.retry_time - as_timestamp(now())
+        elif isinstance(last_ex, PulseExceptionWithBackoff):
+            timediff = last_ex.backoff.get_current_backoff_interval()
+        if timediff < 60:
+            return None
+        return curr_time + timedelta(seconds=timediff)
 
     @property
     def device_info(self) -> DeviceInfo:

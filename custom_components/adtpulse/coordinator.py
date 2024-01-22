@@ -68,16 +68,33 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await self._adt_pulse.wait_for_update()
             except PulseLoginException as ex:
+                LOG.error(
+                    "%s: coordinator received login exception: %s, restarting config flow",
+                    ADTPULSE_DOMAIN,
+                    ex,
+                )
                 raise ConfigEntryAuthFailed from ex
             except PulseExceptionWithRetry as ex:
+                LOG.debug(
+                    "%s: coordinator received retry exception: %s", ADTPULSE_DOMAIN, ex
+                )
                 self._exception = ex
                 if ex.retry_time:
                     next_check = max(ex.retry_time - now().timestamp(), 0)
             except PulseExceptionWithBackoff as ex:
+                LOG.debug(
+                    "%s: coordinator received backoff exception: %s",
+                    ADTPULSE_DOMAIN,
+                    ex,
+                )
                 self._exception = ex
                 next_check = ex.backoff.get_current_backoff_interval()
             except Exception as ex:
-                LOG.error("%s: coordinator received exception: %s", ADTPULSE_DOMAIN, ex)
+                LOG.error(
+                    "%s: coordinator received unexpected exception: %s",
+                    ADTPULSE_DOMAIN,
+                    ex,
+                )
             else:
                 self._exception = None
             LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from logging import getLogger
-from asyncio import Task, sleep
+from asyncio import CancelledError, Task, sleep
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -51,6 +51,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         """Stop the update coordinator."""
         if self._push_wait_task:
             self._push_wait_task.cancel()
+            await self._push_wait_task
 
     async def _async_update_data(self) -> None:
         """Fetch data from ADT Pulse."""
@@ -89,6 +90,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                 )
                 self._exception = ex
                 next_check = ex.backoff.get_current_backoff_interval()
+            except CancelledError:
+                LOG.debug(
+                    "%s: coordinator received cancellation, shutting down",
+                    ADTPULSE_DOMAIN,
+                )
+                return
             except Exception as ex:
                 LOG.error(
                     "%s: coordinator received unexpected exception: %s",

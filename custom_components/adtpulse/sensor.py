@@ -82,7 +82,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
     @property
     def name(self) -> str | None:
         """Return the name of the sensor."""
-        return "Connection_Status"
+        return "Pulse Connection Status"
 
     @property
     def unique_id(self) -> str:
@@ -209,7 +209,7 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
     @property
     def name(self) -> str | None:
         """Return the name of the sensor."""
-        return "Next_Refresh"
+        return "Pulse Next Refresh"
 
     @property
     def available(self) -> bool:

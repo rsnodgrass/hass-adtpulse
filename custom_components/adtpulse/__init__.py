@@ -142,7 +142,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
-    await coordinator.async_config_entry_first_refresh()
+    # entities already have their data, no need to call async_refresh()
     entry.async_on_unload(entry.add_update_listener(options_listener))
     return True
 

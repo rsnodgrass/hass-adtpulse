@@ -33,7 +33,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         LOG.debug("%s: creating update coordinator", ADTPULSE_DOMAIN)
         self._adt_pulse = pulse_service
         super().__init__(
-            hass, LOG, name=ADTPULSE_DOMAIN, update_interval=timedelta(seconds=0)
+            hass,
+            LOG,
+            name=ADTPULSE_DOMAIN,
+            update_interval=timedelta(
+                seconds=pulse_service.site.gateway.backoff.initial_backoff_interval
+            ),
         )
 
     @property
@@ -44,7 +49,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> None:
         """Fetch data from ADT Pulse."""
         LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
-        next_check = 0
+        next_check = self._adt_pulse.site.gateway.backoff.initial_backoff_interval
         update_exception: Exception | None = None
         try:
             await self._adt_pulse.wait_for_update()
@@ -64,10 +69,4 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             self.async_set_update_error(update_exception)
         else:
             self.async_set_updated_data(None)
-        if next_check != 0:
-            LOG.debug(
-                "%s: coordinator scheduling next update in %f seconds",
-                ADTPULSE_DOMAIN,
-                next_check,
-            )
         self.update_interval = timedelta(seconds=next_check)

@@ -27,7 +27,7 @@ from .utils import get_gateway_unique_id
 
 LOG = getLogger(__name__)
 
-COORDINATOR_EXCEPTION_MAP = {
+COORDINATOR_EXCEPTION_MAP: dict[type[Exception], tuple[str, str]] = {
     PulseAccountLockedError: ("Account Locked", "mdi:account-network-off"),
     PulseClientConnectionError: ("Client Connection Error", "mdi:network-off"),
     PulseServerConnectionError: ("Server Connection Error", "mdi:server-network-off"),
@@ -38,7 +38,7 @@ COORDINATOR_EXCEPTION_MAP = {
     ),
 }
 CONNECTION_STATUS_OK = ("Connection OK", "mdi:hand-okay")
-CONNECTION_STATUSES = [value for value in COORDINATOR_EXCEPTION_MAP.values()]
+CONNECTION_STATUSES = list(COORDINATOR_EXCEPTION_MAP.values())
 CONNECTION_STATUSES.append(CONNECTION_STATUS_OK)
 CONNECTION_STATUS_STRINGS = [value[0] for value in CONNECTION_STATUSES]
 
@@ -105,21 +105,27 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         return CONNECTION_STATUS_STRINGS
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         """Return the state of the sensor."""
         if not self.coordinator.last_exception:
             return CONNECTION_STATUS_OK[0]
-        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
-            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][0]
-        return "Unknown"
+        coordinator_exception = COORDINATOR_EXCEPTION_MAP.get(
+            type(self.coordinator.last_exception)
+        )
+        if coordinator_exception:
+            return coordinator_exception[0]
+        return None
 
     @property
     def icon(self) -> str:
         """Return the icon of this sensor."""
-        if self.native_value == CONNECTION_STATUS_OK[0]:
+        if not self.coordinator.last_exception:
             return CONNECTION_STATUS_OK[1]
-        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
-            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][1]
+        coordinator_exception = COORDINATOR_EXCEPTION_MAP.get(
+            type(self.coordinator.last_exception)
+        )
+        if coordinator_exception:
+            return coordinator_exception[1]
         return "mdi:alert-octogram"
 
     @property

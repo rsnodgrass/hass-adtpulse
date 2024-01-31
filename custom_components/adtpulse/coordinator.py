@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from logging import getLogger
-from datetime import timedelta
+from asyncio import CancelledError, Task
 
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.util.dt import now
+from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from pyadtpulse.exceptions import (
     PulseExceptionWithBackoff,
     PulseExceptionWithRetry,
@@ -32,13 +31,11 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         """
         LOG.debug("%s: creating update coordinator", ADTPULSE_DOMAIN)
         self._adt_pulse = pulse_service
+        self._update_task: Task | None = None
         super().__init__(
             hass,
             LOG,
             name=ADTPULSE_DOMAIN,
-            update_interval=timedelta(
-                seconds=pulse_service.site.gateway.backoff.initial_backoff_interval
-            ),
         )
 
     @property
@@ -46,27 +43,60 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         """Return the ADT Pulse service object."""
         return self._adt_pulse
 
+    async def start(self) -> None:
+        """Start ADT Pulse update coordinator.
+
+        This doesn't really need to be async, but it is to yield the event loop.
+        """
+        if not self._update_task:
+            ce = self.config_entry
+            if ce:
+                self._update_task = ce.async_create_background_task(
+                    self.hass, self._async_update_data(), "ADT Pulse Data Update"
+                )
+            else:
+                raise ConfigEntryNotReady
+
+    async def stop(self):
+        """Stop ADT Pulse update coordinator."""
+        if self._update_task:
+            if not self._update_task.cancelled():
+                self._update_task.cancel()
+            await self._update_task
+            self._update_task = None
+
     async def _async_update_data(self) -> None:
         """Fetch data from ADT Pulse."""
-        LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
-        next_check = self._adt_pulse.site.gateway.backoff.initial_backoff_interval
-        update_exception: Exception | None = None
-        try:
-            await self._adt_pulse.wait_for_update()
-        except PulseLoginException as ex:
-            raise ConfigEntryAuthFailed from ex
-        except PulseExceptionWithRetry as ex:
-            update_exception = ex
-            if ex.retry_time:
-                next_check = max(ex.retry_time - now().timestamp(), 0)
-        except PulseExceptionWithBackoff as ex:
-            update_exception = ex
-            next_check = ex.backoff.get_current_backoff_interval()
-        except Exception as ex:
-            raise UpdateFailed from ex
-        LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
-        if update_exception:
-            self.async_set_update_error(update_exception)
-        else:
-            self.async_set_updated_data(None)
-        self.update_interval = timedelta(seconds=next_check)
+        while not self._shutdown_requested and not self.hass.is_stopping:
+            LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
+            update_exception: Exception | None = None
+            try:
+                await self._adt_pulse.wait_for_update()
+            except PulseLoginException as ex:
+                # this should never happen
+                LOG.error(
+                    "%s: ADT Pulse login failed during coordinator update: %s",
+                    ADTPULSE_DOMAIN,
+                    ex,
+                )
+                if self.config_entry:
+                    self.config_entry.async_start_reauth(self.hass)
+                return
+            except (PulseExceptionWithRetry, PulseExceptionWithBackoff) as ex:
+                update_exception = ex
+            except CancelledError:
+                LOG.debug("%s: coordinator received cancellation", ADTPULSE_DOMAIN)
+                return
+            except Exception as ex:
+                LOG.error(
+                    "%s: coordinator received unknown exception %s, exiting...",
+                    ADTPULSE_DOMAIN,
+                    ex,
+                )
+                raise
+            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
+
+            if update_exception:
+                self.async_set_update_error(update_exception)
+            else:
+                self.async_set_updated_data(None)

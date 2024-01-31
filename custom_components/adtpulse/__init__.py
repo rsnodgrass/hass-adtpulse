@@ -143,10 +143,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
-    await coordinator.async_refresh()
-    entry.async_on_unload(
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
-    )
+    await coordinator.async_config_entry_first_refresh()
     entry.async_on_unload(entry.add_update_listener(options_listener))
     return True
 
@@ -219,7 +216,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
             entry.entry_id
         ]
-        await coordinator.stop(None)
         await coordinator.adtpulse.async_logout()
         hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
 

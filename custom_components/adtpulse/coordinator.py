@@ -34,18 +34,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         LOG.debug("%s: creating update coordinator", ADTPULSE_DOMAIN)
         self._adt_pulse = pulse_service
         self._push_wait_task: Task[None] | None = None
-        self._exception: Exception | None = None
         super().__init__(hass, LOG, name=ADTPULSE_DOMAIN)
 
     @property
     def adtpulse(self) -> PyADTPulseAsync:
         """Return the ADT Pulse service object."""
         return self._adt_pulse
-
-    @property
-    def last_update_exception(self) -> Exception | None:
-        """Return the last exception."""
-        return self._exception
 
     async def stop(self, _: Any) -> None:
         """Stop the update coordinator."""
@@ -66,6 +60,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
         while True:
             LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
             next_check = 0
+            update_exception: Exception | None = None
             try:
                 await self._adt_pulse.wait_for_update()
             except PulseLoginException as ex:
@@ -79,7 +74,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                 LOG.debug(
                     "%s: coordinator received retry exception: %s", ADTPULSE_DOMAIN, ex
                 )
-                self._exception = ex
+                update_exception = ex
                 if ex.retry_time:
                     next_check = max(ex.retry_time - now().timestamp(), 0)
             except PulseExceptionWithBackoff as ex:
@@ -88,7 +83,7 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                     ADTPULSE_DOMAIN,
                     ex,
                 )
-                self._exception = ex
+                update_exception = ex
                 next_check = ex.backoff.get_current_backoff_interval()
             except CancelledError:
                 LOG.debug(
@@ -102,10 +97,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                     ADTPULSE_DOMAIN,
                     ex,
                 )
-            else:
-                self._exception = None
+                update_exception = ex
             LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
-            self.async_set_updated_data(None)
+            if update_exception:
+                self.async_set_update_error(update_exception)
+            else:
+                self.async_set_updated_data(None)
             if next_check != 0:
                 LOG.debug(
                     "%s: coordinator scheduling next update in %f seconds",

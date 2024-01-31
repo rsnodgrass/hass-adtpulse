@@ -107,7 +107,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
     @property
     def native_value(self) -> str:
         """Return the state of the sensor."""
-        if not self.coordinator.last_update_exception:
+        if not self.coordinator.last_exception:
             return CONNECTION_STATUS_OK[0]
         if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
             return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][0]
@@ -118,8 +118,8 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         """Return the icon of this sensor."""
         if self.native_value == CONNECTION_STATUS_OK[0]:
             return CONNECTION_STATUS_OK[1]
-        if self.coordinator.last_update_exception in COORDINATOR_EXCEPTION_MAP:
-            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_update_exception][1]
+        if self.coordinator.last_exception in COORDINATOR_EXCEPTION_MAP:
+            return COORDINATOR_EXCEPTION_MAP[self.coordinator.last_exception][1]
         return "mdi:alert-octogram"
 
     @property
@@ -176,7 +176,7 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
         """Return the state of the sensor."""
         timediff = 0
         curr_time = now()
-        last_ex = self.coordinator.last_update_exception
+        last_ex = self.coordinator.last_exception
         if not last_ex:
             return None
         if isinstance(last_ex, PulseExceptionWithRetry):

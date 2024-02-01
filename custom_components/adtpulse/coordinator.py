@@ -113,5 +113,9 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
 
             if update_exception:
                 self.async_set_update_error(update_exception)
+                # async_set_update_error will only notify listeners on first error
+                if not self.last_update_success:
+                    self.async_update_listeners()
             else:
+                self.last_exception = None
                 self.async_set_updated_data(None)

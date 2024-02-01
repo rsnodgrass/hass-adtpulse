@@ -1,4 +1,5 @@
 """Support for ADT Pulse alarm control panels."""
+
 from __future__ import annotations
 
 from logging import getLogger

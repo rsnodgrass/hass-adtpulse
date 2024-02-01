@@ -2,6 +2,7 @@
 
 See https://github.com/rsnodgrass/hass-adtpulse
 """
+
 from __future__ import annotations
 
 from logging import getLogger

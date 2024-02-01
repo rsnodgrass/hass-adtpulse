@@ -5,6 +5,7 @@ motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
+
 from __future__ import annotations
 
 from logging import getLogger

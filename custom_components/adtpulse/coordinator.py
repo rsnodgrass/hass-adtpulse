@@ -1,4 +1,5 @@
 """ADT Pulse Update Coordinator."""
+
 from __future__ import annotations
 
 from logging import getLogger

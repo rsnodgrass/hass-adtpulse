@@ -8,6 +8,7 @@ from asyncio import CancelledError, Task
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util.dt import as_local, utc_from_timestamp
 from pyadtpulse.exceptions import (
     PulseExceptionWithBackoff,
     PulseExceptionWithRetry,
@@ -83,8 +84,21 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                 if self.config_entry:
                     self.config_entry.async_start_reauth(self.hass)
                 return
-            except (PulseExceptionWithRetry, PulseExceptionWithBackoff) as ex:
+            except PulseExceptionWithRetry as ex:
+                if ex.retry_time:
+                    LOG.debug(
+                        "%s: coordinator received retryable exception will retry at %s",
+                        ADTPULSE_DOMAIN,
+                        as_local(utc_from_timestamp(ex.retry_time)),
+                    )
                 update_exception = ex
+            except PulseExceptionWithBackoff as ex:
+                update_exception = ex
+                LOG.debug(
+                    "%s: coordinator received backoff exception, backing off for %s seconds",
+                    ADTPULSE_DOMAIN,
+                    ex.backoff.get_current_backoff_interval(),
+                )
             except CancelledError:
                 LOG.debug("%s: coordinator received cancellation", ADTPULSE_DOMAIN)
                 return

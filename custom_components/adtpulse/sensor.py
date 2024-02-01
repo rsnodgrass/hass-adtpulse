@@ -110,7 +110,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         if not self.coordinator.last_exception:
             return CONNECTION_STATUS_OK[0]
         coordinator_exception = COORDINATOR_EXCEPTION_MAP.get(
-            type(self.coordinator.last_exception)
+            type(self.coordinator.last_exception), ("", "")
         )
         if coordinator_exception:
             return coordinator_exception[0]
@@ -122,7 +122,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
         if not self.coordinator.last_exception:
             return CONNECTION_STATUS_OK[1]
         coordinator_exception = COORDINATOR_EXCEPTION_MAP.get(
-            type(self.coordinator.last_exception)
+            type(self.coordinator.last_exception), ("", "")
         )
         if coordinator_exception:
             return coordinator_exception[1]

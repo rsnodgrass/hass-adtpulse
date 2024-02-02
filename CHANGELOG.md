@@ -1,3 +1,9 @@
+## 0.4.0 (2024-02-02)
+
+* bump pyadtpulse to 1.2.0.  This should provide more robust error handling and stability
+* add connection status and next update sensors
+* remove quick re-login service
+
 ## 0.3.5 (2023-12-22)
 
 * bump pyadtpulse to 1.1.5 to fix more changes in Pulse v27

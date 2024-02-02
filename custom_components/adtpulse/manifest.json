@@ -4,9 +4,9 @@
     "codeowners": ["@rsnodgrass", "@rlippmann"],
     "config_flow": true,
     "dependencies": [],
-    "documentation": "https://github.com/rlippmann/hass-adtpulse/",
+    "documentation": "https://github.com/rsnodgrass/hass-adtpulse/",
     "iot_class": "cloud_push",
-    "issue_tracker": "https://github.com/rlippmann/hass-adtpulse/issues",
+    "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
     "requirements": [
         "pyadtpulse==1.2.0"
     ],

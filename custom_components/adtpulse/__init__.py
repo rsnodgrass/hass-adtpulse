@@ -2,13 +2,13 @@
 
 See https://github.com/rsnodgrass/hass-adtpulse
 """
+
 from __future__ import annotations
 
 from logging import getLogger
 from asyncio import gather
 from typing import Any
 
-from aiohttp.client_exceptions import ClientConnectionError
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_DEVICE_ID,
@@ -16,19 +16,24 @@ from homeassistant.const import (
     CONF_PASSWORD,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    EVENT_HOMEASSISTANT_STOP,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers.config_entry_flow import FlowResult
 from homeassistant.helpers.config_validation import config_entry_only_config_schema
 from homeassistant.helpers.typing import ConfigType
-from pyadtpulse import PyADTPulse
 from pyadtpulse.const import (
     ADT_DEFAULT_KEEPALIVE_INTERVAL,
     ADT_DEFAULT_POLL_INTERVAL,
     ADT_DEFAULT_RELOGIN_INTERVAL,
 )
+from pyadtpulse.exceptions import (
+    PulseAccountLockedError,
+    PulseAuthenticationError,
+    PulseGatewayOfflineError,
+    PulseServiceTemporarilyUnavailableError,
+)
+from pyadtpulse.pyadtpulse_async import PyADTPulseAsync
 
 from .const import (
     ADTPULSE_DOMAIN,
@@ -41,13 +46,14 @@ from .coordinator import ADTPulseDataUpdateCoordinator
 
 LOG = getLogger(__name__)
 
-SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor"]
+SUPPORTED_PLATFORMS = ["alarm_control_panel", "binary_sensor", "sensor"]
 
 CONFIG_SCHEMA = config_entry_only_config_schema(ADTPULSE_DOMAIN)
 
 
 async def async_setup(
-    hass: HomeAssistant, config: ConfigType  # pylint: disable=unused-argument
+    hass: HomeAssistant,
+    config: ConfigType,  # pylint: disable=unused-argument
 ) -> bool:
     """Start up the ADT Pulse HA integration.
 
@@ -79,9 +85,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     username = entry.data.get(CONF_USERNAME)
     password = entry.data.get(CONF_PASSWORD)
     fingerprint = entry.data.get(CONF_FINGERPRINT)
-    poll_interval = entry.options.get(CONF_SCAN_INTERVAL)
-    keepalive = entry.options.get(CONF_KEEPALIVE_INTERVAL)
-    relogin = entry.options.get(CONF_RELOGIN_INTERVAL)
+    poll_interval = entry.options.get(CONF_SCAN_INTERVAL, ADT_DEFAULT_POLL_INTERVAL)
+    keepalive = entry.options.get(
+        CONF_KEEPALIVE_INTERVAL, ADT_DEFAULT_KEEPALIVE_INTERVAL
+    )
+    relogin = entry.options.get(CONF_RELOGIN_INTERVAL, ADT_DEFAULT_RELOGIN_INTERVAL)
     # share reference to the service with other components/platforms
     # running within HASS
 
@@ -90,27 +98,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         LOG.debug("Using ADT Pulse API host %s", host)
     if username is None or password is None or fingerprint is None:
         raise ConfigEntryAuthFailed("Null value for username, password, or fingerprint")
-    service = PyADTPulse(
+    service = PyADTPulseAsync(
         username,
         password,
         fingerprint,
         service_host=host,
-        do_login=False,
         keepalive_interval=keepalive,
         relogin_interval=relogin,
     )
 
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = service
     try:
-        if not await service.async_login():
-            LOG.error("%s could not log in as user %s", ADTPULSE_DOMAIN, username)
-            raise ConfigEntryAuthFailed(
-                f"{ADTPULSE_DOMAIN} could not login using supplied credentials"
-            )
-    except (ClientConnectionError, TimeoutError) as ex:
+        await service.async_login()
+    except PulseAuthenticationError as ex:
+        LOG.error("Unable to connect to ADT Pulse: %s", ex)
+        raise ConfigEntryAuthFailed(
+            f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
+        ) from ex
+    except (
+        PulseAccountLockedError,
+        PulseServiceTemporarilyUnavailableError,
+        PulseGatewayOfflineError,
+    ) as ex:
         LOG.error("Unable to connect to ADT Pulse: %s", ex)
         raise ConfigEntryNotReady(
-            f"{ADTPULSE_DOMAIN} could not log in due to a protocol error"
+            f"{ADTPULSE_DOMAIN} could not log in due to service unavailability"
         ) from ex
 
     if service.sites is None:
@@ -127,20 +139,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = ADTPulseDataUpdateCoordinator(hass, service)
     hass.data.setdefault(ADTPULSE_DOMAIN, {})
     hass.data[ADTPULSE_DOMAIN][entry.entry_id] = coordinator
-    for platform in SUPPORTED_PLATFORMS:
+    setup_tasks = [
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
-    await coordinator.async_refresh()
-    entry.async_on_unload(
-        hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
-    )
+        for platform in SUPPORTED_PLATFORMS
+    ]
+    await gather(*setup_tasks)
+    # entities already have their data, no need to call async_refresh()
     entry.async_on_unload(entry.add_update_listener(options_listener))
-
-    async def handle_relogin(dummy: str) -> None:  # pylint: disable=unused-argument
-        await service.async_quick_relogin()
-
-    hass.services.async_register(ADTPULSE_DOMAIN, "quick_relogin", handle_relogin)
+    await coordinator.start()
     return True
 
 
@@ -212,7 +220,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator: ADTPulseDataUpdateCoordinator = hass.data[ADTPULSE_DOMAIN][
             entry.entry_id
         ]
-        await coordinator.stop(None)
+        await coordinator.stop()
         await coordinator.adtpulse.async_logout()
         hass.data[ADTPULSE_DOMAIN].pop(entry.entry_id)
 

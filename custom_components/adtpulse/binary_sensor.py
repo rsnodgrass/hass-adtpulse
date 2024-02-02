@@ -5,6 +5,7 @@ motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -274,7 +275,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"ADT Pulse Gateway Status - Site: {site.name}"
+        self._name = "Connection"
         super().__init__(coordinator, self._name)
 
     @property
@@ -282,7 +283,11 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         """Return if gateway is online."""
         return self._gateway.is_online
 
-    # FIXME: Gateways only support one site?
+    @property
+    def name(self) -> str:
+        """Return the name of the sensor."""
+        return self._name
+
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""
@@ -307,8 +312,8 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "device_lan_ip_address": str(self._gateway.device_lan_ip_address),
             "router_lan_ip_address": str(self._gateway.router_lan_ip_address),
             "router_wan_ip_address": str(self._gateway.router_wan_ip_address),
-            "current_poll_interval": self._gateway.poll_interval,
-            "initial_poll_interval": self._gateway._initial_poll_interval,
+            "current_poll_interval": self._gateway.backoff.get_current_backoff_interval(),
+            "initial_poll_interval": self._gateway.backoff.initial_backoff_interval,
             "next_update": as_local(datetime.fromtimestamp(self._gateway.next_update)),
             "last_update": as_local(datetime.fromtimestamp(self._gateway.last_update)),
         }

@@ -17,6 +17,8 @@
     "error": {
       "cannot_connect": "Cannot connect to ADT Pulse",
       "invalid_auth": "Cannot authorize with ADT Pulse with the provided credentials",
+      "mfa_required": "Multi-factor authentication is required to authorize with ADT Pulse",
+      "service_unavailable": "ADT Pulse service is unavailable",
       "unknown": "Unknown Error occurred"
     },
     "abort": {

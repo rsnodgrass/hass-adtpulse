@@ -1,4 +1,5 @@
 """Support for ADT Pulse alarm control panels."""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -259,6 +260,11 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     def available(self) -> bool:
         """Alarm panel is always available even if gateway isn't."""
         return True
+
+    @property
+    def name(self) -> str | None:
+        """Return the name of the sensor."""
+        return None
 
     @callback
     def _handle_coordinator_update(self) -> None:

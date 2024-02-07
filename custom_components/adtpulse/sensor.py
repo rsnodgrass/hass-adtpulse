@@ -19,6 +19,9 @@ from pyadtpulse.exceptions import (
     PulseGatewayOfflineError,
     PulseServerConnectionError,
     PulseServiceTemporarilyUnavailableError,
+    PulseAuthenticationError,
+    PulseMFARequiredError,
+    PulseNotLoggedInError,
 )
 
 from .base_entity import ADTPulseEntity
@@ -37,6 +40,9 @@ COORDINATOR_EXCEPTION_MAP: dict[type[Exception], tuple[str, str]] = {
         "Service Temporarily Unavailable",
         "mdi:lan-pending",
     ),
+    PulseAuthenticationError: ("Authentication Error", "mdi:account-alert"),
+    PulseMFARequiredError: ("MFA Required", "mdi:account-reactivate"),
+    PulseNotLoggedInError: ("Not Logged In", "mdi:account-off"),
 }
 CONNECTION_STATUS_OK = ("Connection OK", "mdi:hand-okay")
 CONNECTION_STATUSES = list(COORDINATOR_EXCEPTION_MAP.values())

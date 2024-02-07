@@ -75,7 +75,6 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             try:
                 await self._adt_pulse.wait_for_update()
             except PulseLoginException as ex:
-                # this should never happen
                 LOG.error(
                     "%s: ADT Pulse login failed during coordinator update: %s",
                     ADTPULSE_DOMAIN,
@@ -109,13 +108,14 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                     ex,
                 )
                 raise
-            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
+            finally:
+                if update_exception:
+                    self.async_set_update_error(update_exception)
+                    # async_set_update_error will only notify listeners on first error
+                    if not self.last_update_success:
+                        self.async_update_listeners()
+                else:
+                    self.last_exception = None
+                    self.async_set_updated_data(None)
 
-            if update_exception:
-                self.async_set_update_error(update_exception)
-                # async_set_update_error will only notify listeners on first error
-                if not self.last_update_success:
-                    self.async_update_listeners()
-            else:
-                self.last_exception = None
-                self.async_set_updated_data(None)
+            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)

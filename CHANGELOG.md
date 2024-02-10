@@ -1,6 +1,6 @@
 ## 0.4.1 (2024-02-07)
 
-* bump pyadtpulse to 1.2.3.  This will perform a full re-login after 24 hours
+* bump pyadtpulse to 1.2.5.  This will perform a full re-login approximately every 6 hours
 * have connection status show authentication errors
 
 ## 0.4.0 (2024-02-02)

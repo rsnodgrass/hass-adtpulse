@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import datetime
-from logging import getLogger, DEBUG
+from logging import getLogger
 from asyncio import CancelledError, Task
 from typing import Any, Callable
 

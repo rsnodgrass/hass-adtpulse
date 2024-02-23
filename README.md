@@ -51,9 +51,11 @@ To enable ADT Pulse, add the following integration like any other integration in
 
 #### Step to Get Your Trusted Device
 
+**<ins>Important:</ins>** If you are logged into ADT Pulse with the same fingerprint, the first login will be logged out when the second login is attempted.  For this reason it is recommended that you not use the same machine/browser that you would normally use for logging into Pulse when you generate the fingerprint.
+
 1. Go to the ADT Pulse Login page but do not login.
 2. Open up the developer tools for your browser and make sure you enable the network capturing option and recording is enabled
-3. Login to your account
+3. Login to your account.
 4. If the device isn't trusted, it will prompt you for a code, afterwards you will be asked if you want to trust the device. Give it a name and click Save and Continue.
 
 ![ADT Save Device](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_save_device.jpg?raw=true)

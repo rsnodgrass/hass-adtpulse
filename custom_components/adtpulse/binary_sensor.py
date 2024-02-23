@@ -186,7 +186,10 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
             self._name = f"{self._my_zone.name}"
         super().__init__(coordinator, self._zone_context)
         LOG.debug(
-            "Created ADT Pulse '%s' sensor %s", self._device_class, self._zone_context
+            "Created ADT Pulse '%s' sensor %s - %s",
+            self._device_class,
+            self._zone_context,
+            self._my_zone.name,
         )
 
     @property
@@ -263,9 +266,10 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            "Setting ADT Pulse %s to on = %s at timestamp %d",
+            "Setting ADT Pulse %s - %s to %s at timestamp %d",
             self._zone_context,
-            self.is_on,
+            self._my_zone.name,
+            "on" if self.is_on else "off",
             self._my_zone.last_activity_timestamp,
         )
         self.async_write_ha_state()

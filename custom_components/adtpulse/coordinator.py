@@ -24,7 +24,7 @@ LOG = getLogger(__name__)
 
 ALARM_CONTEXT = "alarm"
 ZONE_CONTEXT_PREFIX = "Zone "
-ZONE_TROUBLE_PREFIX = ZONE_CONTEXT_PREFIX + " Trouble"
+ZONE_TROUBLE_PREFIX = " Trouble"
 
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):

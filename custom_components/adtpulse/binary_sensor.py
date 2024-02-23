@@ -164,25 +164,30 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         trouble_indicator: bool,
     ):
         """Initialize the binary_sensor."""
+        sensor_type = ""
         if trouble_indicator:
-            LOG.debug(
-                "%s: adding zone trouble sensor for site %s", ADTPULSE_DOMAIN, site.id
-            )
-        else:
-            LOG.debug("%s: adding zone sensor for site %s", ADTPULSE_DOMAIN, site.id)
+            sensor_type = "trouble"
+        LOG.debug(
+            "%s: adding zone %s sensor for site %s, zone %d",
+            ADTPULSE_DOMAIN,
+            sensor_type,
+            site.id,
+            zone_id,
+        )
         self._zone_id = zone_id
         self._is_trouble_indicator = trouble_indicator
         self._my_zone = self._get_my_zone(site, zone_id)
-        zone_context = ZONE_CONTEXT_PREFIX + str(self._zone_id)
+        self._zone_context = ZONE_CONTEXT_PREFIX + str(self._zone_id)
         if trouble_indicator:
             self._device_class = BinarySensorDeviceClass.PROBLEM
-            self._name = f"Trouble Sensor - {self._my_zone.name}"
-            zone_context += ZONE_TROUBLE_PREFIX
+            self._zone_context += ZONE_TROUBLE_PREFIX
         else:
             self._device_class = self._determine_device_class(self._my_zone)
             self._name = f"{self._my_zone.name}"
-        super().__init__(coordinator, zone_context)
-        LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
+        super().__init__(coordinator, self._zone_context)
+        LOG.debug(
+            "Created ADT Pulse '%s' sensor %s", self._device_class, self._zone_context
+        )
 
     @property
     def name(self) -> str | None:
@@ -258,8 +263,8 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            "Setting ADT Pulse zone %s to on = %s at timestamp %d",
-            self.name,
+            "Setting ADT Pulse %s to on = %s at timestamp %d",
+            self._zone_context,
             self.is_on,
             self._my_zone.last_activity_timestamp,
         )

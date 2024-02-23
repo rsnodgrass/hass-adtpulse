@@ -27,7 +27,11 @@ from pyadtpulse.zones import ADTPulseZoneData
 
 from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
+from .coordinator import (
+    ADTPulseDataUpdateCoordinator,
+    ZONE_CONTEXT_PREFIX,
+    ZONE_TROUBLE_PREFIX,
+)
 from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
@@ -169,13 +173,15 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         self._zone_id = zone_id
         self._is_trouble_indicator = trouble_indicator
         self._my_zone = self._get_my_zone(site, zone_id)
+        zone_context = ZONE_CONTEXT_PREFIX + str(self._zone_id)
         if trouble_indicator:
             self._device_class = BinarySensorDeviceClass.PROBLEM
             self._name = f"Trouble Sensor - {self._my_zone.name}"
+            zone_context += ZONE_TROUBLE_PREFIX
         else:
             self._device_class = self._determine_device_class(self._my_zone)
             self._name = f"{self._my_zone.name}"
-        super().__init__(coordinator, self._name)
+        super().__init__(coordinator, zone_context)
         LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
 
     @property

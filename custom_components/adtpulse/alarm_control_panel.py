@@ -39,7 +39,7 @@ from pyadtpulse.site import ADTPulseSite
 
 from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
+from .coordinator import ADTPulseDataUpdateCoordinator, ALARM_CONTEXT
 from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
@@ -110,7 +110,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
         self._name = f"ADT Alarm Panel - Site {site.id}"
         self._assumed_state: str | None = None
-        super().__init__(coordinator, self._name)
+        super().__init__(coordinator, ALARM_CONTEXT)
 
     @property
     def state(self) -> str:

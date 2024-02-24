@@ -299,9 +299,9 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         return self._gateway.is_online
 
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         """Return the name of the sensor."""
-        return self._name
+        return None
 
     @property
     def unique_id(self) -> str:

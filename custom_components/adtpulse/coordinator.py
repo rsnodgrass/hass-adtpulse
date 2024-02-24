@@ -21,7 +21,7 @@ from .const import ADTPULSE_DOMAIN
 
 LOG = getLogger(__name__)
 
-ALARM_CONTEXT = "alarm"
+ALARM_CONTEXT = "Alarm"
 ZONE_CONTEXT_PREFIX = "Zone "
 ZONE_TROUBLE_PREFIX = " Trouble"
 

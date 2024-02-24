@@ -32,7 +32,7 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         self._gateway = self._site.gateway
         self._alarm = self._site.alarm_control_panel
         self._attrs: dict = {}
-        super().__init__(coordinator)
+        super().__init__(coordinator, name)
 
     # Base level properties that can be overridden by subclasses
     @property

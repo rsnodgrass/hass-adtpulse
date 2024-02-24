@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from logging import getLogger
 from asyncio import CancelledError, Task
+from typing import Any, Callable
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback, CALLBACK_TYPE
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.util.dt import as_local, utc_from_timestamp
+from homeassistant.util.dt import as_local, utc_from_timestamp, utcnow
 from pyadtpulse.exceptions import (
     PulseExceptionWithBackoff,
     PulseExceptionWithRetry,
@@ -19,6 +20,10 @@ from pyadtpulse.pyadtpulse_async import PyADTPulseAsync
 from .const import ADTPULSE_DOMAIN
 
 LOG = getLogger(__name__)
+
+ALARM_CONTEXT = "Alarm"
+ZONE_CONTEXT_PREFIX = "Zone "
+ZONE_TROUBLE_PREFIX = " Trouble"
 
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
@@ -39,11 +44,47 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             LOG,
             name=ADTPULSE_DOMAIN,
         )
+        self._listener_dictionary: dict[str, CALLBACK_TYPE] = {}
 
     @property
     def adtpulse(self) -> PyADTPulseAsync:
         """Return the ADT Pulse service object."""
         return self._adt_pulse
+
+    @callback
+    def async_add_listener(
+        self, update_callback: CALLBACK_TYPE, context: Any = None
+    ) -> Callable[[], None]:
+        """Listen for data updates."""
+        self._listener_dictionary[context] = update_callback
+        return super().async_add_listener(update_callback, context)
+
+    @callback
+    def async_update_listeners(self) -> None:
+        """Update listeners based update returned data."""
+
+        start_time = utcnow()
+        if not self.data:
+            super().async_update_listeners()
+            LOG.debug(
+                "%s: async_update_listeners took %s",
+                ADTPULSE_DOMAIN,
+                utcnow() - start_time,
+            )
+            return
+        data_to_update: tuple[bool, set[int]] = self.data
+        if data_to_update[0]:
+            self._listener_dictionary[ALARM_CONTEXT]()
+        for zones in data_to_update[1]:
+            self._listener_dictionary[ZONE_CONTEXT_PREFIX + str(zones)]()
+            self._listener_dictionary[
+                ZONE_CONTEXT_PREFIX + str(zones) + ZONE_TROUBLE_PREFIX
+            ]()
+        LOG.debug(
+            "%s: partial async_update_listeners took %s",
+            ADTPULSE_DOMAIN,
+            utcnow() - start_time,
+        )
 
     async def start(self) -> None:
         """Start ADT Pulse update coordinator.
@@ -70,12 +111,12 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> None:
         """Fetch data from ADT Pulse."""
         while not self._shutdown_requested and not self.hass.is_stopping:
+            data = None
             LOG.debug("%s: coordinator waiting for updates", ADTPULSE_DOMAIN)
             update_exception: Exception | None = None
             try:
-                await self._adt_pulse.wait_for_update()
+                data = await self._adt_pulse.wait_for_update()
             except PulseLoginException as ex:
-                # this should never happen
                 LOG.error(
                     "%s: ADT Pulse login failed during coordinator update: %s",
                     ADTPULSE_DOMAIN,
@@ -109,13 +150,14 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
                     ex,
                 )
                 raise
-            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)
+            finally:
+                if update_exception:
+                    self.async_set_update_error(update_exception)
+                    # async_set_update_error will only notify listeners on first error
+                    if not self.last_update_success:
+                        self.async_update_listeners()
+                else:
+                    self.last_exception = None
+                    self.async_set_updated_data(data)
 
-            if update_exception:
-                self.async_set_update_error(update_exception)
-                # async_set_update_error will only notify listeners on first error
-                if not self.last_update_success:
-                    self.async_update_listeners()
-            else:
-                self.last_exception = None
-                self.async_set_updated_data(None)
+            LOG.debug("%s: coordinator received update notification", ADTPULSE_DOMAIN)

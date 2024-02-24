@@ -1,3 +1,14 @@
+## 0.4.1 (2024-02-24)
+
+* bump pyadtpulse to 1.2.7.
+  This will:
+  * perform a full re-login approximately every 6 hours
+  * speed up zone and alarm update times
+  * allow Home Assistant to just refresh updated zones/alarm instead all all entities
+  * fix various "you have not logged in yet" errors
+* have connection status show authentication errors
+* correctly handle coordinator update authentication errors to perform configuration reauthentication flow
+
 ## 0.4.0 (2024-02-02)
 
 * bump pyadtpulse to 1.2.0.  This should provide more robust error handling and stability

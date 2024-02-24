@@ -152,8 +152,9 @@ class PulseConfigFlow(ConfigFlow, domain=ADTPULSE_DOMAIN):  # type: ignore
             ) as ex:
                 errors["base"] = "service_unavailable"
                 raise ConfigEntryNotReady from ex
-            except PulseConnectionError:
+            except PulseConnectionError as ex:
                 errors["base"] = "cannot_connect"
+                raise ConfigEntryNotReady from ex
             except Exception:  # pylint: disable=broad-except
                 LOG.exception("Unexpected exception")
                 errors["base"] = "unknown"

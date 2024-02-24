@@ -9,7 +9,7 @@
     "iot_class": "cloud_push",
     "issue_tracker": "https://github.com/rsnodgrass/hass-adtpulse/issues",
     "requirements": [
-        "pyadtpulse==1.2.6"
+        "pyadtpulse==1.2.7"
     ],
     "version": "0.4.1"
 }

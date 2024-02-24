@@ -1,6 +1,6 @@
 ## 0.4.1 (2024-02-23)
 
-* bump pyadtpulse to 1.2.6.
+* bump pyadtpulse to 1.2.7.
   This will:
   * perform a full re-login approximately every 6 hours
   * speed up zone and alarm update times

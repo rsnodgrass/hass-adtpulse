@@ -255,23 +255,12 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = "Connection"
-        super().__init__(coordinator, self._name)
+        super().__init__(coordinator, "Gateway")
 
     @property
     def is_on(self) -> bool:
         """Return if gateway is online."""
         return self._gateway.is_online
-
-    @property
-    def name(self) -> str | None:
-        """Return the name of the sensor."""
-        return None
-
-    @property
-    def icon(self) -> str | None:
-        """Return the mdi icon."""
-        return super().icon
 
     @property
     def unique_id(self) -> str:
@@ -285,8 +274,7 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "primary_connection_type": self._gateway.primary_connection_type,
             "broadband_connection_status": self._gateway.broadband_connection_status,
             "cellular_connection_status": self._gateway.cellular_connection_status,
-            "cellular_connection"
-            "_signal_strength": self._gateway.cellular_connection_signal_strength,
+            "signal_strength": self._gateway.cellular_connection_signal_strength,
             "broadband_lan_ip_address": str(self._gateway.broadband_lan_ip_address),
             "device_lan_ip_address": str(self._gateway.device_lan_ip_address),
             "router_lan_ip_address": str(self._gateway.router_lan_ip_address),
@@ -303,18 +291,20 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         for i in ("broadband_lan_mac", "device_lan_mac"):
             if getattr(self._gateway, i) is not None:
                 mac_addresses.add((CONNECTION_NETWORK_MAC, getattr(self._gateway, i)))
+        identifiers = set()
+        if self._gateway.serial_number is not None:
+            identifiers.add((ADTPULSE_DOMAIN, self._gateway.serial_number))
+        if self._site.id is not None:
+            identifiers.add((ADTPULSE_DOMAIN, get_gateway_unique_id(self._site)))
         di = DeviceInfo(
             connections=mac_addresses,
             model=self._gateway.model,
             manufacturer=self._gateway.manufacturer,
             hw_version=self._gateway.hardware_version,
             sw_version=self._gateway.firmware_version,
+            name="ADT Pulse Gateway",
+            identifiers=identifiers,
         )
-        if self._gateway.serial_number is not None:
-            di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}
-            di["name"] = f"ADT Pulse Gateway {self._gateway.serial_number}"
-        else:
-            di["name"] = f"ADT Pulse Gateway {self._site.id}"
         return di
 
     @callback

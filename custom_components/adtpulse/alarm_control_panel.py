@@ -247,11 +247,6 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         return True
 
     @property
-    def name(self) -> str | None:
-        """Return the name of the sensor."""
-        return None
-
-    @property
     def code_arm_required(self) -> bool:
         """Whether the code is required for arm actions."""
         return False

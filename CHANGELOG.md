@@ -1,3 +1,8 @@
+## 0.4.2 (2024-02-25)
+
+* use default Home Assistant icons where possible
+* remove gateway serial number/site id from gateway name
+
 ## 0.4.1 (2024-02-24)
 
 * bump pyadtpulse to 1.2.7.

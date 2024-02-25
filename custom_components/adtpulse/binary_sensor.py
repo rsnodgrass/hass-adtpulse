@@ -54,25 +54,6 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "glass": BinarySensorDeviceClass.TAMPER,
 }
 
-ADT_SENSOR_ICON_MAP = {
-    BinarySensorDeviceClass.CO: ("mdi:molecule-co", "mdi:checkbox-marked-circle"),
-    BinarySensorDeviceClass.DOOR: ("mdi:door-open", "mdi:door"),
-    BinarySensorDeviceClass.GARAGE_DOOR: (
-        "mdi:garage-open-variant",
-        "mdi:garage-variant",
-    ),
-    BinarySensorDeviceClass.HEAT: ("mdi:fire", "mdi:smoke-detector-variant"),
-    BinarySensorDeviceClass.MOISTURE: ("mdi:home-flood", "mdi:heat-wave"),
-    BinarySensorDeviceClass.MOTION: ("mdi:run-fast", "mdi:motion-sensor"),
-    BinarySensorDeviceClass.PROBLEM: ("mdi:alert-circle", "mdi:hand-okay"),
-    BinarySensorDeviceClass.SMOKE: ("mdi:fire", "mdi:smoke-detector-variant"),
-    BinarySensorDeviceClass.TAMPER: ("mdi:window-open", "mdi:window-closed"),
-    BinarySensorDeviceClass.WINDOW: (
-        "mdi:window-open-variant",
-        "mdi:window-closed-variant",
-    ),
-}
-
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
@@ -207,22 +188,6 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
 
     @property
-    def icon(self) -> str:
-        """Get icon.
-
-        Returns:
-            str: returns mdi:icon corresponding to current state
-        """
-        if self.device_class not in ADT_SENSOR_ICON_MAP:
-            LOG.error(
-                "Unknown ADT Pulse binary sensor device type %s", self.device_class
-            )
-            return "mdi:alert-octogram"
-        if self.is_on:
-            return ADT_SENSOR_ICON_MAP[self.device_class][0]
-        return ADT_SENSOR_ICON_MAP[self.device_class][1]
-
-    @property
     def is_on(self) -> bool:
         """Return True if the binary sensor is on."""
         # sensor is considered tripped if the state is anything but OK
@@ -307,12 +272,6 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
     def unique_id(self) -> str:
         """Return HA unique id."""
         return get_gateway_unique_id(self._site)
-
-    @property
-    def icon(self) -> str:
-        if self.is_on:
-            return "mdi:lan-connect"
-        return "mdi:lan-disconnect"
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:

@@ -58,14 +58,6 @@ ALARM_MAP = {
     ADT_ALARM_UNKNOWN: STATE_UNAVAILABLE,
 }
 
-ALARM_ICON_MAP = {
-    ADT_ALARM_ARMING: "mdi:shield-refresh",
-    ADT_ALARM_AWAY: "mdi:shield-lock",
-    ADT_ALARM_DISARMING: "mdi-shield-sync",
-    ADT_ALARM_HOME: "mdi:shield-home",
-    ADT_ALARM_OFF: "mdi:shield-off",
-    ADT_ALARM_UNKNOWN: "mdi:shield-bug",
-}
 
 FORCE_ARM = "force arm"
 ARM_ERROR_MESSAGE = (
@@ -128,13 +120,6 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     @property
     def assumed_state(self) -> bool:
         return self._assumed_state is None
-
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        if self._alarm.status not in ALARM_ICON_MAP:
-            return "mdi:shield-alert"
-        return ALARM_ICON_MAP[self._alarm.status]
 
     @property
     def supported_features(self) -> AlarmControlPanelEntityFeature:

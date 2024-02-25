@@ -178,13 +178,6 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
         return SensorDeviceClass.TIMESTAMP
 
     @property
-    def icon(self) -> str | None:
-        """Return the icon of this sensor."""
-        if self.native_value:
-            return "mdi:timer-pause"
-        return None
-
-    @property
     def native_value(self) -> datetime | None:
         """Return the state of the sensor."""
         timediff = 0

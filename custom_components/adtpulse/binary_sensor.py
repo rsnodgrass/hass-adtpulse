@@ -269,6 +269,11 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         return None
 
     @property
+    def icon(self) -> str | None:
+        """Return the mdi icon."""
+        return super().icon
+
+    @property
     def unique_id(self) -> str:
         """Return HA unique id."""
         return get_gateway_unique_id(self._site)

@@ -48,15 +48,6 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return True
 
     @property
-    def icon(self) -> str | None:
-        """Return the mdi icon.
-
-        Returns:
-            str: mdi icon name
-        """
-        return "mdi:gauge"
-
-    @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return the device state attributes."""
         return self._attrs

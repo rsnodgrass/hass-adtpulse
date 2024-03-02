@@ -1,3 +1,8 @@
+## 0.4.3 (2024-03-02)
+
+* fix not updating when exception is raised
+* change glass break type to sound binary sensor
+
 ## 0.4.2 (2024-02-25)
 
 * use default Home Assistant icons where possible

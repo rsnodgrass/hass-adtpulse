@@ -51,7 +51,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "fire": BinarySensorDeviceClass.HEAT,
     "motion": BinarySensorDeviceClass.MOTION,
     "smoke": BinarySensorDeviceClass.SMOKE,
-    "glass": BinarySensorDeviceClass.TAMPER,
+    "glass": BinarySensorDeviceClass.SOUND,
 }
 
 

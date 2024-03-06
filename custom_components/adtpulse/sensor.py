@@ -26,7 +26,11 @@ from pyadtpulse.exceptions import (
 
 from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
+from .coordinator import (
+    ADTPulseDataUpdateCoordinator,
+    CONNECTION_STATUS_CONTEXT,
+    NEXT_REFRESH_CONTEXT,
+)
 from .utils import get_gateway_unique_id
 
 LOG = getLogger(__name__)
@@ -83,7 +87,7 @@ class ADTPulseConnectionStatus(SensorEntity, ADTPulseEntity):
             site_name,
         )
 
-        self._name = f"ADT Pulse Connection Status - Site: {site_name}"
+        self._name = CONNECTION_STATUS_CONTEXT
         super().__init__(coordinator, self._name)
 
     @property
@@ -169,7 +173,7 @@ class ADTPulseNextRefresh(SensorEntity, ADTPulseEntity):
             site_name,
         )
 
-        self._name = f"ADT Pulse Next Refresh - Site: {site_name}"
+        self._name = NEXT_REFRESH_CONTEXT
         super().__init__(coordinator, self._name)
 
     @property

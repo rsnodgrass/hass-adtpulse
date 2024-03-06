@@ -24,6 +24,8 @@ LOG = getLogger(__name__)
 ALARM_CONTEXT = "Alarm"
 ZONE_CONTEXT_PREFIX = "Zone "
 ZONE_TROUBLE_PREFIX = " Trouble"
+CONNECTION_STATUS_CONTEXT = "ConnectionStatus"
+NEXT_REFRESH_CONTEXT = "NextRefresh"
 
 
 class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
@@ -80,6 +82,8 @@ class ADTPulseDataUpdateCoordinator(DataUpdateCoordinator):
             self._listener_dictionary[
                 ZONE_CONTEXT_PREFIX + str(zones) + ZONE_TROUBLE_PREFIX
             ]()
+        for i in CONNECTION_STATUS_CONTEXT, NEXT_REFRESH_CONTEXT:
+            self._listener_dictionary[i]()
         LOG.debug(
             "%s: partial async_update_listeners took %s",
             ADTPULSE_DOMAIN,

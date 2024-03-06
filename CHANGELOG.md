@@ -1,3 +1,7 @@
+## 0.4.4 (2024-03-06)
+
+* update connection status and next update sensors on successful data fetch
+
 ## 0.4.3 (2024-03-02)
 
 * fix not updating when exception is raised

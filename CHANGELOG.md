@@ -1,6 +1,7 @@
 ## 0.4.4 (2024-03-06)
 
 * update connection status and next update sensors on successful data fetch
+* bump pyadtpulse to 1.2.8 which should provide better error logging and more stability for failures from Pulse site
 
 ## 0.4.3 (2024-03-02)
 

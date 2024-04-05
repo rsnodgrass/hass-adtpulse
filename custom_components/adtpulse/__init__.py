@@ -19,7 +19,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers.config_entry_flow import FlowResult
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.config_validation import config_entry_only_config_schema
 from homeassistant.helpers.typing import ConfigType
 from pyadtpulse.const import (

@@ -11,9 +11,6 @@ Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) securit
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/DYks67r)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
-## THANK YOU rlippmann@
-
-[rlippmann@](https://github.com/rlippmann) has been busy making major contributions to pyadtpulse to support async behavior. He is currently (2023) working on switching the HA ADTPulse integration to utilize the async model.
 
 ## THIS IS NOT SUPPORTED
 
@@ -208,3 +205,9 @@ No plans to implement support for the following (however, feel free to contribut
 
 ~~* Home Assistant config flow (would be nice to add)~~
  * ADT Pulse cameras, lighting and dimmers
+
+
+# Credits
+
+* Huge thanks to [Richard Lippmann / rlippmann@](https://github.com/rlippmann). During 2023-2024 Richard made major contributions to pyadtpulse to support async behavior, including switching Home Assistant integration to fully use the async mechanism.
+* [Ryan Snodgrass](https://github.com/rsnodgrass) for originally contributing a skeleton and initial working implementation to have a Home Assistant integration.

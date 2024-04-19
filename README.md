@@ -12,7 +12,9 @@ Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) securit
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
 
-## THIS IS NOT SUPPORTED
+## THIS IS NOT SUPPORTED OR MAINTAINED ANYMORE! (2024)
+
+Please feel free to commit changes and fixes. Pull requests are encouraged.
 
 NOTE: \*Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay should be minimal as the integration will be pushed the data from ADT Pulse's cloud service when updates are detected. This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.
 

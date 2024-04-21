@@ -17,6 +17,7 @@ from homeassistant.const import (
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
     STATE_ALARM_DISARMING,
+    STATE_ALARM_ARMED_NIGHT,
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -34,6 +35,7 @@ from pyadtpulse.alarm_panel import (
     ADT_ALARM_HOME,
     ADT_ALARM_OFF,
     ADT_ALARM_UNKNOWN,
+    ADT_ALARM_NIGHT,
 )
 from pyadtpulse.site import ADTPulseSite
 
@@ -56,6 +58,7 @@ ALARM_MAP = {
     ADT_ALARM_HOME: STATE_ALARM_ARMED_HOME,
     ADT_ALARM_OFF: STATE_ALARM_DISARMED,
     ADT_ALARM_UNKNOWN: STATE_UNAVAILABLE,
+    ADT_ALARM_NIGHT: STATE_ALARM_ARMED_NIGHT,
 }
 
 
@@ -128,6 +131,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
             | AlarmControlPanelEntityFeature.ARM_HOME
+            | AlarmControlPanelEntityFeature.ARM_NIGHT
         )
 
     @property
@@ -202,6 +206,12 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         """Send force arm command."""
         await self._perform_alarm_action(
             self._site.async_arm_away(force_arm=True), FORCE_ARM
+        )
+
+    async def async_alarm_arm_night(self) -> None:
+        """Send arm night command."""
+        await self._perform_alarm_action(
+            self._site.async_arm_night(), STATE_ALARM_ARMED_NIGHT
         )
 
     async def async_alarm_arm_force_stay(self) -> None:

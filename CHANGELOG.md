@@ -1,3 +1,14 @@
+## 0.4.6 (2024-04-21)
+
+* add arm night
+* bump pyadtpulse to 1.2.9
+  This should fix some more instances where it is needed to recover from errors/disconnects
+  
+## 0.4.5 (2024-04-04)
+
+* bump minimum HA version to 2024.04.0
+* fix import of FlowResult
+
 ## 0.4.4 (2024-03-06)
 
 * update connection status and next update sensors on successful data fetch

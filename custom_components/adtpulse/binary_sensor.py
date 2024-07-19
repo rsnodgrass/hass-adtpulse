@@ -5,6 +5,7 @@ motion sensors and switches automatically appear in Home Assistant. This
 automatically discovers the ADT sensors configured within Pulse and
 exposes them into HA.
 """
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -26,7 +27,11 @@ from pyadtpulse.zones import ADTPulseZoneData
 
 from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
+from .coordinator import (
+    ADTPulseDataUpdateCoordinator,
+    ZONE_CONTEXT_PREFIX,
+    ZONE_TROUBLE_PREFIX,
+)
 from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
@@ -46,26 +51,7 @@ ADT_DEVICE_CLASS_TAG_MAP = {
     "fire": BinarySensorDeviceClass.HEAT,
     "motion": BinarySensorDeviceClass.MOTION,
     "smoke": BinarySensorDeviceClass.SMOKE,
-    "glass": BinarySensorDeviceClass.TAMPER,
-}
-
-ADT_SENSOR_ICON_MAP = {
-    BinarySensorDeviceClass.CO: ("mdi:molecule-co", "mdi:checkbox-marked-circle"),
-    BinarySensorDeviceClass.DOOR: ("mdi:door-open", "mdi:door"),
-    BinarySensorDeviceClass.GARAGE_DOOR: (
-        "mdi:garage-open-variant",
-        "mdi:garage-variant",
-    ),
-    BinarySensorDeviceClass.HEAT: ("mdi:fire", "mdi:smoke-detector-variant"),
-    BinarySensorDeviceClass.MOISTURE: ("mdi:home-flood", "mdi:heat-wave"),
-    BinarySensorDeviceClass.MOTION: ("mdi:run-fast", "mdi:motion-sensor"),
-    BinarySensorDeviceClass.PROBLEM: ("mdi:alert-circle", "mdi:hand-okay"),
-    BinarySensorDeviceClass.SMOKE: ("mdi:fire", "mdi:smoke-detector-variant"),
-    BinarySensorDeviceClass.TAMPER: ("mdi:window-open", "mdi:window-closed"),
-    BinarySensorDeviceClass.WINDOW: (
-        "mdi:window-open-variant",
-        "mdi:window-closed-variant",
-    ),
+    "glass": BinarySensorDeviceClass.SOUND,
 }
 
 
@@ -159,23 +145,33 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         trouble_indicator: bool,
     ):
         """Initialize the binary_sensor."""
+        sensor_type = ""
         if trouble_indicator:
-            LOG.debug(
-                "%s: adding zone trouble sensor for site %s", ADTPULSE_DOMAIN, site.id
-            )
-        else:
-            LOG.debug("%s: adding zone sensor for site %s", ADTPULSE_DOMAIN, site.id)
+            sensor_type = "trouble"
+        LOG.debug(
+            "%s: adding zone %s sensor for site %s, zone %d",
+            ADTPULSE_DOMAIN,
+            sensor_type,
+            site.id,
+            zone_id,
+        )
         self._zone_id = zone_id
         self._is_trouble_indicator = trouble_indicator
         self._my_zone = self._get_my_zone(site, zone_id)
+        self._zone_context = ZONE_CONTEXT_PREFIX + str(self._zone_id)
         if trouble_indicator:
             self._device_class = BinarySensorDeviceClass.PROBLEM
-            self._name = f"Trouble Sensor - {self._my_zone.name}"
+            self._zone_context += ZONE_TROUBLE_PREFIX
         else:
             self._device_class = self._determine_device_class(self._my_zone)
             self._name = f"{self._my_zone.name}"
-        super().__init__(coordinator, self._name)
-        LOG.debug("Created ADT Pulse '%s' sensor %s", self._device_class, self.name)
+        super().__init__(coordinator, self._zone_context)
+        LOG.debug(
+            "Created ADT Pulse '%s' sensor %s - %s",
+            self._device_class,
+            self._zone_context,
+            self._my_zone.name,
+        )
 
     @property
     def name(self) -> str | None:
@@ -190,22 +186,6 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
         if self._is_trouble_indicator:
             return f"adt_pulse_trouble_sensor_{self._site.id}_{self._my_zone.id_}"
         return f"adt_pulse_sensor_{self._site.id}_{self._my_zone.id_}"
-
-    @property
-    def icon(self) -> str:
-        """Get icon.
-
-        Returns:
-            str: returns mdi:icon corresponding to current state
-        """
-        if self.device_class not in ADT_SENSOR_ICON_MAP:
-            LOG.error(
-                "Unknown ADT Pulse binary sensor device type %s", self.device_class
-            )
-            return "mdi:alert-octogram"
-        if self.is_on:
-            return ADT_SENSOR_ICON_MAP[self.device_class][0]
-        return ADT_SENSOR_ICON_MAP[self.device_class][1]
 
     @property
     def is_on(self) -> bool:
@@ -251,9 +231,10 @@ class ADTPulseZoneSensor(ADTPulseEntity, BinarySensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         LOG.debug(
-            "Setting ADT Pulse zone %s to on = %s at timestamp %d",
-            self.name,
-            self.is_on,
+            "Setting ADT Pulse %s - %s to %s at timestamp %d",
+            self._zone_context,
+            self._my_zone.name,
+            "on" if self.is_on else "off",
             self._my_zone.last_activity_timestamp,
         )
         self.async_write_ha_state()
@@ -274,25 +255,17 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "%s: adding gateway status sensor for site %s", ADTPULSE_DOMAIN, site.name
         )
         self._device_class = BinarySensorDeviceClass.CONNECTIVITY
-        self._name = f"ADT Pulse Gateway Status - Site: {site.name}"
-        super().__init__(coordinator, self._name)
+        super().__init__(coordinator, "Gateway")
 
     @property
     def is_on(self) -> bool:
         """Return if gateway is online."""
         return self._gateway.is_online
 
-    # FIXME: Gateways only support one site?
     @property
     def unique_id(self) -> str:
         """Return HA unique id."""
         return get_gateway_unique_id(self._site)
-
-    @property
-    def icon(self) -> str:
-        if self.is_on:
-            return "mdi:lan-connect"
-        return "mdi:lan-disconnect"
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:
@@ -301,14 +274,13 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
             "primary_connection_type": self._gateway.primary_connection_type,
             "broadband_connection_status": self._gateway.broadband_connection_status,
             "cellular_connection_status": self._gateway.cellular_connection_status,
-            "cellular_connection"
-            "_signal_strength": self._gateway.cellular_connection_signal_strength,
+            "signal_strength": self._gateway.cellular_connection_signal_strength,
             "broadband_lan_ip_address": str(self._gateway.broadband_lan_ip_address),
             "device_lan_ip_address": str(self._gateway.device_lan_ip_address),
             "router_lan_ip_address": str(self._gateway.router_lan_ip_address),
             "router_wan_ip_address": str(self._gateway.router_wan_ip_address),
-            "current_poll_interval": self._gateway.poll_interval,
-            "initial_poll_interval": self._gateway._initial_poll_interval,
+            "current_poll_interval": self._gateway.backoff.get_current_backoff_interval(),
+            "initial_poll_interval": self._gateway.backoff.initial_backoff_interval,
             "next_update": as_local(datetime.fromtimestamp(self._gateway.next_update)),
             "last_update": as_local(datetime.fromtimestamp(self._gateway.last_update)),
         }
@@ -319,18 +291,20 @@ class ADTPulseGatewaySensor(ADTPulseEntity, BinarySensorEntity):
         for i in ("broadband_lan_mac", "device_lan_mac"):
             if getattr(self._gateway, i) is not None:
                 mac_addresses.add((CONNECTION_NETWORK_MAC, getattr(self._gateway, i)))
+        identifiers = set()
+        if self._gateway.serial_number is not None:
+            identifiers.add((ADTPULSE_DOMAIN, self._gateway.serial_number))
+        if self._site.id is not None:
+            identifiers.add((ADTPULSE_DOMAIN, get_gateway_unique_id(self._site)))
         di = DeviceInfo(
             connections=mac_addresses,
             model=self._gateway.model,
             manufacturer=self._gateway.manufacturer,
             hw_version=self._gateway.hardware_version,
             sw_version=self._gateway.firmware_version,
+            name="ADT Pulse Gateway",
+            identifiers=identifiers,
         )
-        if self._gateway.serial_number is not None:
-            di["identifiers"] = {(ADTPULSE_DOMAIN, self._gateway.serial_number)}
-            di["name"] = f"ADT Pulse Gateway {self._gateway.serial_number}"
-        else:
-            di["name"] = f"ADT Pulse Gateway {self._site.id}"
         return di
 
     @callback

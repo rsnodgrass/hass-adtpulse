@@ -1,4 +1,5 @@
 """ADT Pulse Entity Base class."""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -6,6 +7,7 @@ from typing import Any, Mapping
 
 from homeassistant.core import callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from pyadtpulse.pyadtpulse_async import PyADTPulseAsync
 
 from .const import ADTPULSE_DATA_ATTRIBUTION
 from .coordinator import ADTPulseDataUpdateCoordinator
@@ -25,12 +27,12 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         """
         self._name = name
         # save references to commonly used objects
-        self._pulse_connection = coordinator.adtpulse
+        self._pulse_connection: PyADTPulseAsync = coordinator.adtpulse
         self._site = self._pulse_connection.site
         self._gateway = self._site.gateway
         self._alarm = self._site.alarm_control_panel
         self._attrs: dict = {}
-        super().__init__(coordinator)
+        super().__init__(coordinator, name)
 
     # Base level properties that can be overridden by subclasses
     @property
@@ -46,15 +48,6 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
         return True
 
     @property
-    def icon(self) -> str:
-        """Return the mdi icon.
-
-        Returns:
-            str: mdi icon name
-        """
-        return "mdi:gauge"
-
-    @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return the device state attributes."""
         return self._attrs
@@ -63,8 +56,9 @@ class ADTPulseEntity(CoordinatorEntity[ADTPulseDataUpdateCoordinator]):
     def available(self) -> bool:
         """Returns whether an entity is available.
 
-        Generally false if gateway is offline."""
-        return self._gateway.is_online
+        Generally false if gateway is offline or there was an exception
+        """
+        return self._gateway.is_online and self.coordinator.last_exception is None
 
     @property
     def attribution(self) -> str:

@@ -11,11 +11,10 @@ Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) securit
 [![Buy Me A Coffee](https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg)](https://buymeacoffee.com/DYks67r)
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
-## THANK YOU rlippmann@
 
-[rlippmann@](https://github.com/rlippmann) has been busy making major contributions to pyadtpulse to support async behavior. He is currently (2023) working on switching the HA ADTPulse integration to utilize the async model.
+## THIS IS NOT SUPPORTED OR MAINTAINED ANYMORE! (2024)
 
-## THIS IS NOT SUPPORTED
+Please feel free to commit changes and fixes. Pull requests are encouraged.
 
 NOTE: \*Since this uses ADT's Pulse cloud service, which is not real-time, there are delays detecting state changes to panels, sensors, switches. This delay should be minimal as the integration will be pushed the data from ADT Pulse's cloud service when updates are detected. This package works fine for standard security panel interactions, as well as motion/door sensor status updates, in most cases where "real time" latency is not an issue.
 
@@ -51,9 +50,11 @@ To enable ADT Pulse, add the following integration like any other integration in
 
 #### Step to Get Your Trusted Device
 
+**<ins>Important:</ins>** If you are logged into ADT Pulse with the same fingerprint, the first login will be logged out when the second login is attempted.  For this reason it is recommended that you not use the same machine/browser that you would normally use for logging into Pulse when you generate the fingerprint.
+
 1. Go to the ADT Pulse Login page but do not login.
 2. Open up the developer tools for your browser and make sure you enable the network capturing option and recording is enabled
-3. Login to your account
+3. Login to your account.
 4. If the device isn't trusted, it will prompt you for a code, afterwards you will be asked if you want to trust the device. Give it a name and click Save and Continue.
 
 ![ADT Save Device](https://github.com/rsnodgrass/hass-adtpulse/blob/master/docs/adt_save_device.jpg?raw=true)
@@ -206,3 +207,9 @@ No plans to implement support for the following (however, feel free to contribut
 
 ~~* Home Assistant config flow (would be nice to add)~~
  * ADT Pulse cameras, lighting and dimmers
+
+
+# Credits
+
+* Huge thanks to [Robert Lippmann / rlippmann@](https://github.com/rlippmann). During 2023-2024 Richard made major contributions to pyadtpulse to support async behavior, including switching Home Assistant integration to fully use the async mechanism.
+* [Ryan Snodgrass](https://github.com/rsnodgrass) for originally contributing a skeleton and initial working implementation to have a Home Assistant integration.

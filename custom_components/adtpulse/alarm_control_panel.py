@@ -1,4 +1,5 @@
 """Support for ADT Pulse alarm control panels."""
+
 from __future__ import annotations
 
 from logging import getLogger
@@ -16,6 +17,7 @@ from homeassistant.const import (
     STATE_ALARM_ARMING,
     STATE_ALARM_DISARMED,
     STATE_ALARM_DISARMING,
+    STATE_ALARM_ARMED_NIGHT,
     STATE_UNAVAILABLE,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -33,12 +35,13 @@ from pyadtpulse.alarm_panel import (
     ADT_ALARM_HOME,
     ADT_ALARM_OFF,
     ADT_ALARM_UNKNOWN,
+    ADT_ALARM_NIGHT,
 )
 from pyadtpulse.site import ADTPulseSite
 
 from .base_entity import ADTPulseEntity
 from .const import ADTPULSE_DOMAIN
-from .coordinator import ADTPulseDataUpdateCoordinator
+from .coordinator import ADTPulseDataUpdateCoordinator, ALARM_CONTEXT
 from .utils import (
     get_alarm_unique_id,
     get_gateway_unique_id,
@@ -55,16 +58,9 @@ ALARM_MAP = {
     ADT_ALARM_HOME: STATE_ALARM_ARMED_HOME,
     ADT_ALARM_OFF: STATE_ALARM_DISARMED,
     ADT_ALARM_UNKNOWN: STATE_UNAVAILABLE,
+    ADT_ALARM_NIGHT: STATE_ALARM_ARMED_NIGHT,
 }
 
-ALARM_ICON_MAP = {
-    ADT_ALARM_ARMING: "mdi:shield-refresh",
-    ADT_ALARM_AWAY: "mdi:shield-lock",
-    ADT_ALARM_DISARMING: "mdi-shield-sync",
-    ADT_ALARM_HOME: "mdi:shield-home",
-    ADT_ALARM_OFF: "mdi:shield-off",
-    ADT_ALARM_UNKNOWN: "mdi:shield-bug",
-}
 
 FORCE_ARM = "force arm"
 ARM_ERROR_MESSAGE = (
@@ -109,7 +105,7 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         LOG.debug("%s: adding alarm control panel for %s", ADTPULSE_DOMAIN, site.id)
         self._name = f"ADT Alarm Panel - Site {site.id}"
         self._assumed_state: str | None = None
-        super().__init__(coordinator, self._name)
+        super().__init__(coordinator, ALARM_CONTEXT)
 
     @property
     def state(self) -> str:
@@ -129,19 +125,13 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
         return self._assumed_state is None
 
     @property
-    def icon(self) -> str:
-        """Return the icon."""
-        if self._alarm.status not in ALARM_ICON_MAP:
-            return "mdi:shield-alert"
-        return ALARM_ICON_MAP[self._alarm.status]
-
-    @property
     def supported_features(self) -> AlarmControlPanelEntityFeature:
         """Return the list of supported features."""
         return (
             AlarmControlPanelEntityFeature.ARM_AWAY
             | AlarmControlPanelEntityFeature.ARM_CUSTOM_BYPASS
             | AlarmControlPanelEntityFeature.ARM_HOME
+            | AlarmControlPanelEntityFeature.ARM_NIGHT
         )
 
     @property
@@ -218,6 +208,12 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
             self._site.async_arm_away(force_arm=True), FORCE_ARM
         )
 
+    async def async_alarm_arm_night(self) -> None:
+        """Send arm night command."""
+        await self._perform_alarm_action(
+            self._site.async_arm_night(), STATE_ALARM_ARMED_NIGHT
+        )
+
     async def async_alarm_arm_force_stay(self) -> None:
         """Send force arm stay command.
 
@@ -259,6 +255,11 @@ class ADTPulseAlarm(ADTPulseEntity, alarm.AlarmControlPanelEntity):
     def available(self) -> bool:
         """Alarm panel is always available even if gateway isn't."""
         return True
+
+    @property
+    def code_arm_required(self) -> bool:
+        """Whether the code is required for arm actions."""
+        return False
 
     @callback
     def _handle_coordinator_update(self) -> None:

@@ -12,7 +12,9 @@ Home Assistant integration for [ADT Pulse](https://portal.adtpulse.com/) securit
 [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=WREP29UDAMB6G)
 
 
-## THIS IS NOT SUPPORTED OR MAINTAINED ANYMORE! (2024)
+## WORKS BUT NO LONGER SUPPORTED OR MAINTAINED AS OF 2024
+
+The developers are just volunteers from the community and do not provide any support, so it is best to ask the entire community for help or questions.
 
 Please feel free to commit changes and fixes. Pull requests are encouraged.
 
